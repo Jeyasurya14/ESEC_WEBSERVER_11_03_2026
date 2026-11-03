@@ -1,0 +1,26 @@
+[
+  {
+    "_DESC": "LOGIN_PASSWORD_PLACEHOLDER",
+    "_VALUE": "Password"
+  },
+  {
+    "_DESC": "LOGIN_USER_PLACEHOLDER",
+    "_VALUE": "Nibana's Email Id"
+  },
+  {
+    "_DESC": "UNDER_MAINTENANCE",
+    "_VALUE": "FALSE"
+  },
+  {
+    "_DESC": "UNDER_MAINTENANCE_MSG",
+    "_VALUE": "ESEC UNDER MAINTENANCE TILL : 23-NOV-2023 12:00 PM"
+  },
+  {
+    "_DESC": "ESEC_LOGIN",
+    "_VALUE": "TRUE"
+  },
+  {
+    "_DESC": "LOGIN_TITLE",
+    "_VALUE": "Engineering Software Expertise Capture"
+  }
+]

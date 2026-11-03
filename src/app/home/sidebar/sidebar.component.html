@@ -1,0 +1,51 @@
+<nav #sidebar id="application-sidebar" class="sidebar" aria-label="Application modules">
+  @for (module of modules(); track module) {
+    <button
+      #buttonClk
+      type="button"
+      class="menu-item"
+      [class.selected]="selectedModule() === module"
+      [title]="module"
+      [attr.aria-label]="module"
+      [attr.aria-expanded]="panelOpen() && selectedModule() === module"
+      aria-controls="sidebar-panel"
+      (click)="openModule(module, buttonClk)"
+    >
+      <span
+        class="app-icon"
+        [style.--icon-url]="'url(' + getIcon(module) + ')'"
+        aria-hidden="true"
+      ></span>
+    </button>
+  }
+
+  <div class="sidebar-text" aria-label="License Manager shortcuts">
+    @for (shortcut of shortcuts(); track shortcut.title) {
+      <button
+        type="button"
+        class="menu-textitem"
+        [class.selected]="
+          selectedMenu()?.mainMenuName === licenseManagerMenu &&
+          selectedMenu()?.subMenuName === shortcut.menu?.subMenuName
+        "
+        [title]="shortcut.title"
+        [attr.aria-label]="shortcut.title"
+        [disabled]="!shortcut.menu"
+        (click)="selectSidebarReport(shortcut.menu)"
+      >
+        <span>{{ shortcut.letter }}</span>
+      </button>
+    }
+  </div>
+</nav>
+
+<app-sidebar-panel
+  [isOpen]="panelOpen()"
+  [panelTop]="panelTop()"
+  [title]="selectedModule()"
+  [icon]="getIcon(selectedModule())"
+  [screens]="moduleScreens()"
+  [selectedMenu]="selectedMenu()"
+  (screenSelected)="selectSidebarReport($event)"
+  (closed)="closePanel()"
+></app-sidebar-panel>

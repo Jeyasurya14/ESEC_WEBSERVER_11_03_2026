@@ -1,0 +1,99 @@
+@use '../../../styles/variables' as *;
+
+:host {
+  display: flex;
+  height: 100%;
+  background: $sidebar-bg;
+}
+
+.sidebar {
+  width: $sidebar-width;
+  min-width: $sidebar-width;
+  height: 100%;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-2 0;
+  gap: 2px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.menu-item {
+  width: 44px;
+  height: 36px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $sidebar-icon-size;
+  color: #8fa4bf;
+  cursor: pointer;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: transparent;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+  padding: 0;
+  border-radius: 0 4px 4px 0;
+  position: relative;
+
+  &:hover {
+    color: #d4e1ef;
+    background: $sidebar-hover;
+  }
+
+  &.selected {
+    color: $sidebar-active;
+    border-left-color: $sidebar-active;
+    background: rgba($sidebar-active, 0.12);
+  }
+
+  &:focus-visible {
+    outline: 1px solid rgba($sidebar-active, 0.5);
+    outline-offset: -2px;
+  }
+}
+
+.menu-textitem {
+  width: 44px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #8fa4bf;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  border-left: 3px solid transparent;
+  padding: 0;
+  margin-top: $spacing-4;
+}
+
+.sidebar-text {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: $spacing-4;
+  flex-shrink: 0;
+}
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.menu-textitem:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.menu-textitem.selected {
+  color: $sidebar-active;
+  border-left-color: $sidebar-active;
+  background: rgba($sidebar-active, 0.12);
+}

@@ -1,0 +1,47 @@
+<header class="header">
+  <div class="header-brand">
+    <div class="logo-icon">
+      <img class="logo-image" src="company_logo.png" alt="Company logo" width="106" height="40" />
+    </div>
+    <span class="header-title" title="License Monitoring System">License Monitoring System</span>
+  </div>
+
+  <div class="header-actions">
+    <button
+      type="button"
+      class="header-icon"
+      aria-label="Toggle sidebar"
+      aria-controls="application-sidebar"
+      [attr.aria-expanded]="sidebarVisible()"
+      (click)="toggleSidebar.emit()"
+    >
+      <span class="app-icon" style="--icon-url: url('assets/icons/flaticon/menu.svg')" aria-hidden="true"></span>
+    </button>
+    <button
+      #profileButton
+      class="avatar"
+      type="button"
+      aria-label="Open user settings"
+      aria-controls="user-settings"
+      [attr.aria-expanded]="profileOpen()"
+      (click)="toggleProfile()"
+    >
+      <span>{{ avatarInitial() }}</span>
+    </button>
+    <span class="username-text" [title]="username()">{{ username() }}</span>
+
+    @if (profileOpen()) {
+      <div id="user-settings" class="profile-menu" role="group" aria-label="User settings">
+        <div class="profile-menu-title">User Settings</div>
+        @if (showSettings()) {
+          <button type="button" (click)="selectAction('Settings')">Settings</button>
+        }
+        <button type="button" (click)="selectAction('My Feature')">My Feature</button>
+        <button type="button" (click)="selectAction('My Columns')">My Columns</button>
+        <button type="button" (click)="selectAction('My Share')">My Share</button>
+        <div class="profile-divider"></div>
+        <button type="button" (click)="logout()">Logout</button>
+      </div>
+    }
+  </div>
+</header>

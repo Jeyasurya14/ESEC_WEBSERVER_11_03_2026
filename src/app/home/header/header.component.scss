@@ -1,0 +1,199 @@
+@use '../../../styles/variables' as *;
+
+:host {
+  display: block;
+}
+
+.header {
+  height: $header-height;
+  min-height: $header-height;
+  background: $header-bg;
+  color: $white;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  padding: 0 $spacing-4;
+  gap: $spacing-4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.logo-icon {
+  width: 106px;
+  height: 40px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 3px;
+  background: $white;
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.header-title {
+  font-family: $font-family;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.header-icon {
+  font-size: 18px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color $transition-fast;
+  &:hover {
+    color: $white;
+  }
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  font-weight: 600;
+  color: $white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background $transition-fast;
+  &:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.username-text {
+  font-family: $font-family;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.header {
+  position: relative;
+}
+
+.avatar {
+  border: 0;
+  cursor: pointer;
+}
+
+.profile-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, .35);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
+}
+
+.profile-menu-title {
+  padding: 8px 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #1e293b;
+  text-align: left;
+}
+
+.profile-menu button:hover {
+  background: #f1f5f9;
+}
+
+.profile-divider {
+  height: 1px;
+  margin: 5px 0;
+  background: #e2e8f0;
+}
+
+
+.header {
+  justify-content: space-between;
+}
+
+.header-brand,
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.header-brand {
+  gap: 8px;
+  min-width: 0;
+}
+
+.header-actions {
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.header-icon {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.avatar {
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.username-text {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-menu {
+  right: 12px;
+}
+
+@media (max-width: 640px) {
+  .header {
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .header-title {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-actions {
+    gap: 10px;
+  }
+
+  .username-text {
+    display: none;
+  }
+}
+
+
+.header-icon .app-icon {
+  --icon-size: 18px;
+}

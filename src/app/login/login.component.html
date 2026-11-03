@@ -1,0 +1,102 @@
+<main class="login-page">
+  <section class="login-card" aria-labelledby="login-heading">
+    <div class="brand">
+      <img
+        class="company-logo"
+        src="company_logo.png"
+        alt="ESEC Live company logo"
+        width="141"
+        height="60"
+      />
+      <span class="brand-caption">License Monitoring System</span>
+    </div>
+
+    <div class="login-heading">
+      <h1 id="login-heading">Welcome back</h1>
+      <p>{{ loginTitle }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submitLoginForm()">
+      <fieldset [disabled]="isSubmitting()">
+        <div class="form-field">
+          <label for="loginType">Login type</label>
+          <select id="loginType" formControlName="loginType" (change)="onLoginTypeChange()">
+            <option value="AD LOGIN">AD LOGIN</option>
+
+            @if (showEsecLogin) {
+              <option value="ESEC LOGIN">ESEC LOGIN</option>
+            }
+
+            <option value="ADMIN">ADMIN</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="username">User ID</label>
+          <input
+            id="username"
+            type="text"
+            formControlName="username"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            [placeholder]="loginType() === 'AD LOGIN' ? adUsernamePlaceholder : 'Username'"
+            [attr.aria-invalid]="form.controls.username.touched && form.controls.username.invalid"
+            [attr.aria-describedby]="errorMessage() ? 'login-error' : null"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="password">Password</label>
+          <div class="password-field">
+            <input
+              id="password"
+              [type]="passwordVisible() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="current-password"
+              [placeholder]="loginType() === 'AD LOGIN' ? adPasswordPlaceholder : 'Password'"
+              [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+              [attr.aria-describedby]="errorMessage() ? 'login-error' : null"
+            />
+            <button
+              type="button"
+              class="password-button"
+              [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+              [attr.aria-pressed]="passwordVisible()"
+              (click)="togglePasswordVisibility()"
+            >
+              @if (passwordVisible()) {
+                Hide
+              } @else {
+                Show
+              }
+            </button>
+          </div>
+        </div>
+
+        @if (errorMessage()) {
+          <p id="login-error" class="login-error" role="alert">{{ errorMessage() }}</p>
+        }
+
+        <button class="login-button" type="submit" [attr.aria-busy]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span class="loading-spinner" aria-hidden="true"></span>
+            Signing in...
+          } @else {
+            Sign in
+          }
+        </button>
+      </fieldset>
+    </form>
+
+    <div class="login-note" aria-live="polite">
+      @if (isSubmitting()) {
+        <p role="status">Checking credentials and loading your workspace...</p>
+      } @else {
+        <p>Use your organization account to continue.</p>
+      }
+    </div>
+  </section>
+
+  <footer class="login-footer">ESEC Live <span aria-hidden="true">&middot;</span> License Monitoring System</footer>
+</main>

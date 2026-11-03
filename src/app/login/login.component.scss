@@ -1,0 +1,283 @@
+@use '../../styles/variables' as *;
+
+:host {
+  display: block;
+  color: $gray-900;
+  font-family: $font-family;
+}
+
+.login-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px 24px;
+  background: radial-gradient(ellipse at 50% 0, #edf2ff 0, $content-bg 55%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 34px 36px 22px;
+  border: 1px solid $border-light;
+  border-top: 3px solid $primary;
+  border-radius: 14px;
+  background: $white;
+  box-shadow: 0 16px 48px rgba(30, 41, 59, 0.06), $shadow-xs;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 26px;
+  border-bottom: 1px solid $border-light;
+}
+
+.company-logo {
+  display: block;
+  width: 141px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.brand-caption {
+  margin-top: 13px;
+  color: $gray-500;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.login-heading {
+  margin: 26px 0 28px;
+}
+
+.login-heading h1 {
+  margin: 0 0 9px;
+  font-size: 27px;
+  font-weight: 650;
+  letter-spacing: -0.7px;
+  line-height: 1.25;
+}
+
+.login-heading p {
+  margin: 0;
+  color: $gray-500;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.form-field {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: $gray-800;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+input,
+select {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0 13px;
+  border: 1px solid $border-color;
+  border-radius: 7px;
+  background: $white;
+  color: $gray-900;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+}
+
+select {
+  padding-right: 28px;
+  cursor: pointer;
+}
+
+input::placeholder {
+  color: $gray-500;
+  opacity: 1;
+}
+
+input:hover,
+select:hover {
+  border-color: $gray-400;
+}
+
+input:focus,
+select:focus {
+  border-color: $primary;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba($primary, 0.12);
+}
+
+input[aria-invalid='true'] {
+  border-color: #c53a3a;
+}
+
+input:disabled,
+select:disabled {
+  background: $gray-50;
+  color: $gray-500;
+  cursor: default;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 72px;
+}
+
+.password-button {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  height: 44px;
+  min-width: 64px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0 6px 6px 0;
+  background: transparent;
+  color: $primary-dark;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.password-button:hover {
+  background: $primary-light;
+}
+
+.password-button:focus-visible {
+  outline: 2px solid $primary;
+  outline-offset: -3px;
+}
+
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 6px;
+  padding: 12px 16px;
+  border: 1px solid $primary;
+  border-radius: 7px;
+  background: $primary;
+  color: $white;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background $transition-fast, border-color $transition-fast;
+}
+
+.login-button:hover {
+  border-color: $primary-hover;
+  background: $primary-hover;
+}
+
+fieldset:disabled .login-button {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.login-error {
+  margin: 0 0 16px;
+  padding: 11px 12px;
+  border: 1px solid #f4cece;
+  border-radius: 7px;
+  background: $danger-bg;
+  color: #a52626;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.login-note {
+  min-height: 50px;
+  padding-top: 19px;
+  text-align: center;
+}
+
+.login-note p {
+  margin: 0;
+  color: $gray-500;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.login-footer {
+  margin-top: 25px;
+  color: $gray-500;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.login-footer span {
+  margin: 0 7px;
+}
+
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba($white, 0.4);
+  border-top-color: $white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+
+  input,
+  select,
+  .login-button {
+    transition: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 24px 16px;
+  }
+
+  .login-card {
+    padding: 28px 24px 18px;
+  }
+
+  .login-heading h1 {
+    font-size: 25px;
+  }
+
+  input,
+  select {
+    font-size: 16px;
+  }
+}

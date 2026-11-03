@@ -1,0 +1,132 @@
+@use '../../styles/variables' as *;
+
+:host {
+  display: block;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  color: $gray-800;
+}
+
+.application-shell {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: $main-bg;
+}
+
+.application-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+app-sidebar {
+  flex: 0 0 $sidebar-width;
+  min-height: 0;
+}
+
+.workspace-area {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workspace-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: $spacing-6;
+  overflow: auto;
+  background: $content-bg;
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: $gray-900;
+}
+
+p {
+  line-height: 1.6;
+  color: $gray-500;
+}
+
+.user-details {
+  max-width: 520px;
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid $border-light;
+  border-radius: $border-radius-lg;
+  background: $white;
+}
+
+.user-details h2 {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: $gray-900;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+}
+
+dt {
+  color: $gray-500;
+}
+
+dd {
+  margin: 0;
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-md;
+  background: $white;
+}
+
+.status-bar {
+  height: $status-bar-height;
+  min-height: $status-bar-height;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-start;
+  gap: 16px;
+  align-items: center;
+  padding: 0 12px;
+  border-top: 1px solid $border-light;
+  background: $status-bar-bg;
+  color: $gray-500;
+  font-size: $status-text-size;
+}
+
+@media (max-width: 640px) {
+  .workspace-content {
+    padding: 16px;
+  }
+
+  dl {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  dd {
+    margin-bottom: 10px;
+  }
+}
+
+.icon-credit a {
+  color: inherit;
+  text-decoration: underline;
+}

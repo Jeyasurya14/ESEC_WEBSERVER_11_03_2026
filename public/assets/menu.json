@@ -1,0 +1,100 @@
+[
+  {
+    "RT_M_REF_NO": 1,
+    "RT_M_NAME": "Dashboard",
+    "RT_M_LIST": "Agent (Linux), Agent (Windows), Configuration, Consolidated Software Summary, Department, Department Summary 1,  Division, On Cloud, On Platform, On Prem, Process, Process Type 1, Process Type 2, Process Type 3, Software Inventory, Software Summary, Software Summary 1, Vendor-Expiry-Utilization, Kiosk License"
+  },
+  
+  {
+    "RT_M_REF_NO": 2,
+    "RT_M_NAME": "License",
+    "RT_M_LIST": "Organization, Organization By Week, Organization By Year Month,  Division, Department, Group, My Feature, Report Type 1, Denial, Borrow, Usage, User, Computer, Group Member, License and Agent Combined, Debug Data"
+  },
+  {
+    "RT_M_REF_NO": 3,
+    "RT_M_NAME": "Cloud",
+    "RT_M_LIST": "Cloud Uploader, Adobe, AFT ,Altium, AnyDesk, Autodesk, Automation Anywhere, Aveva, Bentley, Bentley Real,Box, Brixlab, Citrix, Cloud Manual, Confluence, CrowdStrike, CSI, Figma, Forescout, GitHub, Google Maps, Hexagon, iServe, Jira, Kepware, McAfee, Mentimeter, Microsoft, Milestone, MT-Linki, MuleSoft, Palo Alto, Omnissa, OpenText ECM, Oracle, Qlik, Qualys, Red Hat, Seclore, SecurityScorecard, Serena, Snyk,Sprinklr, Thales, Veritas, Wiz, Zoiper,MapmyIndia, Bluebeam, AspenTech, Aconex"
+  },
+  {
+    "RT_M_REF_NO": 4,
+    "RT_M_NAME": "Process",
+    "RT_M_LIST": "Computer Process, Exe Usage, License Harvest, License Harvest Summary, Process Id, Software Harvest, Software Usage, User, User Computer, User Process, User Process Computer, Website"
+  },
+  {
+    "RT_M_REF_NO": 5,
+    "RT_M_NAME": "Asset",
+    "RT_M_LIST": "Computer, File, Services,Shortcut Menu, Print"
+  },
+  {
+    "RT_M_REF_NO": 6,
+    "RT_M_NAME": "Compliance",
+    "RT_M_LIST": "Autodesk Compliance, Communication Port, Software Compliance"
+  },
+  {
+    "RT_M_REF_NO": 7,
+    "RT_M_NAME": "HPC",
+    "RT_M_LIST": "CPU Status, Job List, Current Status, Server Usage"
+  },
+
+  {
+    "RT_M_REF_NO": 8,
+    "RT_M_NAME": "Multi Site",
+    "RT_M_LIST": "Dashboard, License Organization, License Usage, License Expiry, Agent Dashboard, Agent Process Type 1, Agent User, Agent User Process Computer, Agent License Harvest, Status"
+  },
+  {
+    "RT_M_REF_NO": 9,
+    "RT_M_NAME": "Software Register",
+    "RT_M_LIST": "Software Register, Software Register 2, Software Register 3,Software Register 4 ,Software Utilization Month, Node Locked"
+  },
+
+  {
+    "RT_M_REF_NO": 10,
+    "RT_M_NAME": "Admin",
+    "RT_M_LIST": "Access Control, Agent, Agent Install, Cloud, Cluster, Data Process, Department Summary 1, ESEC Preferences, GDPR,Holiday, HoneyWell, License, Software Register 1 Cost, Multi Site, Software Compliance, Software Harvest, Software Inventory, Software Register, Software Register 1, Software Register 2, Software Register 3,Software Register 4, Spend, Teamcenter, User"
+  },
+  {
+    "RT_M_REF_NO": 11,
+    "RT_M_NAME": "License Manager",
+    "RT_M_LIST": "Vendor, Feature, Feature View, Checkout, Expiry, Denial, Opt, Logs, Service,Bentley"
+  },
+  {
+    "RT_M_REF_NO": 12,
+    "RT_M_NAME": "Software",
+    "RT_M_LIST": "Actcad, Cosin, Multi, Pup, VCS, Windchill, XCrash, HoneyWell"
+  },
+  {
+    "RT_M_REF_NO": 13,
+    "RT_M_NAME": "Spend",
+    "RT_M_LIST": "Spend Report 1"
+  },
+  {
+    "RT_M_REF_NO": 14,
+    "RT_M_NAME": "Custom License",
+    "RT_M_LIST": "Division Hours Used, Division License Hours Used, Division Teamcenter Hours Used, Department Hours Used, Department License Hours Used, Department Teamcenter Hours Used, Software"
+  },
+  {
+    "RT_M_REF_NO": 15,
+    "RT_M_NAME": "Planner Portal",
+    "RT_M_LIST": "WFL, License Request, License Request Report,  Estimation Sheet, Time Sheet Report, Software Usage,Software Status, Upload Time Sheet, Planner Access, Project Access,License Request Access, Department Project Access, Department Access, Create Projects, Lock Software, Map Software,Create Hours, Create Employees,Create Department, Recharge"
+  },
+  {
+    "RT_M_REF_NO": 16,
+    "RT_M_NAME": "Software Reservation",
+    "RT_M_LIST": "My Request, Approver, Create Group, Assign Approver"
+  },
+  {
+    "RT_M_REF_NO": 17,
+    "RT_M_NAME": "Chatbot",
+    "RT_M_LIST": "Chatbot"
+  },
+  {
+    "RT_M_REF_NO": 18,
+    "RT_M_NAME": "Software Dashboard",
+    "RT_M_LIST": "Consolidated Software Summary,On Cloud, On Platform, On Prem, Agent Usage Data"
+  },
+  {
+    "RT_M_REF_NO": 19,
+    "RT_M_NAME": "Project Portal",
+    "RT_M_LIST": "Oracle Data, Recharge Price, Purchase Order, Software Map, Widget, License Requestor,Recharge Report, Software Report, Widget Report, Software Admin, Finance Calendar, All User Data, License Report"
+  }
+]

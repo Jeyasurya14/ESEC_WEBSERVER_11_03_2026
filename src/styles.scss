@@ -1,0 +1,66 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f2f5f8;
+  color: #20364a;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.panel {
+  padding: 28px;
+  background: white;
+  border: 1px solid #d6e0e8;
+  border-radius: 10px;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+button {
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 6px;
+  background: #205d8d;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.error {
+  padding: 12px;
+  background: #ffeded;
+  color: #9c2828;
+}
+
+.success {
+  padding: 12px;
+  background: #e7f6eb;
+  color: #245f32;
+}
+
+:focus-visible {
+  outline: 3px solid #4d93bf;
+  outline-offset: 3px;
+}
+
+/* Local Flaticon SVG files. A mask lets each icon inherit the text colour. */
+.app-icon {
+  display: inline-block;
+  width: var(--icon-size, 20px);
+  height: var(--icon-size, 20px);
+  flex-shrink: 0;
+  vertical-align: middle;
+  background-color: currentColor;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+  mask: var(--icon-url) center / contain no-repeat;
+}

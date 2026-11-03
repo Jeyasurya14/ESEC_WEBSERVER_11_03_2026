@@ -1,0 +1,24 @@
+<main class="page">
+  @switch (state().kind) {
+    @case ('connecting') {
+      <section class="panel" aria-live="polite">
+        <h1>Connecting to ESEC</h1>
+        <p>Loading configuration and checking the application licence...</p>
+      </section>
+    }
+    @case ('blocked') {
+      <section class="panel">
+        <h1>Unable to continue</h1>
+        <p class="error" role="alert">{{ message() }}</p>
+        <button type="button" (click)="start()">Try again</button>
+      </section>
+    }
+    @case ('renewal-reminder') {
+      <section class="panel">
+        <h1>Licence renewal reminder</h1>
+        <p class="warning" role="status">{{ message() }}</p>
+        <button type="button" (click)="continueAfterReminder()">OK</button>
+      </section>
+    }
+  }
+</main>

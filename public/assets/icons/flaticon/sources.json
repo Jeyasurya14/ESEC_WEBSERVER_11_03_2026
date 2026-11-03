@@ -1,0 +1,241 @@
+{
+  "author": "Flaticon UIcons",
+  "website": "https://www.flaticon.com/uicons",
+  "websiteGuide": "https://www.flaticon.com/uicons/get-started",
+  "officialPackage": "https://www.npmjs.com/package/@flaticon/flaticon-uicons",
+  "download": "https://registry.npmjs.org/@flaticon/flaticon-uicons/-/flaticon-uicons-3.3.1.tgz",
+  "integrity": "sha512-WN2zuECCdjuGBQrjzN0kpeSygzC5fgF8Q7pDR+FUuGtYWczSdIhIwoD+/fKBEfwqKfNIMZ1WouidevGQ4OJORg==",
+  "attribution": "Uicons by Flaticon — https://www.flaticon.com/uicons",
+  "icons": [
+    {
+      "file": "dashboard.svg",
+      "originalIcon": "fi-rr-dashboard",
+      "codePoint": "0xf523",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "key.svg",
+      "originalIcon": "fi-rr-key",
+      "codePoint": "0xf847",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "cloud.svg",
+      "originalIcon": "fi-rr-cloud",
+      "codePoint": "0xf479",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "processor.svg",
+      "originalIcon": "fi-rr-microchip",
+      "codePoint": "0xf941",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "computer.svg",
+      "originalIcon": "fi-rr-computer",
+      "codePoint": "0xf4cc",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "register.svg",
+      "originalIcon": "fi-rr-check-circle",
+      "codePoint": "0xf3c4",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "compliance.svg",
+      "originalIcon": "fi-rr-shield-check",
+      "codePoint": "0xfbdb",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "settings.svg",
+      "originalIcon": "fi-rr-settings",
+      "codePoint": "0xfbd2",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "information.svg",
+      "originalIcon": "fi-rr-info",
+      "codePoint": "0xf80b",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "money.svg",
+      "originalIcon": "fi-rr-money",
+      "codePoint": "0xf96e",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "server.svg",
+      "originalIcon": "fi-rr-hdd",
+      "codePoint": "0xf786",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "network.svg",
+      "originalIcon": "fi-rr-network",
+      "codePoint": "0xf9a1",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "applications.svg",
+      "originalIcon": "fi-rr-apps",
+      "codePoint": "0xf16c",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "folder.svg",
+      "originalIcon": "fi-rr-folder",
+      "codePoint": "0xf6ba",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "menu.svg",
+      "originalIcon": "fi-rr-menu-burger",
+      "codePoint": "0xf925",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "close.svg",
+      "originalIcon": "fi-rr-cross",
+      "codePoint": "0xf4f7",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "search.svg",
+      "originalIcon": "fi-rr-search",
+      "codePoint": "0xfbba",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "custom-license.svg",
+      "originalIcon": "fi-rr-license",
+      "codePoint": "0xf89e",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "planner.svg",
+      "originalIcon": "fi-rr-calendar",
+      "codePoint": "0xf339",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "reservation.svg",
+      "originalIcon": "fi-rr-calendar-clock",
+      "codePoint": "0xf325",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "chatbot.svg",
+      "originalIcon": "fi-rr-robot",
+      "codePoint": "0xfb61",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "project.svg",
+      "originalIcon": "fi-rr-briefcase",
+      "codePoint": "0xf2e9",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "software-dashboard.svg",
+      "originalIcon": "fi-rr-chart-pie",
+      "codePoint": "0xf3ad",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
+      "intrinsicSize": "24x24",
+      "sidebarDisplaySize": "20x20"
+    }
+  ]
+}
