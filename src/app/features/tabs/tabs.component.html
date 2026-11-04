@@ -1,0 +1,71 @@
+<div class="tab-strip" role="tablist" aria-label="Open reports">
+  @for (tab of tabService.tabs(); track tab.id) {
+    @let active = isActive(tab);
+    @let screen = tab.menu.subMenuName;
+    @let module = tab.menu.mainMenuName;
+
+    <div
+      class="tab"
+      role="presentation"
+      [class.active]="active"
+      [class.pinned]="tab.pinned"
+      (contextmenu)="openMenu($event, tab)"
+    >
+      <button
+        type="button"
+        class="tab-label"
+        role="tab"
+        [id]="'tab-' + tab.id"
+        [title]="screen + ' · ' + module"
+        [attr.aria-label]="tab.pinned ? screen + ', ' + module + ', pinned' : screen + ', ' + module"
+        [attr.aria-selected]="active"
+        [attr.aria-controls]="'panel-' + tab.id"
+        [tabindex]="active ? 0 : -1"
+        (click)="tabService.activate(tab.id)"
+        (keydown)="onKeydown($event, tab)"
+      >
+        @if (tab.pinned) {
+          <svg class="pin" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+            <path fill="currentColor" d="M9.8 1.2 14.8 6.2l-1.4 1.4-.9-.4-2.3 2.3.2 3.1-1.2 1.2-2.7-2.7-3.6 3.6-.8-.8 3.6-3.6L2.9 7.6l1.2-1.2 3.1.2 2.3-2.3-.4-.9z" />
+          </svg>
+        }
+        <span class="title">{{ screen }}</span>
+        <span class="sub">{{ shortName(module) }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-close"
+        tabindex="-1"
+        [attr.aria-label]="'Close ' + screen"
+        (click)="tabService.close(tab.id)"
+      >
+        <span class="app-icon" style="--icon-url: url('assets/icons/flaticon/close.svg')" aria-hidden="true"></span>
+      </button>
+    </div>
+  }
+</div>
+
+<div class="tab-panels">
+  @for (tab of tabService.tabs(); track tab.id) {
+    <section
+      class="tab-panel"
+      role="tabpanel"
+      [id]="'panel-' + tab.id"
+      [attr.aria-labelledby]="'tab-' + tab.id"
+      [hidden]="!isActive(tab)"
+    >
+      <ng-container *ngComponentOutlet="tab.component; inputs: { menu: tab.menu }" />
+    </section>
+  }
+</div>
+
+@if (menu(); as open) {
+  <ul class="context-menu" role="menu" aria-label="Tab actions" [style.left.px]="open.x" [style.top.px]="open.y">
+    @for (item of menuItems(); track item.action) {
+      <li role="none" [class.separated]="item.action === 'togglePin'">
+        <button type="button" role="menuitem" (click)="run(item.action)">{{ item.label }}</button>
+      </li>
+    }
+  </ul>
+}

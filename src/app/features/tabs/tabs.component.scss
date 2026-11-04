@@ -1,0 +1,237 @@
+@use '../../../styles/variables' as *;
+
+$tab-height: 36px;
+$flare: 8px;
+$strip-bg: $gray-100;
+
+:host {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+// ---- Strip: flush against the edges, like a browser's own tab row.
+
+.tab-strip {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  padding-top: $spacing-1;
+  background: $strip-bg;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  flex: 0 1 auto; // as wide as its title + badge; only shrinks when the row is full
+  align-items: center;
+  min-width: 120px; // always room for a few letters of the title and the whole badge
+  max-width: 260px;
+  height: $tab-height;
+  border-radius: $border-radius-lg $border-radius-lg 0 0;
+  color: $gray-600;
+  font-size: $font-size-base;
+  transition: background $transition-fast;
+
+  // Thin divider between neighbouring tabs.
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 1px;
+    background: $gray-300;
+  }
+
+  &:hover {
+    background: rgba($white, 0.6);
+  }
+
+  &:hover::after,
+  &:has(+ .tab:hover)::after,
+  &:has(+ .tab.active)::after,
+  &:last-child::after {
+    opacity: 0;
+  }
+
+  &.pinned {
+    flex: 0 0 auto;
+    max-width: 220px;
+  }
+
+  // The tab in front: white like the page below it, with a solid accent line on top.
+  &.active {
+    z-index: 1;
+    color: $gray-900;
+    background:
+      linear-gradient($primary, $primary) top / 100% 2px no-repeat,
+      $white;
+
+    &::after {
+      opacity: 0;
+    }
+
+    .title {
+      font-weight: 600;
+    }
+
+    .sub {
+      background: $primary-light;
+      color: $primary-dark;
+    }
+
+    // Curved "shoulders" that join the active tab to the page.
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -$flare;
+      width: $flare;
+      height: $flare;
+      background: radial-gradient(circle at 0 0, transparent $flare, $white calc(#{$flare} + 0.5px));
+    }
+
+    .tab-label::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: -$flare;
+      width: $flare;
+      height: $flare;
+      background: radial-gradient(circle at 100% 0, transparent $flare, $white calc(#{$flare} + 0.5px));
+    }
+  }
+}
+
+.tab-label {
+  position: static;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: $spacing-2;
+  min-width: 0;
+  height: 100%;
+  padding: 0 $spacing-1 0 $spacing-3;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: -2px;
+  }
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pin {
+  flex-shrink: 0;
+  color: $gray-500;
+}
+
+// The module the tab belongs to, as a badge next to the tab name.
+// It never shrinks or truncates: when space runs out the title is shortened instead.
+.sub {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: $gray-200;
+  color: $gray-800;
+  font-size: $font-size-xs;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background $transition-fast;
+}
+
+.tab-close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin: 0 $spacing-2 0 $spacing-1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: $gray-500;
+  cursor: default;
+  transition: background $transition-fast, color $transition-fast;
+
+  .app-icon {
+    --icon-size: 10px;
+  }
+
+  &:hover {
+    background: $gray-300;
+    color: $gray-900;
+  }
+}
+
+// ---- Page: the same white as the active tab, so the two read as one surface.
+
+.tab-panels {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: $white;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+// ---- Right-click menu
+
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  width: 190px;
+  margin: 0;
+  padding: $spacing-1;
+  list-style: none;
+  border: 1px solid $border-light;
+  border-radius: $border-radius-lg;
+  background: $white;
+  box-shadow: $shadow-lg;
+  font-size: $font-size-base;
+
+  button {
+    width: 100%;
+    padding: 6px $spacing-3;
+    border: 0;
+    border-radius: $border-radius-sm;
+    background: none;
+    color: $gray-800;
+    font: inherit;
+    text-align: left;
+    cursor: default;
+
+    &:hover,
+    &:focus-visible {
+      background: $primary-light;
+      color: $primary-dark;
+      outline: none;
+    }
+  }
+
+  // Pin/Unpin sits apart from the close actions.
+  li.separated:not(:first-child) {
+    margin-top: $spacing-1;
+    padding-top: $spacing-1;
+    border-top: 1px solid $border-light;
+  }
+}

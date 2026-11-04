@@ -1,8 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
-import { LoginService } from './services/login.service';
-import { OnstartComponent } from './onstart/onstart.component';
-import { LoginComponent } from './login/login.component';
-import { HomeComponent } from './home/home.component';
+import { LoginService } from './core/auth/login.service';
+import { OnstartComponent } from './features/onstart/onstart.component';
+import { LoginComponent } from './features/login/login.component';
+import { HomeComponent } from './features/home/home.component';
 
 @Component({
   selector: 'app-root',

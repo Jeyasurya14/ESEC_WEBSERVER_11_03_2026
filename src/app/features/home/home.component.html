@@ -1,0 +1,61 @@
+<div class="application-shell">
+  <app-header
+    [username]="loginService.user()?.userName || loginService.user()?.userId || ''"
+    [showSettings]="loginService.user()?.userId?.toUpperCase() === 'ADMIN'"
+    [sidebarVisible]="sidebarVisible()"
+    (toggleSidebar)="toggleSidebar()"
+    (actionSelected)="showProfileAction($event)"
+    (logoutRequested)="returnToLogin()"
+  ></app-header>
+
+  <div class="application-body">
+    @if (sidebarVisible()) {
+      <app-sidebar
+        [modules]="loginService.mainMenuNames()"
+        [menus]="loginService.menus()"
+        [selectedMenu]="selectedMenu()"
+        (menuSelected)="openReport($event)"
+      ></app-sidebar>
+    }
+
+    <div class="workspace-area">
+      <main class="workspace-content" id="main-content" [class.has-tabs]="hasTabs()">
+        @if (notice()) {
+          <p class="notice" role="status">{{ notice() }}</p>
+        }
+
+        @if (hasTabs()) {
+          <app-tabs></app-tabs>
+        } @else {
+          <h1>ESEC Workspace</h1>
+          <p>Select a module from the sidebar to see its available screens.</p>
+
+          @if (loginService.mainMenuNames().length === 0) {
+            <p role="status">
+              No visible menus are assigned to this account. Contact your administrator.
+            </p>
+          }
+
+          <section class="user-details" aria-labelledby="profile-title">
+            <h2 id="profile-title">User details</h2>
+            <dl>
+              <dt>User ID</dt>
+              <dd>{{ loginService.user()?.userId }}</dd>
+              <dt>User name</dt>
+              <dd>{{ loginService.user()?.userName || 'Not provided' }}</dd>
+              <dt>Department</dt>
+              <dd>{{ loginService.user()?.department || 'Not provided' }}</dd>
+              <dt>Account status</dt>
+              <dd>{{ loginService.user()?.status || 'Not provided' }}</dd>
+            </dl>
+          </section>
+        }
+      </main>
+
+      <footer class="status-bar" aria-label="Application status">
+        <span>License Monitoring System</span>
+        <span>{{ loginService.user()?.userId }}</span>
+      </footer>
+    </div>
+  </div>
+</div>

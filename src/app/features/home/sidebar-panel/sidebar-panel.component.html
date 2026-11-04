@@ -1,0 +1,45 @@
+@if (isOpen()) {
+  <section id="sidebar-panel" class="sidebar-panel" aria-labelledby="sidebar-panel-title">
+    <div class="sidebar-header-row">
+      <div class="sidebar-icon-title">
+        <span class="app-icon panel-title-icon" [style.--icon-url]="'url(' + icon() + ')'" aria-hidden="true"></span>
+        <h2 id="sidebar-panel-title" class="sidebar-title">{{ title() }}</h2>
+      </div>
+      <button class="close-btn" type="button" (click)="closed.emit()" aria-label="Close panel" title="Close panel">
+        <span class="app-icon" style="--icon-url: url('assets/icons/flaticon/close.svg')" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-filter">
+      <span class="app-icon filter-icon" style="--icon-url: url('assets/icons/flaticon/search.svg')" aria-hidden="true"></span>
+      <input
+        class="filter-input"
+        type="search"
+        [placeholder]="'Filter ' + title().toLowerCase()"
+        [attr.aria-label]="'Filter ' + title() + ' screens'"
+        [value]="filterText()"
+        (input)="updateFilter($event)"
+      />
+    </div>
+
+    <div class="sidebar-body">
+      <div class="sidebar-actions">
+        @for (screen of filteredScreens(); track screen.subMenuName) {
+          <button
+            class="action-chip"
+            type="button"
+            [class.active]="selectedMenu()?.mainMenuName === screen.mainMenuName && selectedMenu()?.subMenuName === screen.subMenuName"
+            [attr.aria-pressed]="selectedMenu()?.mainMenuName === screen.mainMenuName && selectedMenu()?.subMenuName === screen.subMenuName"
+            (click)="selectScreen(screen)"
+          >
+            {{ screen.subMenuName }}
+          </button>
+        } @empty {
+          <p class="empty-message" role="status">No matching screens.</p>
+        }
+      </div>
+    </div>
+  </section>
+}
