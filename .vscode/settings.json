@@ -1,3 +1,7 @@
 {
-    "js/ts.tsdk.path": "node_modules\\typescript\\lib"
+  "js/ts.tsdk.path": "node_modules\\typescript\\lib",
+  "sonarlint.connectedMode.project": {
+    "connectionId": "jeyasurya14",
+    "projectKey": "Jeyasurya14_ESEC_WEBSERVER_11_03_2026"
+  }
 }
