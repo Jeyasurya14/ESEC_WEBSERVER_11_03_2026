@@ -8,6 +8,11 @@ describe('grid formatting', () => {
     expect(formatNumber('n/a')).toBe('n/a');
   });
 
+  it('never stringifies a non-text value to "[object Object]"', () => {
+    expect(formatNumber({})).toBe('');
+    expect(formatCompact({})).toBe('');
+  });
+
   it('shortens large values, with exact limits (1,000,000 is 1 M, not 1000 K)', () => {
     expect(formatCompact(999)).toBe('999');
     expect(formatCompact(12500)).toBe('12.500 K');
