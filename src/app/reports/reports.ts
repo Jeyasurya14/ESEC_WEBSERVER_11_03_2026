@@ -28,11 +28,18 @@ const REPORT_ENTRIES: ReadonlyArray<[string, () => Promise<Type<unknown>>]> = [
 
 export const REPORTS = new Map<string, () => Promise<Type<unknown>>>(REPORT_ENTRIES);
 
-// Catches a copy-pasted key: `Map` would otherwise just keep the last one and drop the rest
-// silently, which is easy to miss as more reports are added here over time.
-if (REPORTS.size !== REPORT_ENTRIES.length) {
-  throw new Error('reports.ts registers the same report key twice - check REPORT_ENTRIES.');
+/**
+ * Catches a copy-pasted key: `Map` would otherwise just keep the last one and drop the rest
+ * silently, which is easy to miss as more reports are added here over time.
+ */
+export function assertNoDuplicateReportKeys(entries: ReadonlyArray<[string, unknown]>): void {
+  const uniqueKeys = new Set(entries.map(([key]) => key));
+  if (uniqueKeys.size !== entries.length) {
+    throw new Error('reports.ts registers the same report key twice - check REPORT_ENTRIES.');
+  }
 }
+
+assertNoDuplicateReportKeys(REPORT_ENTRIES);
 
 /** Set for one page load, right after we reload to recover from a failed report chunk. */
 const RELOADED_AFTER_LOAD_FAILURE = 'esec:reloaded-after-report-load-failure';

@@ -3,9 +3,27 @@ import { NEVER } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../core/api/api.service';
 import { Organization } from './license/organization/organization';
-import { REPORTS, ReportPlaceholderComponent, loadReport } from './reports';
+import { REPORTS, ReportPlaceholderComponent, assertNoDuplicateReportKeys, loadReport } from './reports';
 
 describe('report registry', () => {
+  it('refuses a report list with a repeated key', () => {
+    expect(() =>
+      assertNoDuplicateReportKeys([
+        ['LICENSE/Organization', 1],
+        ['LICENSE/Organization', 2],
+      ]),
+    ).toThrow('registers the same report key twice');
+  });
+
+  it('accepts a report list where every key is unique', () => {
+    expect(() =>
+      assertNoDuplicateReportKeys([
+        ['LICENSE/Organization', 1],
+        ['LICENSE/Division', 2],
+      ]),
+    ).not.toThrow();
+  });
+
   it('opens the real component for a registered screen', async () => {
     const component = await loadReport({ mainMenuName: 'LICENSE', subMenuName: 'Organization' });
     expect(component).toBe(Organization);
