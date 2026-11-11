@@ -13,14 +13,19 @@ export function formatNumber(value: unknown): string {
   if (isBlank(value)) return '';
   const number = Number(value);
   return Number.isNaN(number)
-    ? String(value)
+    ? asText(value)
     : number.toLocaleString('en-US', { maximumFractionDigits: 6 });
+}
+
+/** Converts a primitive to text; anything else (an object, for example) becomes `''`. */
+function asText(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }
 
 export function formatCompact(value: unknown): string {
   if (isBlank(value)) return '';
   const number = Number(value);
-  if (Number.isNaN(number)) return String(value);
+  if (Number.isNaN(number)) return asText(value);
 
   const units: [number, string][] = [
     [1e12, 'T'],

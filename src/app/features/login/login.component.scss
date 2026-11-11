@@ -217,7 +217,9 @@ fieldset:disabled .login-button {
   text-align: center;
 }
 
-.login-note p {
+.login-note p,
+.login-note output {
+  display: block;
   margin: 0;
   color: $gray-500;
   font-size: 12px;

@@ -56,15 +56,20 @@ export class UserPreferencesService {
     }
   }
 
+  /** Writes the current choices, then writes again if more changes arrived while saving. */
   private async writeUntilSaved(): Promise<void> {
-    while (this.unsaved) {
-      this.unsaved = false;
-      const preferences = { ...(await this.load()) };
-      NEVER_SAVED.forEach((key) => delete preferences[key]);
-
-      const sql = `call esms_m.a_user_pref_insert(${sqlString(this.userId)}, ${sqlString(JSON.stringify([preferences]))});`;
-      await firstValueFrom(this.api.write(sql)).catch(() => undefined); // a failed save keeps the choice for this session
+    if (!this.unsaved) {
+      this.saving = null;
+      return;
     }
-    this.saving = null;
+    this.unsaved = false;
+
+    const preferences = { ...(await this.load()) };
+    NEVER_SAVED.forEach((key) => delete preferences[key]);
+
+    const sql = `call esms_m.a_user_pref_insert(${sqlString(this.userId)}, ${sqlString(JSON.stringify([preferences]))});`;
+    await firstValueFrom(this.api.write(sql)).catch(() => undefined); // a failed save keeps the choice for this session
+
+    await this.writeUntilSaved();
   }
 }

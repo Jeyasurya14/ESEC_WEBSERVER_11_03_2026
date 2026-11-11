@@ -21,7 +21,7 @@
     <div class="workspace-area">
       <main class="workspace-content" id="main-content" [class.has-tabs]="hasTabs()">
         @if (notice()) {
-          <p class="notice" role="status">{{ notice() }}</p>
+          <output class="notice">{{ notice() }}</output>
         }
 
         @if (hasTabs()) {
@@ -31,9 +31,9 @@
           <p>Select a module from the sidebar to see its available screens.</p>
 
           @if (loginService.mainMenuNames().length === 0) {
-            <p role="status">
+            <output>
               No visible menus are assigned to this account. Contact your administrator.
-            </p>
+            </output>
           }
 
           <section class="user-details" aria-labelledby="profile-title">

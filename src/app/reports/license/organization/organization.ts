@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   effect,
   inject,
@@ -46,7 +47,7 @@ import {
   providers: [ReportFilters, ReportData],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Organization {
+export class Organization implements OnInit {
   readonly menu = input.required<UserMenu>();
   readonly filters = inject(ReportFilters);
   readonly data = inject<ReportData<OrganizationRow>>(ReportData);
@@ -72,8 +73,6 @@ export class Organization {
   });
 
   constructor() {
-    void this.start();
-
     effect(() => {
       this.filters.range();
       this.filters.featureGroup();
@@ -82,6 +81,10 @@ export class Organization {
         untracked(() => this.load(settings));
       }
     });
+  }
+
+  ngOnInit(): void {
+    void this.start();
   }
 
   refresh(): void {

@@ -16,7 +16,7 @@
     @case ('renewal-reminder') {
       <section class="panel">
         <h1>Licence renewal reminder</h1>
-        <p class="warning" role="status">{{ message() }}</p>
+        <output class="warning">{{ message() }}</output>
         <button type="button" (click)="continueAfterReminder()">OK</button>
       </section>
     }

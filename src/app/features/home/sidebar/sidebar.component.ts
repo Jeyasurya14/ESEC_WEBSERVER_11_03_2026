@@ -31,7 +31,7 @@ import {
 })
 export class SidebarComponent implements OnChanges {
   private readonly element = inject(ElementRef<HTMLElement>);
-  @ViewChild('sidebar') private sidebar?: ElementRef<HTMLElement>;
+  @ViewChild('sidebar') private readonly sidebar?: ElementRef<HTMLElement>;
   private panelTrigger?: HTMLButtonElement;
 
   readonly modules = input<string[]>([]);

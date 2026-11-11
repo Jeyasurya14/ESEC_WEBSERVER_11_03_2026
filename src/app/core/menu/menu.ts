@@ -62,14 +62,19 @@ export function adminMenus(): UserMenu[] {
 }
 
 
-const MENUS_WITHOUT_SIDEBAR_ICON = ['LICENSE MANAGER', 'PLANNER PORTAL', 'PROJECT PORTAL', 'SOFTWARE RESERVATION'];
+const MENUS_WITHOUT_SIDEBAR_ICON = new Set([
+  'LICENSE MANAGER',
+  'PLANNER PORTAL',
+  'PROJECT PORTAL',
+  'SOFTWARE RESERVATION',
+]);
 
 export function sidebarMenuNames(menus: UserMenu[]): string[] {
   const names: string[] = [];
 
   for (const { mainMenuName } of menus) {
     const alreadyListed = names.includes(mainMenuName);
-    const hasNoIcon = MENUS_WITHOUT_SIDEBAR_ICON.includes(mainMenuName);
+    const hasNoIcon = MENUS_WITHOUT_SIDEBAR_ICON.has(mainMenuName);
     if (!alreadyListed && !hasNoIcon) {
       names.push(mainMenuName);
     }

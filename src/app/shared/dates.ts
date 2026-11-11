@@ -6,7 +6,7 @@ export function monthIndex(name: string): number {
 }
 
 export function parseDate(text: unknown): Date | null {
-  const value = String(text ?? '').trim();
+  const value = asText(text).trim();
   const iso = /^(\d{4})[-/](\d{2})[-/](\d{2})$/.exec(value);
   const named = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(value);
 
@@ -23,9 +23,14 @@ export function parseDate(text: unknown): Date | null {
 export function formatDate(value: unknown): string {
   const date = value instanceof Date ? value : parseDate(value);
   if (!date) {
-    return String(value ?? '');
+    return asText(value);
   }
   return `${pad(date.getDate())}-${MONTHS[date.getMonth()]}-${date.getFullYear()}`;
+}
+
+/** Converts a primitive to text; anything else (an object, for example) becomes `''`. */
+function asText(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }
 
 export function formatDateTime(date: Date): string {

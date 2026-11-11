@@ -6,7 +6,7 @@ export interface ServerStatus {
 }
 
 export function matchesServerStatus(status: unknown, filter: ServerStatus): boolean {
-  const installed = String(status ?? '').toLowerCase() === 'installed';
+  const installed = typeof status === 'string' && status.toLowerCase() === 'installed';
   return installed ? filter.active : filter.inactive;
 }
 

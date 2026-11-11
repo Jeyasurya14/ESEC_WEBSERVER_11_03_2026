@@ -86,7 +86,7 @@ export class ReportFilters {
 }
 
 function text(value: unknown): string {
-  return value === null || value === undefined ? '' : String(value);
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }
 
 interface StoredBands {

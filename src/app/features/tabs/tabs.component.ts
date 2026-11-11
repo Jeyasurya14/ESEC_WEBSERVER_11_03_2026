@@ -51,8 +51,10 @@ export class TabsComponent {
     const items: MenuItem[] = [];
 
     if (!tab.pinned) {
-      items.push({ action: 'closeAll', label: 'Close All' });
-      items.push({ action: 'closeOthers', label: 'Close All But This' });
+      items.push(
+        { action: 'closeAll', label: 'Close All' },
+        { action: 'closeOthers', label: 'Close All But This' },
+      );
     }
     if (this.tabService.canCloseLeftOf(tab.id)) {
       items.push({ action: 'closeLeft', label: 'Close Tabs to the Left' });

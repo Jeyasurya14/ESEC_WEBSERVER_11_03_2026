@@ -40,7 +40,7 @@ export type StorageKey = (typeof StorageKey)[keyof typeof StorageKey];
 const OBFUSCATION_KEY = 'pass$1234';
 
 /** Kept when the user signs out, as in the company app. */
-const KEPT_ON_SIGN_OUT: readonly StorageKey[] = [StorageKey.version];
+const KEPT_ON_SIGN_OUT: ReadonlySet<StorageKey> = new Set([StorageKey.version]);
 
 /**
  * localStorage, made safe: if the browser blocks storage (private mode, full disk, policy) the app
@@ -93,7 +93,7 @@ export class BrowserStorage {
   /** Forgets everything this app stored, except what survives a sign-out. */
   clearOnSignOut(): void {
     for (const key of Object.values(StorageKey)) {
-      if (!KEPT_ON_SIGN_OUT.includes(key)) {
+      if (!KEPT_ON_SIGN_OUT.has(key)) {
         this.remove(key);
       }
     }

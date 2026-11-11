@@ -8,7 +8,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewChild
 })
 export class HeaderComponent {
   private readonly element = inject(ElementRef<HTMLElement>);
-  @ViewChild('profileButton') private profileButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('profileButton') private readonly profileButton?: ElementRef<HTMLButtonElement>;
 
   readonly username = input('');
   readonly showSettings = input(false);

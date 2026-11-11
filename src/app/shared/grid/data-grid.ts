@@ -246,5 +246,5 @@ export class DataGrid<T> {
 }
 
 function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
+  return text.replace(/[&<>"']/g, (char) => `&#${char.codePointAt(0)};`);
 }

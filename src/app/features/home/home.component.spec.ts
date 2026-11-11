@@ -54,7 +54,7 @@ describe('reference header and sidebar UI', () => {
     expect(element.querySelector('.header-title')?.textContent).toBe('License Monitoring System');
     expect(element.querySelector('.logo-image')?.getAttribute('src')).toBe('company_logo.png');
     expect(element.querySelector('.avatar')?.textContent?.trim()).toBe('J');
-    expect(element.querySelectorAll('app-sidebar .menu-item').length).toBe(3);
+    expect(element.querySelectorAll('app-sidebar .menu-item')).toHaveLength(3);
     expect(element.querySelector('app-sidebar button[aria-label="ADMIN"]')).toBeNull();
     expect(element.querySelector('.menu-item[aria-label="LICENSE MANAGER"]')).toBeNull();
     expect(element.querySelector('.menu-item[aria-label="SOFTWARE"]')).not.toBeNull();
@@ -70,7 +70,7 @@ describe('reference header and sidebar UI', () => {
     input.value = 'department';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
-    expect(element.querySelectorAll('.action-chip').length).toBe(1);
+    expect(element.querySelectorAll('.action-chip')).toHaveLength(1);
     click(element, '.action-chip');
     await fixture.whenStable();
     fixture.detectChanges();
@@ -123,7 +123,7 @@ describe('reference header and sidebar UI', () => {
     click(fixture.nativeElement, 'button[aria-label="Open user settings"]');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#user-settings')).not.toBeNull();
-    expect(fixture.nativeElement.querySelectorAll('#user-settings button').length).toBe(4);
+    expect(fixture.nativeElement.querySelectorAll('#user-settings button')).toHaveLength(4);
     document.body.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#user-settings')).toBeNull();

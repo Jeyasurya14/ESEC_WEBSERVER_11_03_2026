@@ -63,7 +63,7 @@
 @if (menu(); as open) {
   <ul class="context-menu" role="menu" aria-label="Tab actions" [style.left.px]="open.x" [style.top.px]="open.y">
     @for (item of menuItems(); track item.action) {
-      <li role="none" [class.separated]="item.action === 'togglePin'">
+      <li role="presentation" [class.separated]="item.action === 'togglePin'">
         <button type="button" role="menuitem" (click)="run(item.action)">{{ item.label }}</button>
       </li>
     }

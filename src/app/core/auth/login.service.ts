@@ -10,7 +10,7 @@ export type { LoginType } from '../models';
 
 type CredentialReply = 0 | 1 | string;
 
-const LOGIN_TYPES: readonly LoginType[] = ['AD LOGIN', 'ESEC LOGIN', 'ADMIN'];
+const LOGIN_TYPES: ReadonlySet<LoginType> = new Set(['AD LOGIN', 'ESEC LOGIN', 'ADMIN']);
 
 @Injectable({ providedIn: 'root' })
 export class LoginService {
@@ -54,7 +54,7 @@ export class LoginService {
   async restoreSession(): Promise<boolean> {
     const userId = this.storage.getHidden(StorageKey.userId);
     const loginType = this.storage.getHidden(StorageKey.loginType) as LoginType | null;
-    if (!userId || !loginType || !LOGIN_TYPES.includes(loginType)) {
+    if (!userId || !loginType || !LOGIN_TYPES.has(loginType)) {
       return false;
     }
 
