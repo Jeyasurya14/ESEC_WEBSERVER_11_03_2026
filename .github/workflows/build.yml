@@ -37,4 +37,6 @@ jobs:
             -Dsonar.projectKey=Jeyasurya14_ESEC_WEBSERVER_11_03_2026
             -Dsonar.javascript.lcov.reportPaths=coverage/esec-latest-21/lcov.info
             -Dsonar.typescript.lcov.reportPaths=coverage/esec-latest-21/lcov.info
+            -Dsonar.tests=src
             -Dsonar.test.inclusions=src/**/*.spec.ts
+            -Dsonar.coverage.exclusions=src/**/*.spec.ts
