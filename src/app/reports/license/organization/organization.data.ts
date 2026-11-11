@@ -70,7 +70,6 @@ export interface OrganizationFilters {
   bands: UsageBand[];
 }
 
-//proc
 export function organizationCall(userId: string, range: ReportRange, featureGroup: string): string {
   return rangeCall(
     'esms_m.r_organization_grid',
