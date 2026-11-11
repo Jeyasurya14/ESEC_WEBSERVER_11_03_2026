@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { NEVER } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../core/api/api.service';
 import { Organization } from './license/organization/organization';
 import { REPORTS, ReportPlaceholderComponent, loadReport } from './reports';
@@ -45,5 +45,43 @@ describe('report registry', () => {
     await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).childElementCount).toBeGreaterThan(0);
+  });
+});
+
+describe('recovering from a report that fails to load', () => {
+  const RELOAD_MARKER = 'esec:reloaded-after-report-load-failure';
+  const brokenMenu = { mainMenuName: 'TEST', subMenuName: 'Broken' };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    REPORTS.set(`${brokenMenu.mainMenuName}/${brokenMenu.subMenuName}`, () =>
+      Promise.reject(new Error('chunk failed to load')),
+    );
+  });
+
+  afterEach(() => {
+    REPORTS.delete(`${brokenMenu.mainMenuName}/${brokenMenu.subMenuName}`);
+    sessionStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it('reloads once on the first failure, but not again on a second one', async () => {
+    const reload = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload });
+
+    await expect(loadReport(brokenMenu)).rejects.toThrow('chunk failed to load');
+    expect(reload).toHaveBeenCalledTimes(1);
+
+    await expect(loadReport(brokenMenu)).rejects.toThrow('chunk failed to load');
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the reload marker once a report loads successfully again', async () => {
+    sessionStorage.setItem(RELOAD_MARKER, 'true');
+
+    const component = await loadReport({ mainMenuName: 'LICENSE', subMenuName: 'Organization' });
+
+    expect(component).toBe(Organization);
+    expect(sessionStorage.getItem(RELOAD_MARKER)).toBeNull();
   });
 });
