@@ -12,10 +12,8 @@ import { HomeComponent } from './features/home/home.component';
 export class AppComponent {
   private readonly loginService = inject(LoginService);
 
-  public dummy: boolean = false
   readonly currentScreen = computed(() => {
     if (!this.loginService.licenceReady()) {
-
       return 'startup';
     }
     return this.loginService.isAuthenticated() ? 'home' : 'login';

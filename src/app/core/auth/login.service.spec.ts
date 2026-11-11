@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../api/api.service';
+import { BrowserStorage, StorageKey } from '../storage/browser-storage.service';
 import { LoginService } from './login.service';
 
 // Only the server is faked; credential checks, profile and menu logic run for real.
@@ -26,6 +27,7 @@ describe('sign-in workflow and session state', () => {
   const query = () => api['query'] as ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    localStorage.clear();
     permissions = 'DASHBOARD_CONFIGURATION';
     api = {
       centralized: false,
@@ -125,5 +127,56 @@ describe('sign-in workflow and session state', () => {
     post().mockReturnValue(of({ status: 'FAIL', message: 'Account locked' }));
 
     await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow('Account locked');
+  });
+
+  describe('remembering the signed-in user', () => {
+    const storage = () => TestBed.inject(BrowserStorage);
+
+    it('remembers the user ID and login type after sign-in, never the password', async () => {
+      await loginService.signInUser('ESEC LOGIN', 'COMPANY\\john', 'secret-password');
+
+      expect(storage().getHidden(StorageKey.userId)).toBe('john');
+      expect(storage().getHidden(StorageKey.loginType)).toBe('ESEC LOGIN');
+      expect(JSON.stringify({ ...localStorage })).not.toContain('secret-password');
+      expect(localStorage.getItem('loggedInPwd')).toBeNull();
+    });
+
+    it('restores the session after a reload without checking a password again', async () => {
+      storage().setHidden(StorageKey.userId, 'john');
+      storage().setHidden(StorageKey.loginType, 'ESEC LOGIN');
+      loginService.clearSession();
+
+      expect(await loginService.restoreSession()).toBe(true);
+      expect(loginService.user()?.userId).toBe('john');
+      expect(loginService.menus()).toEqual([{ mainMenuName: 'DASHBOARD', subMenuName: 'Configuration' }]);
+      expect(post()).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when no one is remembered or the stored type is unknown', async () => {
+      expect(await loginService.restoreSession()).toBe(false);
+
+      storage().setHidden(StorageKey.userId, 'john');
+      storage().setHidden(StorageKey.loginType, 'SUPERUSER');
+      expect(await loginService.restoreSession()).toBe(false);
+      expect(loginService.isAuthenticated()).toBe(false);
+    });
+
+    it('forgets a remembered user whose profile no longer loads', async () => {
+      storage().setHidden(StorageKey.userId, 'gone');
+      storage().setHidden(StorageKey.loginType, 'ESEC LOGIN');
+      query().mockReturnValue(of({ status: 'PASS', message: [] }));
+
+      expect(await loginService.restoreSession()).toBe(false);
+      expect(storage().get(StorageKey.userId)).toBeNull();
+    });
+
+    it('forgets everything on sign-out', async () => {
+      await loginService.signInUser('ESEC LOGIN', 'john', 'password');
+      loginService.signOut();
+
+      expect(loginService.isAuthenticated()).toBe(false);
+      expect(storage().get(StorageKey.userId)).toBeNull();
+      expect(storage().get(StorageKey.loginType)).toBeNull();
+    });
   });
 });

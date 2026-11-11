@@ -190,6 +190,11 @@ $strip-bg: $gray-100;
   background: $white;
 }
 
+// Full height, so a report can fill the tab (e.g. a grid that scrolls inside itself).
+.tab-panel {
+  height: 100%;
+}
+
 .tab-panel[hidden] {
   display: none;
 }

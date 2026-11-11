@@ -70,3 +70,99 @@ button:disabled {
   display: block;
   padding: 16px;
 }
+
+// A report that fills its tab, e.g. a filter toolbar above a grid (host: { class: 'report-page report-fill' }).
+.report-fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+
+// ---- Report filter toolbar (shared/filters). Global because every filter control uses it.
+
+.report-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e8ebef;
+  background: #fafbfc;
+  font-size: 12px;
+
+  .filter-group,
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .filter-label {
+    color: #4b5563;
+    font-weight: 600;
+  }
+
+  select,
+  .search {
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid #d9dee7;
+    border-radius: 6px;
+    background: #fff;
+    color: #374151;
+    font: inherit;
+  }
+
+  .search {
+    width: 180px;
+  }
+
+  input[type='checkbox'] {
+    margin: 0;
+  }
+
+  .toolbar-spacer {
+    flex: 1;
+  }
+}
+
+// ---- Report grid header details, as in the company app (colours and icons: shared/grid/data-grid.ts).
+// Global because AG Grid builds this markup itself.
+
+.ag-header-cell-label,
+.ag-header-group-cell-label {
+  justify-content: center;
+}
+
+// A filtered column shows a white filter mark after its caption, instead of the standard icon.
+.ag-header-cell .ag-filter-icon {
+  display: none;
+}
+
+.ag-header-cell-filtered .ag-header-cell-label::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  background: url('/assets/grid/filter_white.png') center / contain no-repeat;
+}
+
+.ag-header-cell-menu-button:not(.ag-header-menu-always-show) {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+}
+
+// Percentage cells in report grids: a dot in the usage band's colour, then the value.
+.percent-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.percent-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

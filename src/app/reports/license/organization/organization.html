@@ -1,2 +1,33 @@
-<h1>{{ menu().mainMenuName }} / {{ menu().subMenuName }}</h1>
-<p>Organization report. The content will be added here.</p>
+<div class="report-toolbar" role="toolbar" aria-label="Organization filters">
+  <app-search-filter [(text)]="filters.search" />
+  <app-range-filter [(range)]="filters.range" />
+  <app-option-filter [(option)]="filters.option" />
+  @if (filters.settings(); as limits) {
+    <app-usage-band-filter [(selected)]="filters.bands" [limits]="limits" />
+  }
+  <app-feature-group-filter [(group)]="filters.featureGroup" />
+  <app-server-status-filter [(status)]="filters.serverStatus" />
+  <app-expiry-filter [(notExpired)]="filters.notExpired" />
+
+  <span class="toolbar-spacer"></span>
+  @if (rowCount()) {
+    <span class="row-count">Rows : {{ rowCount() }}</span>
+  }
+  @if (data.asOn()) {
+    <span class="as-on">As on {{ data.asOn() }}</span>
+  }
+  <button type="button" class="refresh" [disabled]="data.loading()" (click)="refresh()">
+    Refresh
+  </button>
+</div>
+
+<app-data-grid
+  [rows]="rows()"
+  [columns]="columns()"
+  [hiddenColumns]="filters.myColumns()"
+  [search]="filters.search()"
+  [loading]="data.loading()"
+  [emptyText]="data.error()"
+  (rowCount)="rowCount.set($event)"
+  (filtersCleared)="clearFilters()"
+/>

@@ -14,7 +14,10 @@ export class ReportPlaceholderComponent {
 }
 
 export const REPORTS = new Map<string, () => Promise<Type<unknown>>>([
-  ['LICENSE/Organization', () => import('./license/organization/organization').then((m) => m.Organization)],
+  [
+    'LICENSE/Organization',
+    () => import('./license/organization/organization').then((m) => m.Organization),
+  ],
   ['LICENSE/Division', () => import('./license/division/division').then((m) => m.Division)],
 ]);
 

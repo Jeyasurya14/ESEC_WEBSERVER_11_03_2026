@@ -1,1 +1,16 @@
-// Page padding comes from the shared .report-page class; add this report's own styles here.
+// Layout and toolbar styles are shared (report-fill, report-toolbar); only this report's extras are here.
+
+.row-count {
+  color: #000;
+}
+
+.as-on {
+  color: #6b7280;
+}
+
+.refresh {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}

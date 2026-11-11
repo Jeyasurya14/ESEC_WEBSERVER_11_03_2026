@@ -3,6 +3,9 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api/api.service';
 import { evaluateLicense } from '../../core/license/license';
 import { LoginService } from '../../core/auth/login.service';
+import { APP_VERSION } from '../../core/app-version';
+import { BrowserStorage, StorageKey } from '../../core/storage/browser-storage.service';
+import { formatDate } from '../../shared/dates';
 
 type StartupState =
   | { kind: 'connecting' }
@@ -17,6 +20,7 @@ type StartupState =
 export class OnstartComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly loginService = inject(LoginService);
+  private readonly storage = inject(BrowserStorage);
 
   readonly state = signal<StartupState>({ kind: 'connecting' });
   readonly message = computed(() => {
@@ -45,8 +49,8 @@ export class OnstartComponent implements OnInit {
     }
   }
 
-  continueAfterReminder(): void {
-    this.enterApplication();
+  continueAfterReminder(): Promise<void> {
+    return this.enterApplication();
   }
 
   private async checkLicense(): Promise<void> {
@@ -77,10 +81,16 @@ export class OnstartComponent implements OnInit {
     }
   }
 
-  private enterApplication(): void {
+  private async enterApplication(): Promise<void> {
     if (this.api.getSetting('UNDER_MAINTENANCE') === 'TRUE') {
       return this.block(this.api.getSetting('UNDER_MAINTENANCE_MSG') || 'ESEC is under maintenance.');
     }
+
+    this.storage.set(StorageKey.today, formatDate(new Date()));
+    this.storage.set(StorageKey.version, APP_VERSION);
+
+    // A user remembered from before a page reload goes straight back to the home screen.
+    await this.loginService.restoreSession();
     this.loginService.setLicenceReady(true);
   }
 

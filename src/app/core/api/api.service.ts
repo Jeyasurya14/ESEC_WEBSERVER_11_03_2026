@@ -53,6 +53,16 @@ export class ApiService {
     return this.post<T>('post_view_query', { sql });
   }
 
+  /** Runs a stored procedure, e.g. "call esms_m.r_organization_grid(...)". Quote inputs with `sqlString()`. */
+  call<T>(sql: string): Observable<ApiResult<T>> {
+    return this.post<T>('post_view_call', { sql });
+  }
+
+  /** Runs a statement or procedure that changes data, e.g. saving preferences. */
+  write<T>(sql: string): Observable<ApiResult<T>> {
+    return this.post<T>('post_insert_update', { sql });
+  }
+
   loadAsset<T>(path: string): Promise<T> {
     return firstValueFrom(this.http.get<T>(path).pipe(timeout(TIMEOUT_MS)));
   }

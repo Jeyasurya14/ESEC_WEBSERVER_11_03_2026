@@ -45,6 +45,13 @@ describe('startup licence gate', () => {
     expect(TestBed.inject(LoginService).licenceReady()).toBe(true);
   });
 
+  it("stores today's date and the app version, as the company app does", async () => {
+    localStorage.clear();
+    await startUp();
+    expect(localStorage.getItem('TODAY_DATE')).toMatch(/^\d{2}-[A-Z][a-z]{2}-\d{4}$/);
+    expect(localStorage.getItem('ESEC_VERSION')).toBeTruthy();
+  });
+
   it('blocks an expired licence', async () => {
     api["query"].mockReturnValue(licenceReply(inDays(-1)));
     const component = await startUp();
@@ -60,7 +67,7 @@ describe('startup licence gate', () => {
     expect(component.state().kind).toBe('renewal-reminder');
     expect(TestBed.inject(LoginService).licenceReady()).toBe(false);
 
-    component.continueAfterReminder();
+    await component.continueAfterReminder();
     expect(TestBed.inject(LoginService).licenceReady()).toBe(true);
   });
 

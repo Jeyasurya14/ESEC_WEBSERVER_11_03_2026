@@ -4,15 +4,19 @@ import { ApiResult, LoginType, UserDetailRow, UserDetails, UserMenu } from '../m
 import { ApiService, sqlString } from '../api/api.service';
 import { sidebarMenuNames } from '../menu/menu';
 import { MenuService } from '../menu/menu.service';
+import { BrowserStorage, StorageKey } from '../storage/browser-storage.service';
 
 export type { LoginType } from '../models';
 
 type CredentialReply = 0 | 1 | string;
 
+const LOGIN_TYPES: readonly LoginType[] = ['AD LOGIN', 'ESEC LOGIN', 'ADMIN'];
+
 @Injectable({ providedIn: 'root' })
 export class LoginService {
   private readonly api = inject(ApiService);
   private readonly menuService = inject(MenuService);
+  private readonly storage = inject(BrowserStorage);
 
   private readonly currentUser = signal<UserDetails | null>(null);
   private readonly allowedMenus = signal<UserMenu[]>([]);
@@ -37,6 +41,32 @@ export class LoginService {
     this.allowedMenus.set([]);
   }
 
+  /** Ends the session and forgets everything remembered in the browser. */
+  signOut(): void {
+    this.clearSession();
+    this.storage.clearOnSignOut();
+  }
+
+  /**
+   * Picks up the session remembered in the browser after a page reload (user ID and login type,
+   * never the password). Returns false, and forgets it, if there is none or it no longer works.
+   */
+  async restoreSession(): Promise<boolean> {
+    const userId = this.storage.getHidden(StorageKey.userId);
+    const loginType = this.storage.getHidden(StorageKey.loginType) as LoginType | null;
+    if (!userId || !loginType || !LOGIN_TYPES.includes(loginType)) {
+      return false;
+    }
+
+    try {
+      await this.startSession(loginType, userId);
+      return true;
+    } catch {
+      this.storage.clearOnSignOut();
+      return false;
+    }
+  }
+
   async signInUser(loginType: LoginType, username: string, password: string): Promise<boolean> {
     this.clearSession();
 
@@ -53,12 +83,24 @@ export class LoginService {
       return false;
     }
 
+    await this.startSession(loginType, userId);
+
+    // Remember who signed in, so a page reload keeps the session.
+    this.storage.setHidden(StorageKey.userId, userId);
+    this.storage.setHidden(StorageKey.loginType, loginType);
+    if (loginType === 'AD LOGIN') {
+      this.storage.setHidden(StorageKey.adUserName, username.trim());
+    }
+    return true;
+  }
+
+  /** Loads the user's profile and menus, then publishes the session; nothing is published if either fails. */
+  private async startSession(loginType: LoginType, userId: string): Promise<void> {
     const user = await this.loadProfile(userId);
     const menus = await this.menuService.loadMenu(loginType, userId);
 
     this.allowedMenus.set(menus);
     this.currentUser.set(user);
-    return true;
   }
 
   private authenticate(type: LoginType, username: string, password: string): Promise<string | null> {

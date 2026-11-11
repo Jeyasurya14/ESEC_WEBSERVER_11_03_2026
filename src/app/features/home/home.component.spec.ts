@@ -13,10 +13,10 @@ describe('reference header and sidebar UI', () => {
     { mainMenuName: 'SOFTWARE', subMenuName: 'Actcad' },
     { mainMenuName: 'CUSTOM LICENSE', subMenuName: 'Software' },
   ];
-  let clearSession: ReturnType<typeof vi.fn>;
+  let signOut: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    clearSession = vi.fn();
+    signOut = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         {
@@ -30,7 +30,7 @@ describe('reference header and sidebar UI', () => {
             }),
             menus: signal(menus),
             mainMenuNames: signal(['DASHBOARD', 'SOFTWARE', 'CUSTOM LICENSE']),
-            clearSession: clearSession,
+            signOut,
           },
         },
       ],
@@ -148,7 +148,7 @@ describe('reference header and sidebar UI', () => {
       return button.textContent?.trim() === 'Logout';
     }) as HTMLButtonElement;
     logout.click();
-    expect(clearSession).toHaveBeenCalledOnce();
+    expect(signOut).toHaveBeenCalledOnce();
   });
 
   it('only enables letter shortcuts supported by License Manager permissions', async () => {

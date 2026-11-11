@@ -48,6 +48,6 @@ export class HomeComponent {
   }
 
   returnToLogin(): void {
-    this.loginService.clearSession();
+    this.loginService.signOut();
   }
 }

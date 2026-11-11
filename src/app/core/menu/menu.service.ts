@@ -29,7 +29,6 @@ export class MenuService {
     return catalog;
   }
 
-  
   private async loadPermissions(userId: string): Promise<string> {
     const sql = `SELECT RT_A_LIST FROM esms.cltx_user_rt_a WHERE RT_A_ID=${sqlString(userId)}`;
     const result = await firstValueFrom(this.api.query<MenuPermissionRow[]>(sql));
