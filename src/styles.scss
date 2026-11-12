@@ -89,7 +89,7 @@ button:disabled {
 //
 // Every filter renders as a `.filter` (a single label + control) or a `.filter-group` (several
 // controls under one label, e.g. the usage-band checkboxes). Each one that sits directly in the
-// toolbar becomes its own bordered "chip"; a `.filter` nested inside a `.filter-group` stays
+// toolbar becomes its own soft-shadowed "chip"; a `.filter` nested inside a `.filter-group` stays
 // plain so chips never nest inside chips.
 
 .report-toolbar {
@@ -114,20 +114,8 @@ button:disabled {
     height: $filter-height;
     padding: 0 $spacing-3;
     background: $filter-bg;
-    border: 1px solid $filter-border;
     border-radius: $filter-radius;
-    transition:
-      border-color $transition-fast,
-      box-shadow $transition-fast;
-
-    &:hover {
-      border-color: $filter-border-hover;
-    }
-
-    &:focus-within {
-      border-color: $filter-border-focus;
-      box-shadow: $filter-shadow-focus;
-    }
+    box-shadow: $shadow-xs;
   }
 
   // A filter nested inside a group (the usage-band checkboxes, a range filter's own label)
@@ -136,7 +124,6 @@ button:disabled {
     height: auto;
     padding: 0;
     background: none;
-    border: 0;
     box-shadow: none;
   }
 
@@ -146,7 +133,6 @@ button:disabled {
     white-space: nowrap;
   }
 
-  select,
   .search input {
     height: 100%;
     padding: 0;
@@ -154,19 +140,6 @@ button:disabled {
     background: transparent;
     color: $filter-text;
     font: inherit;
-    cursor: pointer;
-  }
-
-  // A plain <select> looks different in every browser, so we draw our own arrow and hide the
-  // native one; this is purely visual and keeps the native dropdown and keyboard behaviour.
-  select {
-    appearance: none;
-    padding-right: 20px;
-    // Mirrors $filter-icon (#6b7280); CSS custom properties can't be used inside a data URI.
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z' clip-rule='evenodd'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right center;
-    background-size: 16px;
   }
 
   .search {

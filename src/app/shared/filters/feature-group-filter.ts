@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, sqlString } from '../../core/api/api.service';
 import { LoginService } from '../../core/auth/login.service';
 import { BrowserStorage, StorageKey } from '../../core/storage/browser-storage.service';
+import { Dropdown, DropdownOption } from '../dropdown/dropdown';
 
 const BUILT_IN_GROUPS = ['All Feature', 'Primary Feature'];
 
@@ -54,14 +55,11 @@ export class FeatureGroupsService {
 
 @Component({
   selector: 'app-feature-group-filter',
+  imports: [Dropdown],
   template: `
     <label class="filter">
       <span class="filter-label">Feature</span>
-      <select (change)="group.set($any($event.target).value)">
-        @for (name of options(); track name) {
-          <option [value]="name" [selected]="group() === name">{{ name }}</option>
-        }
-      </select>
+      <app-dropdown [options]="options()" [(value)]="group" />
     </label>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,9 +69,10 @@ export class FeatureGroupFilter {
 
   protected readonly groups = signal<string[]>(BUILT_IN_GROUPS);
 
-  protected readonly options = computed(() => {
+  protected readonly options = computed<DropdownOption[]>(() => {
     const groups = this.groups();
-    return groups.includes(this.group()) ? groups : [this.group(), ...groups];
+    const names = groups.includes(this.group()) ? groups : [this.group(), ...groups];
+    return names.map((name) => ({ value: name, label: name }));
   });
 
   constructor() {

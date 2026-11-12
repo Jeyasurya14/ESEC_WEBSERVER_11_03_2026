@@ -1,0 +1,73 @@
+@use '../../../styles/variables' as *;
+
+:host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $filter-text;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dropdown-chevron {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid $filter-icon;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + #{$spacing-1});
+  left: 0;
+  z-index: 30;
+  min-width: 100%;
+  max-height: 280px;
+  margin: 0;
+  padding: $spacing-1;
+  overflow-y: auto;
+  list-style: none;
+  background: $filter-bg;
+  border: 1px solid $filter-border;
+  border-radius: $filter-radius;
+  box-shadow: $shadow-md;
+}
+
+.dropdown-group-label {
+  padding: $spacing-2 $spacing-2 2px;
+  color: $filter-label;
+  font-size: $font-size-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dropdown-option {
+  padding: $spacing-2;
+  border-radius: $border-radius-sm;
+  color: $filter-text;
+  font-size: $font-size-base;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &.active {
+    background: $primary-light;
+  }
+
+  &.selected {
+    color: $primary-dark;
+    font-weight: 600;
+  }
+}

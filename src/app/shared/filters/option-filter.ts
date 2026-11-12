@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, model } from '@angular/core';
+import { Dropdown, DropdownOption } from '../dropdown/dropdown';
 
 export type UsageOption = 'DP' | 'DPM' | 'DA' | 'DAM' | 'WP' | 'WPM' | 'WA' | 'WAM';
 
@@ -29,27 +30,18 @@ export function percentField(option: UsageOption): PercentField {
   return `p_${option.toLowerCase()}` as PercentField;
 }
 
+const OPTIONS: DropdownOption[] = [
+  ...DAY_OPTIONS.map((item) => ({ ...item, group: 'Day (00:00 - 23:59)' })),
+  ...WORK_OPTIONS.map((item) => ({ ...item, group: 'Work hours' })),
+];
+
 @Component({
   selector: 'app-option-filter',
+  imports: [Dropdown],
   template: `
     <label class="filter">
       <span class="filter-label">Option</span>
-      <select (change)="option.set($any($event.target).value)">
-        <optgroup label="Day (00:00 - 23:59)">
-          @for (item of dayOptions; track item.value) {
-            <option [value]="item.value" [selected]="option() === item.value">
-              {{ item.label }}
-            </option>
-          }
-        </optgroup>
-        <optgroup label="Work hours">
-          @for (item of workOptions; track item.value) {
-            <option [value]="item.value" [selected]="option() === item.value">
-              {{ item.label }}
-            </option>
-          }
-        </optgroup>
-      </select>
+      <app-dropdown [options]="options" [value]="option()" (valueChange)="pickOption($event)" />
     </label>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +49,9 @@ export function percentField(option: UsageOption): PercentField {
 export class OptionFilter {
   readonly option = model.required<UsageOption>();
 
-  protected readonly dayOptions = DAY_OPTIONS;
-  protected readonly workOptions = WORK_OPTIONS;
+  protected readonly options = OPTIONS;
+
+  protected pickOption(value: string): void {
+    this.option.set(toUsageOption(value));
+  }
 }

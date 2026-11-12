@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, model } from '@angular/core';
 import { sqlString } from '../../core/api/api.service';
+import { Dropdown, DropdownOption } from '../dropdown/dropdown';
 import { MONTHS, monthIndex } from '../dates';
 
 export type ReportRange =
@@ -122,29 +123,29 @@ function sameRange(a: ReportRange, b: ReportRange): boolean {
   return formatRange(a) === formatRange(b);
 }
 
+const KIND_OPTIONS: DropdownOption[] = [
+  ...DAY_RANGES.map((preset) => ({ value: preset.value, label: preset.label })),
+  { value: 'month', label: 'Month - Year' },
+  { value: 'quarter', label: 'Qtr - Year' },
+  { value: 'year', label: 'Year' },
+];
+
 @Component({
   selector: 'app-range-filter',
+  imports: [Dropdown],
   template: `
     <label class="filter">
       <span class="filter-label">Range</span>
-      <select (change)="pickKind($any($event.target).value)">
-        @for (preset of dayRanges; track preset.value) {
-          <option [value]="preset.value" [selected]="kindValue() === preset.value">
-            {{ preset.label }}
-          </option>
-        }
-        <option value="month" [selected]="kindValue() === 'month'">Month - Year</option>
-        <option value="quarter" [selected]="kindValue() === 'quarter'">Qtr - Year</option>
-        <option value="year" [selected]="kindValue() === 'year'">Year</option>
-      </select>
+      <app-dropdown [options]="kindOptions" [value]="kindValue()" (valueChange)="pickKind($event)" />
     </label>
 
-    @if (periods().length > 0) {
-      <select aria-label="Period" (change)="pickPeriod(+$any($event.target).value)">
-        @for (period of periods(); track period.label; let index = $index) {
-          <option [value]="index" [selected]="isSelected(period.range)">{{ period.label }}</option>
-        }
-      </select>
+    @if (periodOptions().length > 0) {
+      <app-dropdown
+        ariaLabel="Period"
+        [options]="periodOptions()"
+        [value]="periodValue()"
+        (valueChange)="pickPeriod($event)"
+      />
     }
   `,
   host: { class: 'filter-group' },
@@ -153,7 +154,7 @@ function sameRange(a: ReportRange, b: ReportRange): boolean {
 export class RangeFilter {
   readonly range = model.required<ReportRange>();
 
-  protected readonly dayRanges = DAY_RANGES;
+  protected readonly kindOptions = KIND_OPTIONS;
   private readonly today = new Date();
 
   protected readonly kindValue = computed(() => {
@@ -166,9 +167,14 @@ export class RangeFilter {
     return range.kind === 'days' ? [] : periodsFor(range.kind, this.today);
   });
 
-  protected isSelected(range: ReportRange): boolean {
-    return sameRange(range, this.range());
-  }
+  protected readonly periodOptions = computed<DropdownOption[]>(() => {
+    return this.periods().map((period, index) => ({ value: String(index), label: period.label }));
+  });
+
+  protected readonly periodValue = computed(() => {
+    const index = this.periods().findIndex((period) => sameRange(period.range, this.range()));
+    return String(Math.max(index, 0));
+  });
 
   protected pickKind(value: string): void {
     if (value === 'month' || value === 'quarter' || value === 'year') {
@@ -178,7 +184,7 @@ export class RangeFilter {
     }
   }
 
-  protected pickPeriod(index: number): void {
-    this.range.set(this.periods()[index].range);
+  protected pickPeriod(value: string): void {
+    this.range.set(this.periods()[Number(value)].range);
   }
 }
