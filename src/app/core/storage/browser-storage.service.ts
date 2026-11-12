@@ -1,23 +1,16 @@
 import { Injectable } from '@angular/core';
 import * as CryptoJS from 'crypto-js';
 
-/**
- * Every value the app keeps in the browser's localStorage. The names (and the obfuscation of the
- * signed-in user) match the company app's, so both apps read each other's values on the same site.
- */
 export const StorageKey = {
-  // The signed-in user, so a page reload keeps the session. Never the password.
   userId: 'loggedInUsername',
   adUserName: 'ADLoggedInUsername',
   loginType: 'loggedInType',
 
-  // Report parameters: reset to the defaults once per session, then reports read them.
   licenseHoursPerDay: 'SP_REPORT_LHPD',
   longDuration: 'SP_REPORT_LONGDURATION',
   percentile: 'SP_REPORT_PERCENTILE',
   defaultPercentile: 'PERCENTILE',
 
-  // Copies of settings, written when they load.
   bandLowBelow: 'LS_CBAND_1_VALUE',
   bandHighFrom: 'LS_CBAND_2_VALUE',
   bandLowColor: 'CBAND_1_COLOR',
@@ -33,19 +26,10 @@ export const StorageKey = {
 
 export type StorageKey = (typeof StorageKey)[keyof typeof StorageKey];
 
-/**
- * The company app's AES key. It ships inside the app, so this hides values from a casual glance
- * only; it is not protection. That is why a password is never stored.
- */
 const OBFUSCATION_KEY = 'pass$1234';
 
-/** Kept when the user signs out, as in the company app. */
 const KEPT_ON_SIGN_OUT: ReadonlySet<StorageKey> = new Set([StorageKey.version]);
 
-/**
- * localStorage, made safe: if the browser blocks storage (private mode, full disk, policy) the app
- * keeps working, just without remembering.
- */
 @Injectable({ providedIn: 'root' })
 export class BrowserStorage {
   get(key: StorageKey): string | null {
@@ -72,7 +56,6 @@ export class BrowserStorage {
     }
   }
 
-  /** For the signed-in user's details: stored obfuscated, in the company app's format. */
   setHidden(key: StorageKey, value: string): void {
     this.set(key, CryptoJS.AES.encrypt(JSON.stringify(value), OBFUSCATION_KEY).toString());
   }
@@ -83,14 +66,15 @@ export class BrowserStorage {
       return null;
     }
     try {
-      const value: unknown = JSON.parse(CryptoJS.AES.decrypt(stored, OBFUSCATION_KEY).toString(CryptoJS.enc.Utf8));
+      const value: unknown = JSON.parse(
+        CryptoJS.AES.decrypt(stored, OBFUSCATION_KEY).toString(CryptoJS.enc.Utf8),
+      );
       return typeof value === 'string' && value !== '' ? value : null;
     } catch {
       return null; // unreadable or tampered with: treat as absent
     }
   }
 
-  /** Forgets everything this app stored, except what survives a sign-out. */
   clearOnSignOut(): void {
     for (const key of Object.values(StorageKey)) {
       if (!KEPT_ON_SIGN_OUT.has(key)) {
