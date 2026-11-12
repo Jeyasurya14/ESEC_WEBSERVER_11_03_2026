@@ -20,6 +20,7 @@ import { ServerStatusFilter } from '../../../shared/filters/server-status-filter
 import { ALL_BANDS, UsageBandFilter } from '../../../shared/filters/usage-band-filter';
 import { GaugeTile } from '../../../shared/gauge/gauge-tile';
 import { DataGrid, rowCountText } from '../../../shared/grid/data-grid';
+import { RefreshButton } from '../../../shared/refresh-button/refresh-button';
 import { ReportData } from '../../../shared/report-data';
 import { ReportSettings } from '../../../shared/report-settings.service';
 import {
@@ -44,6 +45,7 @@ export type OrganizationView = 'grid' | 'gauge';
     GaugeTile,
     OptionFilter,
     RangeFilter,
+    RefreshButton,
     SearchFilter,
     ServerStatusFilter,
     UsageBandFilter,

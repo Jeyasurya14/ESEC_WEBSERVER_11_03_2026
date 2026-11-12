@@ -236,6 +236,15 @@
       "conversion": "Official outline converted to standalone SVG; no artwork redrawn",
       "intrinsicSize": "24x24",
       "sidebarDisplaySize": "20x20"
+    },
+    {
+      "file": "refresh.svg",
+      "originalIcon": "fi-rr-refresh",
+      "codePoint": "0xfb34",
+      "source": "@flaticon/flaticon-uicons@3.3.1",
+      "sourceFile": "css/uicons-regular-rounded-KDJ23353.woff",
+      "conversion": "Glyph outline extracted from the woff with fontTools and converted to a standalone SVG path; no artwork redrawn",
+      "intrinsicSize": "24x24"
     }
   ]
 }

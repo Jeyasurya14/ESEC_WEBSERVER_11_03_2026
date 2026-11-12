@@ -1,0 +1,37 @@
+@use '../../../styles/variables' as *;
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $filter-height;
+  height: $filter-height;
+  padding: 0;
+  background: $white;
+  color: $gray-600;
+  border: 1px solid $filter-border;
+  border-radius: $filter-radius;
+
+  &:hover:not(:disabled) {
+    background: $gray-50;
+    border-color: $filter-border-hover;
+  }
+
+  .app-icon {
+    --icon-size: 16px;
+  }
+}
+
+.spinning .app-icon {
+  animation: refresh-spin 0.8s linear infinite;
+}
+
+@keyframes refresh-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

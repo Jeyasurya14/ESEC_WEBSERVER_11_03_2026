@@ -32,9 +32,7 @@
     <button type="button" class="view-toggle" (click)="toggleView()">
       {{ view() === 'grid' ? 'Gauge View' : 'Grid View' }}
     </button>
-    <button type="button" class="refresh" [disabled]="data.loading()" (click)="refresh()">
-      Refresh
-    </button>
+    <app-refresh-button [loading]="data.loading()" (refresh)="refresh()" />
   </div>
 </div>
 

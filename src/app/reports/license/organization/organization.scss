@@ -9,15 +9,11 @@
   color: $gray-500;
 }
 
-.refresh,
 .view-toggle {
   height: $filter-height;
   padding: 0 $spacing-3;
   border-radius: $filter-radius;
   font-size: $font-size-base;
-}
-
-.view-toggle {
   background: $white;
   color: $primary;
   border: 1px solid $filter-border;
