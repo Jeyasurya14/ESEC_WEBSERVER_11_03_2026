@@ -34,7 +34,6 @@ export class ReportData<T> {
       if (!isLatest()) {
         return;
       }
-
       if (result?.status === 'PASS' && Array.isArray(result.message)) {
         this.rows.set(prepare(result.message));
       } else {
@@ -53,7 +52,6 @@ export class ReportData<T> {
     }
   }
 
-  /** Stops any load in flight and shows `message` in place of the rows. */
   fail(message: string): void {
     this.latestRequest++;
     this.loading.set(false);

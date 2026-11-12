@@ -1,6 +1,18 @@
-export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
-/** 0-based index of a three-letter month name, any case; -1 when it isn't one. */
 export function monthIndex(name: string): number {
   return MONTHS.findIndex((month) => month.toLowerCase() === name.toLowerCase());
 }
@@ -28,7 +40,6 @@ export function formatDate(value: unknown): string {
   return `${pad(date.getDate())}-${MONTHS[date.getMonth()]}-${date.getFullYear()}`;
 }
 
-/** Converts a primitive to text; anything else (an object, for example) becomes `''`. */
 function asText(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }

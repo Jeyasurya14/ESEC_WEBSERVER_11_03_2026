@@ -46,7 +46,7 @@ export class ReportSettingsService {
     const hours = await this.fetchWorkingHours();
 
     const settings: ReportSettings = {
-      lowBelow: Number(setting('CBAND_1_VALUE', '50')),
+      lowBelow: Number(setting('CBAND_1_VALUE', '60')),
       highFrom: Number(setting('CBAND_2_VALUE', '80')),
       bandColors: {
         low: setting('CBAND_1_COLOR', BAND_COLORS.low),
@@ -65,10 +65,6 @@ export class ReportSettingsService {
     return settings;
   }
 
-  /**
-   * Keeps a copy of the settings in the browser, and starts the report parameters (license hours
-   * per day, long duration, percentile) at their defaults for this session, as the company app does.
-   */
   private remember(settings: ReportSettings, hours: WorkingHourTimes): void {
     const store = (key: StorageKey, value: string | number) => this.storage.set(key, value);
 
@@ -98,7 +94,6 @@ export class ReportSettingsService {
   }
 }
 
-/** Hours between two "HH:MM[:SS]" times, to 2 decimals. Falls back to a full day when either is missing. */
 export function workingHours(start: string, end: string): number {
   if (!start || !end) {
     return 24;
