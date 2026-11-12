@@ -158,6 +158,8 @@ describe('Organization report', { timeout: 20_000 }, () => {
 
     const fixture = await open();
     expect(tabs.activeRefreshHandle()?.loading()).toBe(false);
+    expect(tabs.activeRefreshHandle()?.asOn()).toBe(fixture.componentInstance.data.asOn());
+    expect(tabs.activeRefreshHandle()?.asOn()).not.toBe('');
 
     const callsBefore = reportCalls().length;
     tabs.activeRefreshHandle()?.refresh();

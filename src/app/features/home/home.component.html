@@ -60,6 +60,9 @@
             [loading]="handle.loading()"
             (refresh)="handle.refresh()"
           />
+          @if (handle.asOn()) {
+            <span>As on {{ handle.asOn() }}</span>
+          }
         }
         <span class="status-bar-spacer"></span>
         <span>{{ loginService.user()?.userId }}</span>

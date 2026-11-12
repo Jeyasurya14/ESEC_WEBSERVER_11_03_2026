@@ -112,7 +112,11 @@ export class Organization implements OnInit {
     const tabId = inject(TAB_ID, { optional: true });
     if (tabId !== null) {
       const tabs = inject(TabService);
-      tabs.setRefreshHandle(tabId, { loading: () => this.data.loading(), refresh: () => this.refresh() });
+      tabs.setRefreshHandle(tabId, {
+        loading: () => this.data.loading(),
+        refresh: () => this.refresh(),
+        asOn: () => this.data.asOn(),
+      });
       inject(DestroyRef).onDestroy(() => tabs.setRefreshHandle(tabId, null));
     }
   }

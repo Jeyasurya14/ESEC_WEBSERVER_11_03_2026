@@ -16,10 +16,11 @@ export interface Tab {
  */
 export const TAB_ID = new InjectionToken<number>('TAB_ID');
 
-/** How a report's own refresh button reaches the shared status bar: its loading state and what to call. */
+/** How a report's own refresh button reaches the shared status bar: its loading state, what to call, and when it last loaded. */
 export interface RefreshHandle {
   loading: () => boolean;
   refresh: () => void;
+  asOn: () => string;
 }
 
 @Injectable()

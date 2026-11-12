@@ -25,9 +25,6 @@
     @if (rowCountLabel()) {
       <span class="row-count">Rows : {{ rowCountLabel() }}</span>
     }
-    @if (data.asOn()) {
-      <span class="as-on">As on {{ data.asOn() }}</span>
-    }
     <span class="toolbar-spacer"></span>
     <button type="button" class="view-toggle" (click)="toggleView()">
       {{ view() === 'grid' ? 'Gauge View' : 'Grid View' }}
