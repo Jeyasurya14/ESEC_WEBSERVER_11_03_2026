@@ -17,7 +17,6 @@ export function formatNumber(value: unknown): string {
     : number.toLocaleString('en-US', { maximumFractionDigits: 6 });
 }
 
-/** Converts a primitive to text; anything else (an object, for example) becomes `''`. */
 function asText(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }

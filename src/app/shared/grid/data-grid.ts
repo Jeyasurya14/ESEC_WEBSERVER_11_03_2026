@@ -133,14 +133,6 @@ export function rowCountText(shown: number, total: number, filtered: boolean): s
 
 let licenseApplied = false;
 
-/**
- * The grid every report uses (AG Grid Enterprise), set up like the company app's. A report gives
- * it rows and columns; filters, the side panels, the right-click menu, cell selection, export,
- * charts, the loading spinner and the row count work the same everywhere.
- *
- * The licence key comes from the AG_GRID_LICENSE_KEY setting. Without it AG Grid shows its trial
- * watermark, as the company app does today.
- */
 @Component({
   selector: 'app-data-grid',
   imports: [AgGridAngular],

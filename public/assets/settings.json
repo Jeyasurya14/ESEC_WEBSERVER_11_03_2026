@@ -1,5 +1,134 @@
 [
   {
+    "_DESC": "CBAND_1_COLOR",
+    "_VALUE": "#77dd77"
+  },
+  {
+    "_DESC": "CBAND_1_VALUE",
+    "_VALUE": "60"
+  },
+  {
+    "_DESC": "CBAND_2_COLOR",
+    "_VALUE": "#ffc324"
+  },
+  {
+    "_DESC": "CBAND_2_VALUE",
+    "_VALUE": "80"
+  },
+  {
+    "_DESC": "CBAND_3_COLOR",
+    "_VALUE": "#ff6961"
+  },
+  {
+    "_DESC": "HEATMAP_0_50",
+    "_VALUE": "#C7E9FF"
+  },
+  {
+    "_DESC": "HEATMAP_50_60",
+    "_VALUE": "#00BFFF"
+  },
+  {
+    "_DESC": "HEATMAP_60_70",
+    "_VALUE": "#77DD77"
+  },
+  {
+    "_DESC": "HEATMAP_70_80",
+    "_VALUE": "#FEF070"
+  },
+  {
+    "_DESC": "HEATMAP_80_90",
+    "_VALUE": "#FF8508"
+  },
+  {
+    "_DESC": "HEATMAP_90_99",
+    "_VALUE": "#FF6961"
+  },
+  {
+    "_DESC": "HEATMAP_100",
+    "_VALUE": "#FF0000"
+  },
+  {
+    "_DESC": "HEATMAP_ABOVE_100",
+    "_VALUE": "#5f5f5f"
+  },
+  {
+    "_DESC": "LANDING_PAGE",
+    "_VALUE": ""
+  },
+  {
+    "_DESC": "DASHBOARD_OPTION_V3",
+    "_VALUE": "DP"
+  },
+  {
+    "_DESC": "DASHBOARD_SELECT_OPTION_DEFAULT",
+    "_VALUE": "YTD"
+  },
+
+  {
+    "_DESC": "LBL_BLDG",
+    "_VALUE": "Bldg"
+  },
+  {
+    "_DESC": "LBL_BUILDING",
+    "_VALUE": "Building"
+  },
+  {
+    "_DESC": "LBL_CITY",
+    "_VALUE": "City"
+  },
+  {
+    "_DESC": "LBL_CN",
+    "_VALUE": "CN"
+  },
+  {
+    "_DESC": "LBL_COUNTRY",
+    "_VALUE": "Country"
+  },
+  {
+    "_DESC": "LBL_CY",
+    "_VALUE": "City"
+  },
+  {
+    "_DESC": "LBL_DEPARTMENT",
+    "_VALUE": "Department"
+  },
+  {
+    "_DESC": "LBL_DEPT",
+    "_VALUE": "Dept"
+  },
+  {
+    "_DESC": "LBL_DIVISION",
+    "_VALUE": "Division"
+  },
+  {
+    "_DESC": "LBL_DIVN",
+    "_VALUE": "Divn"
+  },
+  {
+    "_DESC": "LBL_REGION",
+    "_VALUE": "Region"
+  },
+  {
+    "_DESC": "LBL_RGN",
+    "_VALUE": "RGN"
+  },
+  {
+    "_DESC": "LBL_SEC",
+    "_VALUE": "SEC"
+  },
+  {
+    "_DESC": "LBL_SECTION",
+    "_VALUE": "Section"
+  },
+  {
+    "_DESC": "LBL_ST",
+    "_VALUE": "State"
+  },
+  {
+    "_DESC": "LBL_STATE",
+    "_VALUE": "State"
+  },
+  {
     "_DESC": "LOGIN_PASSWORD_PLACEHOLDER",
     "_VALUE": "Password"
   },
@@ -16,11 +145,31 @@
     "_VALUE": "ESEC UNDER MAINTENANCE TILL : 23-NOV-2023 12:00 PM"
   },
   {
+    "_DESC": "MY_FEATURE",
+    "_VALUE": "All Feature"
+  },
+  {
     "_DESC": "ESEC_LOGIN",
     "_VALUE": "TRUE"
   },
   {
     "_DESC": "LOGIN_TITLE",
     "_VALUE": "Engineering Software Expertise Capture"
+  },
+  {
+    "_DESC": "UTILIZATION_AND_HOURS_ORGS_NEW_CALC",
+    "_VALUE": "TRUE"
+  },
+  {
+    "_DESC": "QOS_REDUCTION_POPUP_VALUE",
+    "_VALUE": "10000"
+  },
+  {
+    "_DESC": "ORGS_UTILIZATION_AND_HOURS_AVG",
+    "_VALUE": "TRUE"
+  },
+  {
+    "_DESC": "START_MONTH_FOR_DROPDOWNS",
+    "_VALUE": "2021-01-01"
   }
 ]
