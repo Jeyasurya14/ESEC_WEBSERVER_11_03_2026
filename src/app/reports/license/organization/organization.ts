@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   effect,
@@ -10,6 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { UserMenu } from '../../../core/models';
+import { TAB_ID, TabService } from '../../../features/tabs/tab.service';
 import { ExpiryFilter } from '../../../shared/filters/expiry-filter';
 import { FeatureGroupFilter } from '../../../shared/filters/feature-group-filter';
 import { OptionFilter } from '../../../shared/filters/option-filter';
@@ -20,7 +22,6 @@ import { ServerStatusFilter } from '../../../shared/filters/server-status-filter
 import { ALL_BANDS, UsageBandFilter } from '../../../shared/filters/usage-band-filter';
 import { GaugeTile } from '../../../shared/gauge/gauge-tile';
 import { DataGrid, rowCountText } from '../../../shared/grid/data-grid';
-import { RefreshButton } from '../../../shared/refresh-button/refresh-button';
 import { ReportData } from '../../../shared/report-data';
 import { ReportSettings } from '../../../shared/report-settings.service';
 import {
@@ -45,7 +46,6 @@ export type OrganizationView = 'grid' | 'gauge';
     GaugeTile,
     OptionFilter,
     RangeFilter,
-    RefreshButton,
     SearchFilter,
     ServerStatusFilter,
     UsageBandFilter,
@@ -105,6 +105,16 @@ export class Organization implements OnInit {
         untracked(() => this.load(settings));
       }
     });
+
+    // Puts this report's refresh control in the shared status bar instead of its own toolbar -
+    // see TabsComponent for how a tab id ends up here. Nothing to do when there isn't one (a
+    // test rendering this component directly, say).
+    const tabId = inject(TAB_ID, { optional: true });
+    if (tabId !== null) {
+      const tabs = inject(TabService);
+      tabs.setRefreshHandle(tabId, { loading: () => this.data.loading(), refresh: () => this.refresh() });
+      inject(DestroyRef).onDestroy(() => tabs.setRefreshHandle(tabId, null));
+    }
   }
 
   ngOnInit(): void {

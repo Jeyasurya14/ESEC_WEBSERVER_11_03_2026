@@ -4,12 +4,13 @@ import {
   Component,
   ElementRef,
   HostListener,
+  Injector,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { shortModuleName } from './short-name';
-import { Tab, TabService } from './tab.service';
+import { TAB_ID, Tab, TabService } from './tab.service';
 
 const MENU_WIDTH_PX = 190;
 const MENU_HEIGHT_PX = 190;
@@ -38,8 +39,26 @@ export class TabsComponent {
   readonly tabService = inject(TabService);
   readonly shortName = shortModuleName;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly parentInjector = inject(Injector);
 
   readonly menu = signal<OpenMenu | null>(null);
+
+  // One child injector per tab, created once and reused - ngComponentOutlet recreates its
+  // component whenever the injector it's given is a different object, so this must stay stable
+  // for as long as the tab stays open.
+  private readonly tabInjectors = new Map<number, Injector>();
+
+  injectorFor(tab: Tab): Injector {
+    let injector = this.tabInjectors.get(tab.id);
+    if (!injector) {
+      injector = Injector.create({
+        parent: this.parentInjector,
+        providers: [{ provide: TAB_ID, useValue: tab.id }],
+      });
+      this.tabInjectors.set(tab.id, injector);
+    }
+    return injector;
+  }
 
   readonly menuItems = computed<MenuItem[]>(() => {
     const open = this.menu();

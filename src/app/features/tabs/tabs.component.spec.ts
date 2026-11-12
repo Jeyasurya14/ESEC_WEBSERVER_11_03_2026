@@ -67,4 +67,13 @@ describe('tab strip', () => {
     fixture.detectChanges();
     expect(element.querySelector('.context-menu')).toBeNull();
   });
+
+  // ngComponentOutlet recreates its component whenever it's given a different injector object, so
+  // a tab's injector (which is how a report reaches TAB_ID) has to stay the same one every time.
+  it("keeps the same injector for a tab across calls, so its report isn't torn down and rebuilt", async () => {
+    await setUp();
+    const [tab] = fixture.componentInstance.tabService.tabs();
+
+    expect(fixture.componentInstance.injectorFor(tab)).toBe(fixture.componentInstance.injectorFor(tab));
+  });
 });

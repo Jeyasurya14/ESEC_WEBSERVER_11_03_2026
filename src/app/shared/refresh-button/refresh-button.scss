@@ -20,6 +20,22 @@
   .app-icon {
     --icon-size: 16px;
   }
+
+  &.plain {
+    width: 18px;
+    height: 18px;
+    background: none;
+    border: 0;
+
+    &:hover:not(:disabled) {
+      background: none;
+      color: $gray-900;
+    }
+
+    .app-icon {
+      --icon-size: 13px;
+    }
+  }
 }
 
 .spinning .app-icon {

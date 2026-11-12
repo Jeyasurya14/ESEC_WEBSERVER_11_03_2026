@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../../core/api/api.service';
 import { LoginService } from '../../../core/auth/login.service';
+import { TAB_ID, TabService } from '../../../features/tabs/tab.service';
 import { ReportSettings } from '../../../shared/report-settings.service';
 import { Organization } from './organization';
 import { OrganizationRow, organizationCall, prepareRows, visibleRows } from './organization.data';
@@ -148,5 +149,22 @@ describe('Organization report', { timeout: 20_000 }, () => {
     expect(fixture.componentInstance.rows()).toEqual([]);
     expect(fixture.componentInstance.data.error()).toBe('No data for the selected period');
     expect(fixture.componentInstance.data.loading()).toBe(false);
+  });
+
+  it("puts its refresh handle in the status bar under its own tab's id, and clears it on destroy", async () => {
+    TestBed.configureTestingModule({ providers: [TabService, { provide: TAB_ID, useValue: 42 }] });
+    const tabs = TestBed.inject(TabService);
+    tabs.activate(42);
+
+    const fixture = await open();
+    expect(tabs.activeRefreshHandle()?.loading()).toBe(false);
+
+    const callsBefore = reportCalls().length;
+    tabs.activeRefreshHandle()?.refresh();
+    await fixture.whenStable();
+    expect(reportCalls().length).toBeGreaterThan(callsBefore);
+
+    fixture.destroy();
+    expect(tabs.activeRefreshHandle()).toBeNull();
   });
 });

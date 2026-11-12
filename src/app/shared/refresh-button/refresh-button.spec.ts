@@ -6,17 +6,25 @@ import { RefreshButton } from './refresh-button';
 @Component({
   selector: 'app-refresh-button-host',
   imports: [RefreshButton],
-  template: `<app-refresh-button [loading]="loading" (refresh)="refreshCount = refreshCount + 1" />`,
+  template: `
+    <app-refresh-button
+      [loading]="loading"
+      [variant]="variant"
+      (refresh)="refreshCount = refreshCount + 1"
+    />
+  `,
 })
 class HostComponent {
   loading = false;
+  variant: 'chip' | 'plain' = 'chip';
   refreshCount = 0;
 }
 
 describe('RefreshButton', () => {
-  function render(loading: boolean) {
+  function render(loading: boolean, variant: 'chip' | 'plain' = 'chip') {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.loading = loading;
+    fixture.componentInstance.variant = variant;
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
     const button = () => element.querySelector('button') as HTMLButtonElement;
@@ -36,5 +44,10 @@ describe('RefreshButton', () => {
     const loading = render(true);
     expect(loading.button().disabled).toBe(true);
     expect(loading.button().classList).toContain('spinning');
+  });
+
+  it('draws plain (no chip chrome) only when asked for it', () => {
+    expect(render(false, 'chip').button().classList).not.toContain('plain');
+    expect(render(false, 'plain').button().classList).toContain('plain');
   });
 });

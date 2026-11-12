@@ -55,7 +55,9 @@
       [attr.aria-labelledby]="'tab-' + tab.id"
       [hidden]="!isActive(tab)"
     >
-      <ng-container *ngComponentOutlet="tab.component; inputs: { menu: tab.menu }" />
+      <ng-container
+        *ngComponentOutlet="tab.component; inputs: { menu: tab.menu }; injector: injectorFor(tab)"
+      />
     </section>
   }
 </div>

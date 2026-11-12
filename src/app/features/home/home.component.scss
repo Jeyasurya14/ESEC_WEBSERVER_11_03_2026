@@ -122,6 +122,10 @@ dd {
   font-size: $status-text-size;
 }
 
+.status-bar-spacer {
+  flex: 1;
+}
+
 @media (max-width: 640px) {
   .workspace-content {
     padding: 16px;

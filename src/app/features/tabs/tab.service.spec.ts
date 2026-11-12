@@ -89,4 +89,29 @@ describe('report tabs', () => {
     expect(tabs.canCloseRightOf(idOf('A'))).toBe(false);
     expect(tabs.canCloseRightOf(idOf('C'))).toBe(true);
   });
+
+  describe('a tab\'s refresh control', () => {
+    it('is only there once a tab registers one, and only for the active tab', () => {
+      expect(tabs.activeRefreshHandle()).toBeNull();
+
+      tabs.setRefreshHandle(idOf('D'), { loading: () => true, refresh: () => {} });
+      expect(tabs.activeRefreshHandle()?.loading()).toBe(true);
+
+      tabs.activate(idOf('A'));
+      expect(tabs.activeRefreshHandle()).toBeNull();
+    });
+
+    it('clears when the tab says so', () => {
+      tabs.setRefreshHandle(idOf('D'), { loading: () => false, refresh: () => {} });
+      tabs.setRefreshHandle(idOf('D'), null);
+      expect(tabs.activeRefreshHandle()).toBeNull();
+    });
+
+    it('is forgotten once the tab closes', () => {
+      tabs.setRefreshHandle(idOf('D'), { loading: () => false, refresh: () => {} });
+      tabs.close(idOf('D'));
+      tabs.activate(idOf('C'));
+      expect(tabs.activeRefreshHandle()).toBeNull();
+    });
+  });
 });

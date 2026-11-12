@@ -54,6 +54,14 @@
 
       <footer class="status-bar" aria-label="Application status">
         <span>License Monitoring System</span>
+        @if (refreshHandle(); as handle) {
+          <app-refresh-button
+            variant="plain"
+            [loading]="handle.loading()"
+            (refresh)="handle.refresh()"
+          />
+        }
+        <span class="status-bar-spacer"></span>
         <span>{{ loginService.user()?.userId }}</span>
       </footer>
     </div>
