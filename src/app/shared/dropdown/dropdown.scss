@@ -17,6 +17,19 @@
   font: inherit;
   white-space: nowrap;
   cursor: pointer;
+  border-radius: $border-radius-sm;
+
+  &:hover {
+    color: $primary;
+  }
+
+  // Replace the page's default 3px outline ring with the same soft focus
+  // treatment the rest of the filter row uses, so opening/tabbing to a
+  // dropdown doesn't draw a heavy oval border around it.
+  &:focus-visible {
+    outline: none;
+    box-shadow: $filter-shadow-focus;
+  }
 }
 
 .dropdown-chevron {
@@ -34,7 +47,9 @@
   left: 0;
   z-index: 30;
   min-width: 100%;
-  max-height: 280px;
+  // Tall enough that a typical option list (a handful of entries, maybe
+  // grouped) never needs to scroll; only an unusually long list does.
+  max-height: 340px;
   margin: 0;
   padding: $spacing-1;
   overflow-y: auto;
@@ -43,6 +58,24 @@
   border: 1px solid $filter-border;
   border-radius: $filter-radius;
   box-shadow: $shadow-md;
+
+  // A slim, unobtrusive scrollbar for the rare list that does overflow,
+  // instead of the browser's bulky default track-and-arrow scrollbar.
+  scrollbar-width: thin;
+  scrollbar-color: $gray-300 transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $gray-300;
+    border-radius: $border-radius-sm;
+  }
 }
 
 .dropdown-group-label {

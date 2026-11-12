@@ -9,6 +9,10 @@ body {
   background: #f2f5f8;
   color: #20364a;
   font-family: 'Segoe UI', sans-serif;
+  // Chromium's default blue tap flash on touch devices; every interactive
+  // element already shows its own hover/active/focus state, so this is
+  // just noise on top of it.
+  -webkit-tap-highlight-color: transparent;
 }
 
 .panel {
@@ -22,6 +26,10 @@ h1 {
   margin-top: 0;
 }
 
+// A default look for plain <button> elements. Wrapping the states in :where()
+// keeps their specificity at zero, so any component (an icon button, the
+// dropdown trigger, ...) can still override background/color with a single
+// class of its own instead of fighting this rule for specificity.
 button {
   padding: $spacing-3 $spacing-5;
   border: 0;
@@ -32,7 +40,7 @@ button {
   cursor: pointer;
   transition: background $transition-fast;
 
-  &:hover:not(:disabled) {
+  &:where(:hover:not(:disabled)) {
     background: $primary-hover;
   }
 }
