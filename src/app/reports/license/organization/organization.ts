@@ -18,16 +18,22 @@ import { ReportFilters } from '../../../shared/filters/report-filters';
 import { SearchFilter } from '../../../shared/filters/search-filter';
 import { ServerStatusFilter } from '../../../shared/filters/server-status-filter';
 import { ALL_BANDS, UsageBandFilter } from '../../../shared/filters/usage-band-filter';
-import { DataGrid } from '../../../shared/grid/data-grid';
+import { GaugeTile } from '../../../shared/gauge/gauge-tile';
+import { DataGrid, rowCountText } from '../../../shared/grid/data-grid';
 import { ReportData } from '../../../shared/report-data';
 import { ReportSettings } from '../../../shared/report-settings.service';
 import {
   OrganizationRow,
   organizationCall,
   organizationColumns,
+  organizationTiles,
   prepareRows,
+  searchTiles,
   visibleRows,
 } from './organization.data';
+
+/** The two ways this report can show its rows. */
+export type OrganizationView = 'grid' | 'gauge';
 
 @Component({
   selector: 'app-organization',
@@ -35,6 +41,7 @@ import {
     DataGrid,
     ExpiryFilter,
     FeatureGroupFilter,
+    GaugeTile,
     OptionFilter,
     RangeFilter,
     SearchFilter,
@@ -52,6 +59,7 @@ export class Organization implements OnInit {
   readonly filters = inject(ReportFilters);
   readonly data = inject<ReportData<OrganizationRow>>(ReportData);
   readonly rowCount = signal('');
+  readonly view = signal<OrganizationView>('grid');
 
   readonly rows = computed(() => {
     const settings = this.filters.settings();
@@ -70,6 +78,20 @@ export class Organization implements OnInit {
   readonly columns = computed(() => {
     const settings = this.filters.settings();
     return settings ? organizationColumns(settings) : [];
+  });
+
+  /** The gauge view's own tiles - the same filtered rows as the grid, reshaped for `app-gauge-tile`. */
+  readonly tiles = computed(() =>
+    searchTiles(organizationTiles(this.rows(), this.filters.option()), this.filters.search()),
+  );
+
+  /** "Rows : ..." reads from the grid's own count in grid view, and the tile count in gauge view. */
+  readonly rowCountLabel = computed(() => {
+    if (this.view() === 'grid') {
+      return this.rowCount();
+    }
+    const searching = this.filters.search().trim().length > 0;
+    return rowCountText(this.tiles().length, this.rows().length, searching);
   });
 
   constructor() {
@@ -99,6 +121,10 @@ export class Organization implements OnInit {
   clearFilters(): void {
     this.filters.search.set('');
     this.filters.bands.set([...ALL_BANDS]);
+  }
+
+  toggleView(): void {
+    this.view.update((current) => (current === 'grid' ? 'gauge' : 'grid'));
   }
 
   private async start(): Promise<void> {

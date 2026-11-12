@@ -9,9 +9,35 @@
   color: $gray-500;
 }
 
-.refresh {
+.refresh,
+.view-toggle {
   height: $filter-height;
   padding: 0 $spacing-3;
   border-radius: $filter-radius;
   font-size: $font-size-base;
+}
+
+.view-toggle {
+  background: $white;
+  color: $primary;
+  border: 1px solid $filter-border;
+
+  &:hover {
+    background: $gray-50;
+  }
+}
+
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: $spacing-3;
+  flex: 1;
+  padding: $spacing-3;
+  overflow-y: auto;
+}
+
+.gauge-empty {
+  padding: $spacing-5;
+  color: $gray-500;
+  text-align: center;
 }

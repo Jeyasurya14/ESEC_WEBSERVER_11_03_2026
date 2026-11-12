@@ -1,0 +1,45 @@
+@use '../../../styles/variables' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  padding: $spacing-3;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-sm;
+}
+
+.gauge-tile-title {
+  margin: 0 0 $spacing-2;
+  overflow: hidden;
+  color: $gray-900;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.gauge-tile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-1 $spacing-3;
+  margin-top: $spacing-2;
+}
+
+.gauge-tile-stat {
+  display: flex;
+  flex-direction: column;
+  padding-top: $spacing-1;
+  border-top: 1px solid $border-light;
+}
+
+.gauge-tile-stat-value {
+  color: $gray-900;
+  font-size: $font-size-lg;
+  font-weight: 600;
+}
+
+.gauge-tile-stat-label {
+  color: $gray-500;
+  font-size: $font-size-xs;
+}

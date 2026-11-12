@@ -30,6 +30,12 @@ export function percentField(option: UsageOption): PercentField {
   return `p_${option.toLowerCase()}` as PercentField;
 }
 
+export type QuantityField = `qty_${Lowercase<UsageOption>}`;
+
+export function quantityField(option: UsageOption): QuantityField {
+  return `qty_${option.toLowerCase()}` as QuantityField;
+}
+
 const OPTIONS: DropdownOption[] = [
   ...DAY_OPTIONS.map((item) => ({ ...item, group: 'Day (00:00 - 23:59)' })),
   ...WORK_OPTIONS.map((item) => ({ ...item, group: 'Work hours' })),

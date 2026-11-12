@@ -1,18 +1,21 @@
 import { isNotExpired } from '../../../shared/filters/expiry-filter';
 import { featureGroupParam } from '../../../shared/filters/feature-group-filter';
-import { UsageOption, percentField } from '../../../shared/filters/option-filter';
+import { UsageOption, percentField, quantityField } from '../../../shared/filters/option-filter';
 import { ReportRange, rangeCall } from '../../../shared/filters/range-filter';
 import { ServerStatus, matchesServerStatus } from '../../../shared/filters/server-status-filter';
 import { UsageBand, matchesBands } from '../../../shared/filters/usage-band-filter';
+import { GaugeStat } from '../../../shared/gauge/gauge-tile';
 import {
   Column,
   columnGroup,
   compactColumn,
   dateColumn,
+  formatNumber,
   numberColumn,
   percentColumn,
   rowNumberColumn,
   textColumn,
+  toNumber,
 } from '../../../shared/grid/columns';
 import { ReportSettings } from '../../../shared/report-settings.service';
 
@@ -106,6 +109,37 @@ export function visibleRows(
       (!filters.notExpired || isNotExpired(row.expiry, today)) &&
       matchesBands(row[percent], filters.bands, settings),
   );
+}
+
+/** One gauge tile's worth of data: the card's title, the dial's percentage, and its stat rows. */
+export interface OrganizationTile {
+  title: string;
+  percent: number;
+  stats: GaugeStat[];
+}
+
+export function organizationTiles(rows: OrganizationRow[], option: UsageOption): OrganizationTile[] {
+  const percent = percentField(option);
+  const quantity = quantityField(option);
+
+  return rows.map((row) => ({
+    title: [row.sw, row.server, row.lic_name].filter(Boolean).join(', '),
+    percent: toNumber(row[percent]) ?? 0,
+    stats: [
+      { label: 'Percentage', value: formatNumber(row[percent]) },
+      { label: 'Value', value: formatNumber(row[quantity]) },
+      { label: 'User', value: formatNumber(row.di) },
+      { label: 'True Denial', value: formatNumber(row.td) },
+      { label: 'Issued (Max)', value: formatNumber(row.max_qty_i) },
+      { label: 'Issued (Last)', value: formatNumber(row.l_qty_i) },
+    ],
+  }));
+}
+
+/** Keeps the tiles whose title matches the search text - the same text box the grid view uses. */
+export function searchTiles(tiles: OrganizationTile[], search: string): OrganizationTile[] {
+  const query = search.trim().toLowerCase();
+  return query ? tiles.filter((tile) => tile.title.toLowerCase().includes(query)) : tiles;
 }
 
 export function organizationColumns(settings: ReportSettings): Column<OrganizationRow>[] {
