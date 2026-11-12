@@ -1,9 +1,9 @@
 <div class="report-toolbar" role="toolbar" aria-label="Organization filters">
-  <div class="toolbar-row">
-    <app-search-filter [(text)]="filters.search" />
+  <app-search-filter [(text)]="filters.search" />
 
-    <span class="filter-divider" aria-hidden="true"></span>
+  <span class="filter-divider" aria-hidden="true"></span>
 
+  <div class="toolbar-filters">
     <div class="filter-cluster">
       <app-range-filter [(range)]="filters.range" />
       <app-option-filter [(option)]="filters.option" />
@@ -21,11 +21,10 @@
     </div>
   </div>
 
-  <div class="toolbar-row toolbar-row-status">
+  <div class="toolbar-trailing">
     @if (rowCountLabel()) {
       <span class="row-count">Rows : {{ rowCountLabel() }}</span>
     }
-    <span class="toolbar-spacer"></span>
     <button type="button" class="view-toggle" (click)="toggleView()">
       {{ view() === 'grid' ? 'Gauge View' : 'Grid View' }}
     </button>
