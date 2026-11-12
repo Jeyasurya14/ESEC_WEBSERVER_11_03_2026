@@ -1,16 +1,17 @@
 // Layout and toolbar styles are shared (report-fill, report-toolbar); only this report's extras are here.
+@use '../../../../styles/variables' as *;
 
 .row-count {
-  color: #000;
+  color: $gray-900;
 }
 
 .as-on {
-  color: #6b7280;
+  color: $gray-500;
 }
 
 .refresh {
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  height: $filter-height;
+  padding: 0 $spacing-3;
+  border-radius: $filter-radius;
+  font-size: $font-size-base;
 }

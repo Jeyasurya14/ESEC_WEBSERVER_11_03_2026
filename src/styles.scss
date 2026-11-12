@@ -1,3 +1,4 @@
+@use './styles/variables' as *;
 
 * {
   box-sizing: border-box;
@@ -22,13 +23,18 @@ h1 {
 }
 
 button {
-  padding: 12px 18px;
+  padding: $spacing-3 $spacing-5;
   border: 0;
-  border-radius: 6px;
-  background: #205d8d;
-  color: white;
+  border-radius: $border-radius-md;
+  background: $primary;
+  color: $white;
   font: inherit;
   cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: $primary-hover;
+  }
 }
 
 button:disabled {
@@ -80,46 +86,114 @@ button:disabled {
 }
 
 // ---- Report filter toolbar (shared/filters). Global because every filter control uses it.
+//
+// Every filter renders as a `.filter` (a single label + control) or a `.filter-group` (several
+// controls under one label, e.g. the usage-band checkboxes). Each one that sits directly in the
+// toolbar becomes its own bordered "chip"; a `.filter` nested inside a `.filter-group` stays
+// plain so chips never nest inside chips.
 
 .report-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e8ebef;
-  background: #fafbfc;
-  font-size: 12px;
+  gap: $spacing-2 $spacing-4;
+  padding: $spacing-2 $spacing-3;
+  border-bottom: 1px solid $border-light;
+  background: $gray-50;
+  font-size: $font-size-base;
 
   .filter-group,
   .filter {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: $spacing-2;
+  }
+
+  .filter-group,
+  .filter {
+    height: $filter-height;
+    padding: 0 $spacing-3;
+    background: $filter-bg;
+    border: 1px solid $filter-border;
+    border-radius: $filter-radius;
+    transition:
+      border-color $transition-fast,
+      box-shadow $transition-fast;
+
+    &:hover {
+      border-color: $filter-border-hover;
+    }
+
+    &:focus-within {
+      border-color: $filter-border-focus;
+      box-shadow: $filter-shadow-focus;
+    }
+  }
+
+  // A filter nested inside a group (the usage-band checkboxes, a range filter's own label)
+  // reuses the group's chip instead of drawing one of its own.
+  .filter-group .filter {
+    height: auto;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
   }
 
   .filter-label {
-    color: #4b5563;
+    color: $filter-label;
     font-weight: 600;
+    white-space: nowrap;
   }
 
   select,
-  .search {
-    height: 28px;
-    padding: 0 8px;
-    border: 1px solid #d9dee7;
-    border-radius: 6px;
-    background: #fff;
-    color: #374151;
+  .search input {
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: $filter-text;
     font: inherit;
+    cursor: pointer;
+  }
+
+  // A plain <select> looks different in every browser, so we draw our own arrow and hide the
+  // native one; this is purely visual and keeps the native dropdown and keyboard behaviour.
+  select {
+    appearance: none;
+    padding-right: 20px;
+    // Mirrors $filter-icon (#6b7280); CSS custom properties can't be used inside a data URI.
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 16px;
   }
 
   .search {
-    width: 180px;
+    width: 220px;
+
+    .app-icon {
+      color: $filter-icon;
+      --icon-size: 14px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      cursor: text;
+
+      &::placeholder {
+        color: $filter-placeholder;
+      }
+    }
   }
 
   input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
     margin: 0;
+    accent-color: $primary;
+    cursor: pointer;
   }
 
   .toolbar-spacer {
