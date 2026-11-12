@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, model } from '@angular/core';
 import { parseDate } from '../dates';
+import { CheckFilter } from './check-filter';
 
 export function isNotExpired(expiry: unknown, today: Date): boolean {
   const date = parseDate(expiry);
@@ -12,11 +13,13 @@ export function isNotExpired(expiry: unknown, today: Date): boolean {
 
 @Component({
   selector: 'app-expiry-filter',
+  imports: [CheckFilter],
   template: `
-    <label class="filter check">
-      <input type="checkbox" [checked]="notExpired()" (change)="notExpired.set(!notExpired())" />
-      Not Expired
-    </label>
+    <app-check-filter
+      label="Not Expired"
+      [checked]="notExpired()"
+      (toggled)="notExpired.set(!notExpired())"
+    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

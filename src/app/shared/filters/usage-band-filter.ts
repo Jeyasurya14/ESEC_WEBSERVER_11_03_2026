@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { CheckFilter } from './check-filter';
 
 export type UsageBand = 'low' | 'medium' | 'high';
 
@@ -52,20 +53,15 @@ export function matchesBands(
 
 @Component({
   selector: 'app-usage-band-filter',
+  imports: [CheckFilter],
   template: `
     @for (band of bands; track band) {
-      <label class="filter check">
-        <input type="checkbox" [checked]="selected().includes(band)" (change)="toggle(band)" />
-        <span class="band-dot" [style.background]="colorOf(band)" aria-hidden="true"></span>
-        {{ labelOf(band) }}
-      </label>
-    }
-  `,
-  styles: `
-    .band-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+      <app-check-filter
+        [label]="labelOf(band)"
+        [checked]="selected().includes(band)"
+        [dotColor]="colorOf(band)"
+        (toggled)="toggle(band)"
+      />
     }
   `,
   host: { class: 'filter-group', role: 'group', 'aria-label': 'Usage level' },

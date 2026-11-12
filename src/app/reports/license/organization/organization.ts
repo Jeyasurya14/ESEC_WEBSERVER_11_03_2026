@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { UserMenu } from '../../../core/models';
+import { ActiveFiltersBar } from '../../../shared/filters/active-filters';
 import { ExpiryFilter } from '../../../shared/filters/expiry-filter';
 import { FeatureGroupFilter } from '../../../shared/filters/feature-group-filter';
 import { OptionFilter } from '../../../shared/filters/option-filter';
@@ -38,6 +39,7 @@ export type OrganizationView = 'grid' | 'gauge';
 @Component({
   selector: 'app-organization',
   imports: [
+    ActiveFiltersBar,
     DataGrid,
     ExpiryFilter,
     FeatureGroupFilter,
