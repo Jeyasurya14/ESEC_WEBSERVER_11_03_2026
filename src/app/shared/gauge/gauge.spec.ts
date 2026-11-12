@@ -58,12 +58,29 @@ describe('Gauge', () => {
     expect(element.querySelector('.gauge-value')?.textContent).toBe('50%');
   });
 
-  it('colours the needle for the band the percentage falls in', () => {
-    expect(render(50).element.querySelector('.gauge-needle')?.getAttribute('stroke')).toBe(
+  it('colours the progress arc for the band the percentage falls in', () => {
+    expect(render(50).element.querySelector('.gauge-progress')?.getAttribute('stroke')).toBe(
       BAND_COLORS.low, // 50 is below lowBelow (60)
     );
-    expect(render(90).element.querySelector('.gauge-needle')?.getAttribute('stroke')).toBe(
+    expect(render(90).element.querySelector('.gauge-progress')?.getAttribute('stroke')).toBe(
       BAND_COLORS.high, // 90 is at/above highFrom (80)
     );
+  });
+
+  it('draws the progress arc from empty up to the percentage, so it reads as a fill level', () => {
+    const { element } = render(25);
+    const [, , , , , , , endX] = arcEndpoints(element.querySelector('.gauge-progress')!.getAttribute('d')!);
+    // 0% sits at x=20 (the left end) and 100% at x=180 (the right end); 25% should land well
+    // short of the top (x=100), proving the arc stops at the value instead of always being full.
+    expect(endX).toBeGreaterThan(20);
+    expect(endX).toBeLessThan(100);
+  });
+
+  it('still shows the three zone colours regardless of the current value', () => {
+    const { element } = render(10);
+    const zoneColors = Array.from(element.querySelectorAll('.gauge-zone')).map((zone) =>
+      zone.getAttribute('stroke'),
+    );
+    expect(zoneColors).toEqual([BAND_COLORS.low, BAND_COLORS.medium, BAND_COLORS.high]);
   });
 });

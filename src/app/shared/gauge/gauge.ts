@@ -4,7 +4,6 @@ import { BandLimits, bandColor, bandOf } from '../filters/usage-band-filter';
 // The gauge is a half circle: 0% points left, 100% points right, 50% points straight up.
 const CENTER = 100;
 const RADIUS = 80;
-const NEEDLE_RADIUS = 52;
 const START_ANGLE = 180;
 const END_ANGLE = 0;
 
@@ -30,32 +29,26 @@ export function arcPath(fromPercent: number, toPercent: number): string {
   return `M ${start.x} ${start.y} A ${RADIUS} ${RADIUS} 0 0 1 ${end.x} ${end.y}`;
 }
 
-interface GaugeBand {
+interface GaugeZone {
   path: string;
   color: string;
 }
 
 /**
- * A half-circle gauge: a coloured track split into the same low/medium/high bands as the usage
- * filter, with a needle pointing at the current percentage. Reusable anywhere a percentage needs
- * a dial instead of a number - give it a percent and the report's band limits.
+ * A half-circle gauge: a pale low/medium/high "zone map" (the same bands the usage filter uses)
+ * with a bold arc drawn over it from 0 up to the current percentage, in that percentage's own
+ * band colour - a progress ring that also shows how close the value is to its next threshold.
+ * Reusable anywhere a percentage needs a dial instead of a number - give it a percent and the
+ * report's band limits.
  */
 @Component({
   selector: 'app-gauge',
   template: `
     <svg class="gauge" viewBox="0 0 200 112" [attr.aria-label]="ariaLabel()" role="img">
-      @for (band of bands(); track band.color) {
-        <path [attr.d]="band.path" [attr.stroke]="band.color" class="gauge-track" />
+      @for (zone of zones(); track zone.color) {
+        <path [attr.d]="zone.path" [attr.stroke]="zone.color" class="gauge-zone" />
       }
-      <line
-        class="gauge-needle"
-        [attr.x1]="center"
-        [attr.y1]="center"
-        [attr.x2]="needleEnd().x"
-        [attr.y2]="needleEnd().y"
-        [attr.stroke]="color()"
-      />
-      <circle class="gauge-pivot" [attr.cx]="center" [attr.cy]="center" [attr.fill]="color()" />
+      <path [attr.d]="progressPath()" [attr.stroke]="color()" class="gauge-progress" />
       <text class="gauge-value" x="100" y="96" [attr.fill]="color()">{{ roundedPercent() }}%</text>
     </svg>
   `,
@@ -67,14 +60,12 @@ export class Gauge {
   readonly limits = input.required<BandLimits>();
   readonly ariaLabel = input('Usage gauge');
 
-  protected readonly center = CENTER;
-
   protected readonly roundedPercent = computed(() => Math.round(this.percent()));
   protected readonly band = computed(() => bandOf(this.percent(), this.limits()));
   protected readonly color = computed(() => bandColor(this.band(), this.limits()));
 
-  /** The track drawn as three arcs - one per band - so each shows in its own colour. */
-  protected readonly bands = computed<GaugeBand[]>(() => {
+  /** The pale background showing where the low/medium/high zones are, regardless of the value. */
+  protected readonly zones = computed<GaugeZone[]>(() => {
     const limits = this.limits();
     const { lowBelow, highFrom } = limits;
     return [
@@ -84,7 +75,6 @@ export class Gauge {
     ];
   });
 
-  protected readonly needleEnd = computed(() =>
-    pointOnCircle(angleForPercent(this.percent()), NEEDLE_RADIUS),
-  );
+  /** The bold arc: how far the value has filled the gauge, from empty (0) to now. */
+  protected readonly progressPath = computed(() => arcPath(0, this.percent()));
 }

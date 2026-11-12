@@ -113,6 +113,23 @@ describe('Organization report', { timeout: 20_000 }, () => {
     expect(fixture.nativeElement.querySelector('.report-toolbar')).not.toBeNull();
   });
 
+  it('briefly shows the gauge view as not-ready, so a click repaints before the tiles build', async () => {
+    const fixture = await open();
+
+    vi.useFakeTimers();
+    try {
+      expect(fixture.componentInstance.gaugeReady()).toBe(true);
+      fixture.componentInstance.toggleView();
+      expect(fixture.componentInstance.view()).toBe('gauge');
+      expect(fixture.componentInstance.gaugeReady()).toBe(false);
+
+      vi.runAllTimers();
+      expect(fixture.componentInstance.gaugeReady()).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('reloads when the range changes, but not when a browser-side filter changes', async () => {
     const fixture = await open();
 

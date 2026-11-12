@@ -26,10 +26,38 @@
   flex: 1;
   padding: $spacing-3;
   overflow-y: auto;
+  animation: gauge-grid-in $transition-slow ease-out;
+}
+
+@keyframes gauge-grid-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .gauge-empty {
   padding: $spacing-5;
   color: $gray-500;
   text-align: center;
+}
+
+.gauge-loading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-3;
+  color: $gray-500;
+}
+
+.gauge-loading-spinner {
+  width: 48px;
+  height: 48px;
 }

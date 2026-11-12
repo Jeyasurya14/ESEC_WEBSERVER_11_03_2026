@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { BandLimits } from '../filters/usage-band-filter';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { BandLimits, bandColor, bandOf } from '../filters/usage-band-filter';
 import { Gauge } from './gauge';
 
 /** One labelled number shown under a gauge tile, e.g. `{ label: 'User', value: '1,204' }`. */
@@ -29,6 +29,7 @@ export interface GaugeStat {
     </div>
   `,
   styleUrl: './gauge-tile.scss',
+  host: { '[style.--tile-accent]': 'accentColor()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GaugeTile {
@@ -36,4 +37,9 @@ export class GaugeTile {
   readonly percent = input.required<number>();
   readonly limits = input.required<BandLimits>();
   readonly stats = input<readonly GaugeStat[]>([]);
+
+  /** The same band colour the gauge fills with - picked up by a thin accent border on the card. */
+  protected readonly accentColor = computed(() =>
+    bandColor(bandOf(this.percent(), this.limits()), this.limits()),
+  );
 }

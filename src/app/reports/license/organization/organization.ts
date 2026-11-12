@@ -63,6 +63,13 @@ export class Organization implements OnInit {
   readonly rowCount = signal('');
   readonly view = signal<OrganizationView>('grid');
 
+  /**
+   * False for one tick right after switching to the gauge view, so the toolbar's click repaints
+   * a lightweight "Preparing gauges…" message immediately instead of the browser sitting frozen
+   * while every tile (there can be hundreds) builds - see toggleView.
+   */
+  readonly gaugeReady = signal(true);
+
   readonly rows = computed(() => {
     const settings = this.filters.settings();
     if (!settings) {
@@ -140,7 +147,13 @@ export class Organization implements OnInit {
   }
 
   toggleView(): void {
-    this.view.update((current) => (current === 'grid' ? 'gauge' : 'grid'));
+    const next = this.view() === 'grid' ? 'gauge' : 'grid';
+    this.view.set(next);
+
+    if (next === 'gauge') {
+      this.gaugeReady.set(false);
+      setTimeout(() => this.gaugeReady.set(true));
+    }
   }
 
   private async start(): Promise<void> {

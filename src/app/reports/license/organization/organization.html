@@ -44,16 +44,25 @@
   />
 } @else if (filters.settings(); as limits) {
   @if (tiles().length) {
-    <div class="gauge-grid">
-      @for (tile of tiles(); track tile.title) {
-        <app-gauge-tile
-          [title]="tile.title"
-          [percent]="tile.percent"
-          [stats]="tile.stats"
-          [limits]="limits"
-        />
-      }
-    </div>
+    @if (gaugeReady()) {
+      <div class="gauge-grid">
+        @for (tile of tiles(); track tile.title) {
+          <app-gauge-tile
+            [title]="tile.title"
+            [percent]="tile.percent"
+            [stats]="tile.stats"
+            [limits]="limits"
+          />
+        }
+      </div>
+    } @else {
+      <!-- Shown for one tick after switching to this view, so the click repaints straight away
+           instead of the browser sitting frozen while every tile (there can be hundreds) builds. -->
+      <div class="gauge-loading">
+        <img class="gauge-loading-spinner" src="assets/grid/spinner.svg" alt="" />
+        <p>Preparing gauges…</p>
+      </div>
+    }
   } @else {
     <p class="gauge-empty">{{ data.error() || 'No data to show.' }}</p>
   }

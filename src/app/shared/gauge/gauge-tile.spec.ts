@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { BandLimits } from '../filters/usage-band-filter';
+import { BAND_COLORS, BandLimits } from '../filters/usage-band-filter';
 import { GaugeStat, GaugeTile } from './gauge-tile';
 
 @Component({
@@ -50,5 +50,14 @@ describe('GaugeTile', () => {
     const element: HTMLElement = fixture.nativeElement;
 
     expect(element.querySelector('.gauge-value')?.textContent).toBe('72%');
+  });
+
+  it("accents the card with the gauge's own band colour", () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    const tile = fixture.nativeElement.querySelector('app-gauge-tile') as HTMLElement;
+
+    // 72% is medium (>= 60, < 80) under this host's limits.
+    expect(tile.style.getPropertyValue('--tile-accent')).toBe(BAND_COLORS.medium);
   });
 });

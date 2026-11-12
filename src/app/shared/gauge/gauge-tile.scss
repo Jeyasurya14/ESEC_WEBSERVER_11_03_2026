@@ -5,8 +5,22 @@
   flex-direction: column;
   padding: $spacing-3;
   background: $white;
+  border-left: 4px solid var(--tile-accent, transparent);
   border-radius: $border-radius-lg;
   box-shadow: $shadow-sm;
+  transition:
+    box-shadow $transition-base,
+    transform $transition-base;
+
+  // Skips layout/paint for whichever tiles are off-screen (there can be hundreds), so switching
+  // into the gauge view only pays for what's actually visible instead of every tile at once.
+  content-visibility: auto;
+  contain-intrinsic-size: 260px 290px;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
 }
 
 .gauge-tile-title {
