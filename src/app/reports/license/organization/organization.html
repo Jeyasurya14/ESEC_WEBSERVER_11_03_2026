@@ -1,30 +1,42 @@
 <div class="report-toolbar" role="toolbar" aria-label="Organization filters">
-  <app-search-filter [(text)]="filters.search" />
-  <app-range-filter [(range)]="filters.range" />
-  <app-option-filter [(option)]="filters.option" />
-  @if (filters.settings(); as limits) {
-    <app-usage-band-filter [(selected)]="filters.bands" [limits]="limits" />
-  }
-  <app-feature-group-filter [(group)]="filters.featureGroup" />
-  <app-server-status-filter [(status)]="filters.serverStatus" />
-  <app-expiry-filter [(notExpired)]="filters.notExpired" />
+  <div class="toolbar-row">
+    <app-search-filter [(text)]="filters.search" />
 
-  <span class="toolbar-spacer"></span>
-  @if (rowCountLabel()) {
-    <span class="row-count">Rows : {{ rowCountLabel() }}</span>
-  }
-  @if (data.asOn()) {
-    <span class="as-on">As on {{ data.asOn() }}</span>
-  }
-  <button type="button" class="view-toggle" (click)="toggleView()">
-    {{ view() === 'grid' ? 'Gauge View' : 'Grid View' }}
-  </button>
-  <button type="button" class="refresh" [disabled]="data.loading()" (click)="refresh()">
-    Refresh
-  </button>
+    <span class="filter-divider" aria-hidden="true"></span>
+
+    <div class="filter-cluster">
+      <app-range-filter [(range)]="filters.range" />
+      <app-option-filter [(option)]="filters.option" />
+      <app-feature-group-filter [(group)]="filters.featureGroup" />
+    </div>
+
+    <span class="filter-divider" aria-hidden="true"></span>
+
+    <div class="filter-cluster">
+      @if (filters.settings(); as limits) {
+        <app-usage-band-filter [(selected)]="filters.bands" [limits]="limits" />
+      }
+      <app-server-status-filter [(status)]="filters.serverStatus" />
+      <app-expiry-filter [(notExpired)]="filters.notExpired" />
+    </div>
+  </div>
+
+  <div class="toolbar-row toolbar-row-status">
+    @if (rowCountLabel()) {
+      <span class="row-count">Rows : {{ rowCountLabel() }}</span>
+    }
+    @if (data.asOn()) {
+      <span class="as-on">As on {{ data.asOn() }}</span>
+    }
+    <span class="toolbar-spacer"></span>
+    <button type="button" class="view-toggle" (click)="toggleView()">
+      {{ view() === 'grid' ? 'Gauge View' : 'Grid View' }}
+    </button>
+    <button type="button" class="refresh" [disabled]="data.loading()" (click)="refresh()">
+      Refresh
+    </button>
+  </div>
 </div>
-
-<app-active-filters />
 
 @if (view() === 'grid') {
   <app-data-grid

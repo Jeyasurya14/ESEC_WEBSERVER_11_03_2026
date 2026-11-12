@@ -119,16 +119,8 @@ export function periodsFor(kind: 'month' | 'quarter' | 'year', today: Date): Per
   }
 }
 
-export function sameRange(a: ReportRange, b: ReportRange): boolean {
+function sameRange(a: ReportRange, b: ReportRange): boolean {
   return formatRange(a) === formatRange(b);
-}
-
-/** A short, human label for a range, e.g. "30 Days", "Q1-2026" or "Jan-2026". */
-export function rangeLabel(range: ReportRange): string {
-  if (range.kind !== 'days') {
-    return formatRange(range);
-  }
-  return DAY_RANGES.find((preset) => preset.value === range.days)?.label ?? `${range.days} Days`;
 }
 
 const KIND_OPTIONS: DropdownOption[] = [

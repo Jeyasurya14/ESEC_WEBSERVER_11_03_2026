@@ -99,16 +99,47 @@ button:disabled {
 // controls under one label, e.g. the usage-band checkboxes). Each one that sits directly in the
 // toolbar becomes its own soft-shadowed "chip"; a `.filter` nested inside a `.filter-group` stays
 // plain so chips never nest inside chips.
+//
+// The toolbar itself is a couple of `.toolbar-row`s stacked up: the filters on top (grouped into
+// `.filter-cluster`s with a `.filter-divider` between them, so related filters read as one block
+// instead of a single long run of chips), and the row count / view toggle / refresh underneath.
 
 .report-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: $spacing-2 $spacing-4;
+  flex-direction: column;
+  gap: $spacing-2;
   padding: $spacing-2 $spacing-3;
   border-bottom: 1px solid $border-light;
   background: $gray-50;
   font-size: $font-size-base;
+
+  .toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-2 $spacing-4;
+  }
+
+  // The row underneath the filters (row count, as-on date, view/refresh buttons) reads as
+  // secondary information, so it sits a touch smaller and quieter than the filters above it.
+  .toolbar-row-status {
+    gap: $spacing-2 $spacing-3;
+    font-size: $font-size-sm;
+  }
+
+  .filter-cluster {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-2;
+  }
+
+  .filter-divider {
+    width: 1px;
+    height: 22px;
+    background: $border-color;
+    flex-shrink: 0;
+  }
 
   .filter-group,
   .filter {
@@ -167,14 +198,6 @@ button:disabled {
         color: $filter-placeholder;
       }
     }
-  }
-
-  input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    accent-color: $primary;
-    cursor: pointer;
   }
 
   .toolbar-spacer {

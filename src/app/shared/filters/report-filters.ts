@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import {
   StoredPreferences,
   UserPreferencesService,
@@ -6,18 +6,11 @@ import {
 import { myColumnsFrom } from '../grid/my-columns';
 import { ReportSettings, ReportSettingsService } from '../report-settings.service';
 import { UsageOption, toUsageOption } from './option-filter';
-import { ReportRange, formatRange, parseRange, rangeLabel, sameRange } from './range-filter';
+import { ReportRange, formatRange, parseRange } from './range-filter';
 import { ServerStatus } from './server-status-filter';
 import { ALL_BANDS, UsageBand } from './usage-band-filter';
 
-export const DEFAULT_SERVER_STATUS: Readonly<ServerStatus> = { active: true, inactive: false };
-
-/** One filter that is away from its default - shown as a chip the user can clear on its own. */
-export interface ActiveFilter {
-  readonly key: string;
-  readonly label: string;
-  clear(): void;
-}
+const DEFAULT_SERVER_STATUS: Readonly<ServerStatus> = { active: true, inactive: false };
 
 @Injectable()
 export class ReportFilters {
@@ -38,62 +31,6 @@ export class ReportFilters {
   readonly myColumns = signal<Record<string, boolean>>(myColumnsFrom(undefined));
 
   private lastSaved = '';
-
-  /** Every filter currently away from its default, for a summary bar with per-filter clear buttons. */
-  readonly activeFilters = computed<ActiveFilter[]>(() => {
-    const settings = this.settings();
-    if (!settings) {
-      return [];
-    }
-
-    const active: ActiveFilter[] = [];
-    const add = (key: string, label: string, clear: () => void) => active.push({ key, label, clear });
-
-    if (this.search().trim()) {
-      add('search', `Search: "${this.search().trim()}"`, () => this.search.set(''));
-    }
-    if (!sameRange(this.range(), parseRange(settings.defaultRange))) {
-      const defaultRange = parseRange(settings.defaultRange);
-      add('range', `Range: ${rangeLabel(this.range())}`, () => this.range.set(defaultRange));
-    }
-    if (this.option() !== toUsageOption(settings.defaultOption)) {
-      const defaultOption = toUsageOption(settings.defaultOption);
-      add('option', `Option: ${this.option()}`, () => this.option.set(defaultOption));
-    }
-    if (this.featureGroup() !== settings.defaultFeatureGroup) {
-      add('feature', `Feature: ${this.featureGroup()}`, () =>
-        this.featureGroup.set(settings.defaultFeatureGroup),
-      );
-    }
-    if (this.bands().length !== ALL_BANDS.length) {
-      add('bands', `Usage: ${bandsLabel(this.bands())}`, () => this.bands.set([...ALL_BANDS]));
-    }
-    if (!isDefaultServerStatus(this.serverStatus())) {
-      add('serverStatus', serverStatusLabel(this.serverStatus()), () =>
-        this.serverStatus.set({ ...DEFAULT_SERVER_STATUS }),
-      );
-    }
-    if (!this.notExpired()) {
-      add('notExpired', 'Including expired', () => this.notExpired.set(true));
-    }
-
-    return active;
-  });
-
-  /** Resets every filter to its default - the app settings' defaults where it has one. */
-  clearAll(): void {
-    const settings = this.settings();
-    if (!settings) {
-      return;
-    }
-    this.search.set('');
-    this.range.set(parseRange(settings.defaultRange));
-    this.option.set(toUsageOption(settings.defaultOption));
-    this.featureGroup.set(settings.defaultFeatureGroup);
-    this.bands.set([...ALL_BANDS]);
-    this.serverStatus.set({ ...DEFAULT_SERVER_STATUS });
-    this.notExpired.set(true);
-  }
 
   constructor() {
     effect(() => {
@@ -191,16 +128,3 @@ export function serverStatusFrom(saved: unknown): ServerStatus {
   return { active: status.active !== false, inactive: status.inactive === true };
 }
 
-function isDefaultServerStatus(status: ServerStatus): boolean {
-  return status.active === DEFAULT_SERVER_STATUS.active && status.inactive === DEFAULT_SERVER_STATUS.inactive;
-}
-
-function serverStatusLabel(status: ServerStatus): string {
-  const parts = [status.active && 'Active', status.inactive && 'Inactive'].filter(Boolean);
-  return `License Server: ${parts.length ? parts.join(' & ') : 'None'}`;
-}
-
-function bandsLabel(bands: UsageBand[]): string {
-  const capitalize = (band: UsageBand) => band[0].toUpperCase() + band.slice(1);
-  return bands.length ? bands.map(capitalize).join(', ') : 'None';
-}

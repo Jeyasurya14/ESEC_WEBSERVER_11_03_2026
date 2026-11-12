@@ -1,28 +1,28 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 /**
- * One checkbox "chip" - the same look every checkbox-style filter uses (Usage Band, License
- * Server, Expiry). An optional coloured dot lets a filter show what an option means at a glance,
- * the way Usage Band shows its green/yellow/red.
+ * One filter toggle, styled as a filled/outlined pill rather than a bare OS checkbox - the same
+ * look every checkbox-style filter uses (Usage Band, License Server, Expiry). Give it a
+ * `dotColor` and that becomes the option's own colour: a small dot while off, a solid fill while
+ * on - e.g. Usage Band's green/yellow/red. Without one, it toggles like a plain on/off pill.
  */
 @Component({
   selector: 'app-check-filter',
   template: `
-    <label class="filter check">
-      <input type="checkbox" [checked]="checked()" (change)="toggled.emit()" />
-      @if (dotColor(); as color) {
+    <label class="chip-toggle" [class.active]="checked()" [style.--chip-color]="dotColor()">
+      <input
+        type="checkbox"
+        class="check-input"
+        [checked]="checked()"
+        (change)="toggled.emit()"
+      />
+      @if (!checked() && dotColor(); as color) {
         <span class="check-dot" [style.background]="color" aria-hidden="true"></span>
       }
       {{ label() }}
     </label>
   `,
-  styles: `
-    .check-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-  `,
+  styleUrl: './check-filter.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckFilter {
