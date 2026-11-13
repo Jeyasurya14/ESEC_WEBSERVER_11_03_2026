@@ -4,6 +4,7 @@ import {
   ElementRef,
   HostListener,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -54,7 +55,15 @@ let nextDropdownId = 0;
     </button>
 
     @if (open()) {
-      <ul class="dropdown-menu" role="listbox" [id]="listId" [attr.aria-label]="ariaLabel()">
+      <ul
+        class="dropdown-menu"
+        role="listbox"
+        [id]="listId"
+        [attr.aria-label]="ariaLabel()"
+        [style.top.px]="menuPosition()?.top"
+        [style.left.px]="menuPosition()?.left"
+        [style.min-width.px]="menuPosition()?.width"
+      >
         @for (group of groups(); track group.heading) {
           @if (group.heading) {
             <li class="dropdown-group-label" role="presentation">{{ group.heading }}</li>
@@ -93,6 +102,13 @@ export class Dropdown {
   protected readonly open = signal(false);
   protected readonly activeValue = signal<string | null>(null);
 
+  // The menu is fixed-positioned (not absolute, under the trigger) and placed here in pixels,
+  // because several of this app's toolbars scroll horizontally - an absolutely-positioned menu
+  // would be clipped by that scroll container the moment it reached past its bottom edge.
+  protected readonly menuPosition = signal<{ top: number; left: number; width: number } | null>(
+    null,
+  );
+
   protected readonly selectedLabel = computed(() => {
     return this.options().find((option) => option.value === this.value())?.label ?? '';
   });
@@ -116,6 +132,19 @@ export class Dropdown {
     return this.open() && active !== null ? this.optionId(active) : null;
   });
 
+  constructor() {
+    // Closes the menu the moment anything scrolls underneath it, instead of leaving it floating
+    // in place while its trigger moves (the fixed position doesn't track a scrolling ancestor).
+    effect((onCleanup) => {
+      if (!this.open()) {
+        return;
+      }
+      const close = () => this.open.set(false);
+      document.addEventListener('scroll', close, { capture: true, passive: true });
+      onCleanup(() => document.removeEventListener('scroll', close, { capture: true }));
+    });
+  }
+
   protected optionId(value: string): string {
     return `${this.listId}-${value}`;
   }
@@ -125,6 +154,8 @@ export class Dropdown {
     this.open.set(opening);
     if (opening) {
       this.activeValue.set(this.value());
+      const rect = this.element.nativeElement.getBoundingClientRect();
+      this.menuPosition.set({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     }
   }
 

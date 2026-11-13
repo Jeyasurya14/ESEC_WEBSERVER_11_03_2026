@@ -42,11 +42,10 @@
 }
 
 .dropdown-menu {
-  position: absolute;
-  top: calc(100% + #{$spacing-1});
-  left: 0;
+  // Fixed (not absolute under the trigger) so a toolbar that scrolls horizontally can't clip it -
+  // see the component for how its top/left/width are measured and set.
+  position: fixed;
   z-index: 30;
-  min-width: 100%;
   // Tall enough that a typical option list (a handful of entries, maybe
   // grouped) never needs to scroll; only an unusually long list does.
   max-height: 340px;

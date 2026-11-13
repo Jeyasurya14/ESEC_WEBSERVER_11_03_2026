@@ -82,6 +82,33 @@ describe('Dropdown', () => {
     element.remove();
   });
 
+  it('positions the menu as fixed, not clipped by a scrolling ancestor', () => {
+    // Several toolbars in this app scroll horizontally; a plain absolutely-positioned menu would
+    // be clipped by that overflow the moment it reached past the toolbar's bottom edge.
+    const { fixture, trigger, element } = render();
+    trigger().click();
+    fixture.detectChanges();
+
+    const menu = element.querySelector('.dropdown-menu') as HTMLElement;
+    expect(getComputedStyle(menu).position).toBe('fixed');
+    expect(menu.style.top).not.toBe('');
+    expect(menu.style.left).not.toBe('');
+  });
+
+  it('closes if something scrolls while it is open, instead of floating away from its trigger', () => {
+    const { fixture, trigger, element } = render();
+    document.body.appendChild(element);
+    trigger().click();
+    fixture.detectChanges();
+    expect(element.querySelector('.dropdown-menu')).not.toBeNull();
+
+    document.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+    expect(element.querySelector('.dropdown-menu')).toBeNull();
+
+    element.remove();
+  });
+
   it('moves the active option with the arrow keys and selects it with Enter', () => {
     const { fixture, trigger, element } = render();
     trigger().click();
