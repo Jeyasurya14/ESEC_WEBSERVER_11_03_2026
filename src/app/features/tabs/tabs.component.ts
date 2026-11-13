@@ -49,24 +49,24 @@ export class TabsComponent {
   private readonly tabInjectors = new Map<number, Injector>();
 
   injectorFor(tab: Tab): Injector {
-    let injector = this.tabInjectors.get(tab.id);
-    if (!injector) {
-      injector = Injector.create({
+    let tabInjector = this.tabInjectors.get(tab.id);
+    if (!tabInjector) {
+      tabInjector = Injector.create({
         parent: this.parentInjector,
         providers: [{ provide: TAB_ID, useValue: tab.id }],
       });
-      this.tabInjectors.set(tab.id, injector);
+      this.tabInjectors.set(tab.id, tabInjector);
     }
-    return injector;
+    return tabInjector;
   }
 
   readonly menuItems = computed<MenuItem[]>(() => {
-    const open = this.menu();
-    if (!open) {
+    const openMenu = this.menu();
+    if (!openMenu) {
       return [];
     }
 
-    const { tab } = open;
+    const { tab } = openMenu;
     const items: MenuItem[] = [];
 
     if (!tab.pinned) {
@@ -101,10 +101,10 @@ export class TabsComponent {
   }
 
   run(action: MenuAction): void {
-    const open = this.menu();
+    const openMenu = this.menu();
 
-    if (open) {
-      const { id } = open.tab;
+    if (openMenu) {
+      const { id } = openMenu.tab;
 
       switch (action) {
         case 'closeAll':
@@ -144,10 +144,11 @@ export class TabsComponent {
   }
 
   private focusNeighbour(tab: Tab, step: 1 | -1): void {
-    const tabs = this.tabService.tabs();
-    const neighbour = tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length];
+    const openTabs = this.tabService.tabs();
+    const neighbourTab =
+      openTabs[(openTabs.indexOf(tab) + step + openTabs.length) % openTabs.length];
 
-    this.tabService.activate(neighbour.id);
-    this.host.nativeElement.querySelector<HTMLElement>(`#tab-${neighbour.id}`)?.focus();
+    this.tabService.activate(neighbourTab.id);
+    this.host.nativeElement.querySelector<HTMLElement>(`#tab-${neighbourTab.id}`)?.focus();
   }
 }

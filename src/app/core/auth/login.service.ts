@@ -120,60 +120,65 @@ export class LoginService {
     }
     const userId = withoutDomain(username);
 
-    const userCheck = await firstValueFrom(
-      this.api.post<CredentialReply>('check_esec_user', { username: userId }),
+    await this.checkCredentials('check_esec_user', { username: userId }, 'Invalid User ID');
+    await this.checkCredentials(
+      'esec_login',
+      { username: userId, password },
+      'Invalid Password',
     );
-    requireAccepted(userCheck, 'Invalid User ID');
-
-    const passwordCheck = await firstValueFrom(
-      this.api.post<CredentialReply>('esec_login', { username: userId, password }),
-    );
-    requireAccepted(passwordCheck, 'Invalid Password');
 
     return userId;
   }
 
   private async signInAsAdmin(password: string): Promise<string> {
-    const reply = await firstValueFrom(this.api.post<CredentialReply>('admin_login', { password }));
-    requireAccepted(reply, 'Invalid User ID / Password');
+    await this.checkCredentials('admin_login', { password }, 'Invalid User ID / Password');
     return 'ADMIN';
   }
 
+  private async checkCredentials(
+    endpoint: string,
+    body: object,
+    rejectedMessage: string,
+  ): Promise<void> {
+    const credentialResponse = await firstValueFrom(this.api.post<CredentialReply>(endpoint, body));
+    requireAccepted(credentialResponse, rejectedMessage);
+  }
+
   private async signInWithActiveDirectory(username: string, password: string): Promise<string | null> {
-    const result = await firstValueFrom(
+    const adLoginResponse = await firstValueFrom(
       this.api.post<{ type?: string; redirectUrl?: string } | string>('ad_login', { username, password }),
     );
-    if (result?.status !== 'PASS') {
+    if (adLoginResponse?.status !== 'PASS') {
       throw new Error('Invalid User ID / Password or AD service unavailable.');
     }
 
-    const reply = result.message;
-    if (typeof reply === 'object' && reply?.type === 'AZURE') {
-      redirectToAzure(reply.redirectUrl);
+    const loginDetails = adLoginResponse.message;
+    if (typeof loginDetails === 'object' && loginDetails?.type === 'AZURE') {
+      redirectToAzure(loginDetails.redirectUrl);
       return null;
     }
     return withoutDomain(username);
   }
 
   private async loadProfile(userId: string): Promise<UserDetails> {
-    const fromUser = ` FROM esms.cltx_user WHERE USER_ID = ${sqlString(userId)}`;
-    const sql =
+    const profileSource = `FROM esms.cltx_user WHERE USER_ID = ${sqlString(userId)}`;
+    const profileQuery =
       ['USER_ID', 'USER_NAME', 'USER_DEPT', 'USER_STATUS']
-        .map((column) => `SELECT '${column}' AS _DESC, ${column} AS _VALUE${fromUser}`)
+        .map((fieldName) => `SELECT '${fieldName}' AS _DESC, ${fieldName} AS _VALUE ${profileSource}`)
         .join(' UNION ALL ') + ';';
-    console.log('[SQL]: ', sql)
-    const result = await firstValueFrom(this.api.query<UserDetailRow[]>(sql));
-    if (result?.status !== 'PASS' || !Array.isArray(result.message)) {
+    const profileResponse = await firstValueFrom(this.api.query<UserDetailRow[]>(profileQuery));
+    if (profileResponse?.status !== 'PASS' || !Array.isArray(profileResponse.message)) {
       throw new Error('Credentials were accepted, but user details could not be loaded.');
     }
 
-    const rows = result.message;
-    const valueOf = (column: string) => String(rows.find((row) => row?._DESC === column)?._VALUE ?? '');
+    const profileRows = profileResponse.message;
+    const profileValue = (fieldName: string) =>
+      String(profileRows.find((row) => row?._DESC === fieldName)?._VALUE ?? '');
     const user: UserDetails = {
-      userId: valueOf('USER_ID'),
-      userName: valueOf('USER_NAME'),
-      department: valueOf('USER_DEPT'),
-      status: valueOf('USER_STATUS'),
+      userId: profileValue('USER_ID'),
+      userName: profileValue('USER_NAME'),
+      department: profileValue('USER_DEPT'),
+      status: profileValue('USER_STATUS'),
     };
 
     if (user.userId.trim() === '') {
@@ -185,23 +190,27 @@ export class LoginService {
 }
 
 function withoutDomain(username: string): string {
-  const name = (username.includes('\\') ? username.split('\\')[1] : username).trim();
-  if (name === '') {
+  const userId = (username.includes('\\') ? username.split('\\')[1] : username).trim();
+  if (userId === '') {
     throw new Error('Please enter a valid User ID.');
   }
-  return name;
+  return userId;
 }
 
 
-function requireAccepted(result: ApiResult<CredentialReply>, rejectedMessage: string): void {
-  if (result?.status !== 'PASS') {
-    const serverMessage = typeof result?.message === 'string' ? result.message : '';
+function requireAccepted(
+  credentialResponse: ApiResult<CredentialReply>,
+  rejectedMessage: string,
+): void {
+  if (credentialResponse?.status !== 'PASS') {
+    const serverMessage =
+      typeof credentialResponse?.message === 'string' ? credentialResponse.message : '';
     throw new Error(serverMessage || 'The server could not complete credential validation.');
   }
-  if (result.message === 0) {
+  if (credentialResponse.message === 0) {
     throw new Error(rejectedMessage);
   }
-  if (result.message !== 1) {
+  if (credentialResponse.message !== 1) {
     throw new Error('The server returned an unexpected authentication response.');
   }
 }
@@ -210,9 +219,9 @@ function redirectToAzure(redirectUrl: string | undefined): void {
   if (!redirectUrl) {
     throw new Error('The server did not return an Azure sign-in address.');
   }
-  const target = new URL(redirectUrl);
-  if (target.protocol !== 'https:') {
+  const redirectTarget = new URL(redirectUrl);
+  if (redirectTarget.protocol !== 'https:') {
     throw new Error('The server returned an invalid Azure sign-in address.');
   }
-  window.location.assign(target.href);
+  window.location.assign(redirectTarget.href);
 }

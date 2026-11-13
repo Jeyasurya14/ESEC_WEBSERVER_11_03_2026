@@ -11,10 +11,10 @@ function isBlank(value: unknown): value is null | undefined | '' {
 
 export function formatNumber(value: unknown): string {
   if (isBlank(value)) return '';
-  const number = Number(value);
-  return Number.isNaN(number)
+  const numericValue = Number(value);
+  return Number.isNaN(numericValue)
     ? asText(value)
-    : number.toLocaleString('en-US', { maximumFractionDigits: 6 });
+    : numericValue.toLocaleString('en-US', { maximumFractionDigits: 6 });
 }
 
 function asText(value: unknown): string {
@@ -23,8 +23,8 @@ function asText(value: unknown): string {
 
 export function formatCompact(value: unknown): string {
   if (isBlank(value)) return '';
-  const number = Number(value);
-  if (Number.isNaN(number)) return asText(value);
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) return asText(value);
 
   const units: [number, string][] = [
     [1e12, 'T'],
@@ -32,10 +32,12 @@ export function formatCompact(value: unknown): string {
     [1e6, 'M'],
     [1e3, 'K'],
   ];
-  const unit = units.find(([size]) => Math.abs(number) >= size);
-  if (unit) return `${(number / unit[0]).toFixed(3)} ${unit[1]}`;
+  const matchingUnit = units.find(([size]) => Math.abs(numericValue) >= size);
+  if (matchingUnit) return `${(numericValue / matchingUnit[0]).toFixed(3)} ${matchingUnit[1]}`;
 
-  return Number.isInteger(number) ? String(number) : String(Number(number.toFixed(4)));
+  return Number.isInteger(numericValue)
+    ? String(numericValue)
+    : String(Number(numericValue.toFixed(4)));
 }
 
 export const ROW_NUMBER_COLUMN = 'sno';
@@ -81,8 +83,8 @@ export function numberColumn<T>(
 
 export function toNumber(value: unknown): number | null {
   if (isBlank(value)) return null;
-  const number = Number(value);
-  return Number.isNaN(number) ? null : number;
+  const numericValue = Number(value);
+  return Number.isNaN(numericValue) ? null : numericValue;
 }
 
 export function compactColumn<T>(

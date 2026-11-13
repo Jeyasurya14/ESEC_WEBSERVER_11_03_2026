@@ -66,10 +66,10 @@ export class BrowserStorage {
       return null;
     }
     try {
-      const value: unknown = JSON.parse(
+      const decodedValue: unknown = JSON.parse(
         CryptoJS.AES.decrypt(stored, OBFUSCATION_KEY).toString(CryptoJS.enc.Utf8),
       );
-      return typeof value === 'string' && value !== '' ? value : null;
+      return typeof decodedValue === 'string' && decodedValue !== '' ? decodedValue : null;
     } catch {
       return null; // unreadable or tampered with: treat as absent
     }

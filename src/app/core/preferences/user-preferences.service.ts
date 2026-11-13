@@ -5,7 +5,7 @@ import { LoginService } from '../auth/login.service';
 
 export type StoredPreferences = Record<string, unknown>;
 
-const NEVER_SAVED = ['password'];
+const NON_PERSISTENT_PREFERENCE_KEYS = ['password'];
 
 @Injectable({ providedIn: 'root' })
 export class UserPreferencesService {
@@ -35,16 +35,20 @@ export class UserPreferencesService {
 
   private async fetch(userId: string): Promise<StoredPreferences> {
     try {
-      const result = await firstValueFrom(
+      const preferenceResponse = await firstValueFrom(
         this.api.call<Array<{ pref?: string }>>(
           `call esms_m.a_user_pref_load(${sqlString(userId)});`,
         ),
       );
-      const text =
-        result?.status === 'PASS' && Array.isArray(result.message) ? result.message[0]?.pref : '';
+      const preferencesJson =
+        preferenceResponse?.status === 'PASS' && Array.isArray(preferenceResponse.message)
+          ? preferenceResponse.message[0]?.pref
+          : '';
 
-      const [saved] = text ? (JSON.parse(text) as StoredPreferences[]) : [];
-      return saved && typeof saved === 'object' ? saved : {};
+      const [savedPreferences] = preferencesJson
+        ? (JSON.parse(preferencesJson) as StoredPreferences[])
+        : [];
+      return savedPreferences && typeof savedPreferences === 'object' ? savedPreferences : {};
     } catch {
       return {};
     }
@@ -57,11 +61,11 @@ export class UserPreferencesService {
     }
     this.unsaved = false;
 
-    const preferences = { ...(await this.load()) };
-    NEVER_SAVED.forEach((key) => delete preferences[key]);
+    const preferencesToSave = { ...(await this.load()) };
+    NON_PERSISTENT_PREFERENCE_KEYS.forEach((key) => delete preferencesToSave[key]);
 
-    const sql = `call esms_m.a_user_pref_insert(${sqlString(this.userId)}, ${sqlString(JSON.stringify([preferences]))});`;
-    await firstValueFrom(this.api.write(sql)).catch(() => undefined); // a failed save keeps the choice for this session
+    const saveQuery = `call esms_m.a_user_pref_insert(${sqlString(this.userId)}, ${sqlString(JSON.stringify([preferencesToSave]))});`;
+    await firstValueFrom(this.api.write(saveQuery)).catch(() => undefined); // a failed save keeps the choice for this session
 
     await this.writeUntilSaved();
   }

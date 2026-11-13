@@ -87,27 +87,28 @@ export function prepareRows(
   workingHoursPerDay: number,
 ): OrganizationRow[] {
   return rows.map((row) => {
-    const available = Number(((Number(row.tlh_24) * workingHoursPerDay) / 24).toFixed(4));
-    const used = Number(row.tot_du_q);
-    const percentUsed = available !== 0 ? Number(((used / available) * 100).toFixed(1)) : 0;
+    const availableHours = Number(((Number(row.tlh_24) * workingHoursPerDay) / 24).toFixed(4));
+    const usedHours = Number(row.tot_du_q);
+    const usagePercent =
+      availableHours !== 0 ? Number(((usedHours / availableHours) * 100).toFixed(1)) : 0;
 
-    return { ...row, tlh_24: available, per_tot_du_q: percentUsed };
+    return { ...row, tlh_24: availableHours, per_tot_du_q: usagePercent };
   });
 }
 
 export function visibleRows(
-  rows: OrganizationRow[],
-  filters: OrganizationFilters,
-  settings: ReportSettings,
+  organizationRows: OrganizationRow[],
+  selectedFilters: OrganizationFilters,
+  reportSettings: ReportSettings,
   today: Date,
 ): OrganizationRow[] {
-  const percent = percentField(filters.option);
+  const selectedPercentField = percentField(selectedFilters.option);
 
-  return rows.filter(
+  return organizationRows.filter(
     (row) =>
-      matchesServerStatus(row.status, filters.serverStatus) &&
-      (!filters.notExpired || isNotExpired(row.expiry, today)) &&
-      matchesBands(row[percent], filters.bands, settings),
+      matchesServerStatus(row.status, selectedFilters.serverStatus) &&
+      (!selectedFilters.notExpired || isNotExpired(row.expiry, today)) &&
+      matchesBands(row[selectedPercentField], selectedFilters.bands, reportSettings),
   );
 }
 
@@ -118,16 +119,19 @@ export interface OrganizationTile {
   stats: GaugeStat[];
 }
 
-export function organizationTiles(rows: OrganizationRow[], option: UsageOption): OrganizationTile[] {
-  const percent = percentField(option);
-  const quantity = quantityField(option);
+export function organizationTiles(
+  organizationRows: OrganizationRow[],
+  selectedUsageOption: UsageOption,
+): OrganizationTile[] {
+  const selectedPercentField = percentField(selectedUsageOption);
+  const selectedQuantityField = quantityField(selectedUsageOption);
 
-  return rows.map((row) => ({
+  return organizationRows.map((row) => ({
     title: [row.sw, row.server, row.lic_name].filter(Boolean).join(', '),
-    percent: toNumber(row[percent]) ?? 0,
+    percent: toNumber(row[selectedPercentField]) ?? 0,
     stats: [
-      { label: 'Percentage', value: formatNumber(row[percent]) },
-      { label: 'Value', value: formatNumber(row[quantity]) },
+      { label: 'Percentage', value: formatNumber(row[selectedPercentField]) },
+      { label: 'Value', value: formatNumber(row[selectedQuantityField]) },
       { label: 'User', value: formatNumber(row.di) },
       { label: 'True Denial', value: formatNumber(row.td) },
       { label: 'Issued (Max)', value: formatNumber(row.max_qty_i) },
@@ -137,16 +141,21 @@ export function organizationTiles(rows: OrganizationRow[], option: UsageOption):
 }
 
 /** Keeps the tiles whose title matches the search text - the same text box the grid view uses. */
-export function searchTiles(tiles: OrganizationTile[], search: string): OrganizationTile[] {
-  const query = search.trim().toLowerCase();
-  return query ? tiles.filter((tile) => tile.title.toLowerCase().includes(query)) : tiles;
+export function searchTiles(
+  organizationTiles: OrganizationTile[],
+  searchText: string,
+): OrganizationTile[] {
+  const normalizedSearch = searchText.trim().toLowerCase();
+  return normalizedSearch
+    ? organizationTiles.filter((tile) => tile.title.toLowerCase().includes(normalizedSearch))
+    : organizationTiles;
 }
 
-export function organizationColumns(settings: ReportSettings): Column<OrganizationRow>[] {
-  const usage = (headerName: string, option: Lowercase<UsageOption>, hide = false) =>
+export function organizationColumns(reportSettings: ReportSettings): Column<OrganizationRow>[] {
+  const usageColumns = (headerName: string, option: Lowercase<UsageOption>, hide = false) =>
     columnGroup<OrganizationRow>(headerName, [
       numberColumn(`qty_${option}`, 'Qty', { width: 90, hide }),
-      percentColumn(`p_${option}`, '%', settings, { width: 60, hide }),
+      percentColumn(`p_${option}`, '%', reportSettings, { width: 60, hide }),
     ]);
 
   return [
@@ -165,22 +174,22 @@ export function organizationColumns(settings: ReportSettings): Column<Organizati
       numberColumn('qty_r', 'Max', { width: 90, hide: true }),
     ]),
     numberColumn('qty_db', 'Borrow', { width: 80 }),
-    usage('Day Peak', 'dp'),
-    usage('Day Avg', 'da', true),
-    usage('Day Peak Mean', 'dpm', true),
-    usage('Day Avg Mean', 'dam', true),
-    usage('Work Peak', 'wp'),
-    usage('Work Avg', 'wa', true),
-    usage('Work Peak Mean', 'wpm', true),
-    usage('Work Avg Mean', 'wam', true),
-    columnGroup(`License Hours - ${settings.workingHoursPerDay} Hrs`, [
+    usageColumns('Day Peak', 'dp'),
+    usageColumns('Day Avg', 'da', true),
+    usageColumns('Day Peak Mean', 'dpm', true),
+    usageColumns('Day Avg Mean', 'dam', true),
+    usageColumns('Work Peak', 'wp'),
+    usageColumns('Work Avg', 'wa', true),
+    usageColumns('Work Peak Mean', 'wpm', true),
+    usageColumns('Work Avg Mean', 'wam', true),
+    columnGroup(`License Hours - ${reportSettings.workingHoursPerDay} Hrs`, [
       compactColumn('tot_du_q', 'Used', { width: 90 }),
       compactColumn('tlh_24', 'Available', { width: 100 }),
-      percentColumn('per_tot_du_q', '%', settings, { width: 75 }),
+      percentColumn('per_tot_du_q', '%', reportSettings, { width: 75 }),
     ]),
     numberColumn('di', 'User', { width: 60 }),
-    numberColumn('ndivn', settings.divisionLabel, { width: 60 }),
-    numberColumn('ndept', settings.departmentLabel, { width: 60 }),
+    numberColumn('ndivn', reportSettings.divisionLabel, { width: 60 }),
+    numberColumn('ndept', reportSettings.departmentLabel, { width: 60 }),
     numberColumn('de', 'Denial Count', { width: 75, hide: true }),
     numberColumn('ad', 'Denial Users', { width: 75, hide: true }),
     numberColumn('td', 'True Denial', { width: 75 }),

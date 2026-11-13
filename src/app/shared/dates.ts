@@ -13,21 +13,21 @@ export const MONTHS = [
   'Dec',
 ];
 
-export function monthIndex(name: string): number {
-  return MONTHS.findIndex((month) => month.toLowerCase() === name.toLowerCase());
+export function monthIndex(monthName: string): number {
+  return MONTHS.findIndex((month) => month.toLowerCase() === monthName.toLowerCase());
 }
 
-export function parseDate(text: unknown): Date | null {
-  const value = asText(text).trim();
-  const iso = /^(\d{4})[-/](\d{2})[-/](\d{2})$/.exec(value);
-  const named = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(value);
+export function parseDate(input: unknown): Date | null {
+  const dateText = asText(input).trim();
+  const isoParts = /^(\d{4})[-/](\d{2})[-/](\d{2})$/.exec(dateText);
+  const namedParts = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(dateText);
 
-  if (iso) {
-    return localDate(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+  if (isoParts) {
+    return localDate(Number(isoParts[1]), Number(isoParts[2]) - 1, Number(isoParts[3]));
   }
-  if (named) {
-    const month = monthIndex(named[2]);
-    return month < 0 ? null : localDate(Number(named[3]), month, Number(named[1]));
+  if (namedParts) {
+    const month = monthIndex(namedParts[2]);
+    return month < 0 ? null : localDate(Number(namedParts[3]), month, Number(namedParts[1]));
   }
   return null;
 }

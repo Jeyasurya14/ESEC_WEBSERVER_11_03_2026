@@ -1,11 +1,6 @@
 import { ColDef, ColGroupDef } from 'ag-grid-community';
 import { Column } from './columns';
 
-/**
- * "My Columns": which of the common columns each user sees, in every report that has them. Saved in
- * the user's preferences under `my_columns` as [{ colId, name, hide }], as the company app does.
- * These are the company app's defaults for a user who never changed them.
- */
 const DEFAULT_HIDDEN: Readonly<Record<string, boolean>> = {
   user_name: true,
   region: true,
@@ -47,7 +42,6 @@ const DEFAULT_HIDDEN: Readonly<Record<string, boolean>> = {
   expiry: false,
 };
 
-/** column id -> hidden. The user's saved choices over the defaults. */
 export function myColumnsFrom(saved: unknown): Record<string, boolean> {
   const hidden = { ...DEFAULT_HIDDEN };
   if (Array.isArray(saved)) {

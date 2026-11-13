@@ -27,18 +27,18 @@ export class HomeComponent {
   readonly notice = signal('');
 
   async openReport(menu: UserMenu): Promise<void> {
-    const permitted = this.loginService.menus().find((item) => {
+    const permittedMenu = this.loginService.menus().find((item) => {
       return item.mainMenuName === menu.mainMenuName && item.subMenuName === menu.subMenuName;
     });
-    if (!permitted) {
+    if (!permittedMenu) {
       return;
     }
 
     this.notice.set('');
     try {
-      await this.tabs.open(permitted);
+      await this.tabs.open(permittedMenu);
     } catch {
-      this.notice.set(`Could not open ${permitted.subMenuName}. Please try again.`);
+      this.notice.set(`Could not open ${permittedMenu.subMenuName}. Please try again.`);
     }
   }
 

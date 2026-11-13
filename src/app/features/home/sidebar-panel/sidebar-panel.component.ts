@@ -23,10 +23,10 @@ export class SidebarPanelComponent implements OnChanges {
   readonly filterText = signal('');
 
   readonly filteredScreens = computed(() => {
-    const filter = this.filterText().trim().toLowerCase();
+    const searchText = this.filterText().trim().toLowerCase();
 
-   return this.screens().filter((screen) => {
-      return screen.subMenuName.toLowerCase().includes(filter);
+    return this.screens().filter((screen) => {
+      return screen.subMenuName.toLowerCase().includes(searchText);
     });
   });
 
@@ -35,8 +35,8 @@ export class SidebarPanelComponent implements OnChanges {
   }
 
   updateFilter(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.filterText.set(input.value);
+    const searchInput = event.target as HTMLInputElement;
+    this.filterText.set(searchInput.value);
   }
 
   selectScreen(screen: UserMenu): void {

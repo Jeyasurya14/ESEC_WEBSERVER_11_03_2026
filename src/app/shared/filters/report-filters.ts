@@ -22,7 +22,7 @@ export class ReportFilters {
 
   readonly range = signal<ReportRange>({ kind: 'days', days: '30' });
   readonly featureGroup = signal('All Feature');
-  readonly option = signal<UsageOption>('DP');
+  readonly option = signal<UsageOption>('WP');
   readonly bands = signal<UsageBand[]>([...ALL_BANDS]);
   readonly serverStatus = signal<ServerStatus>({ ...DEFAULT_SERVER_STATUS });
   readonly notExpired = signal(true);
@@ -30,18 +30,18 @@ export class ReportFilters {
   readonly search = signal('');
   readonly myColumns = signal<Record<string, boolean>>(myColumnsFrom(undefined));
 
-  private lastSaved = '';
+  private lastSavedSnapshot = '';
 
   constructor() {
     effect(() => {
-      const choices = this.choices();
       if (!this.settings()) {
         return;
       }
-      const snapshot = JSON.stringify(choices);
-      if (snapshot !== this.lastSaved) {
-        this.lastSaved = snapshot;
-        untracked(() => void this.preferences.save(choices));
+      const savedChoices = this.toSavedPreferences();
+      const snapshot = JSON.stringify(savedChoices);
+      if (snapshot !== this.lastSavedSnapshot) {
+        this.lastSavedSnapshot = snapshot;
+        untracked(() => void this.preferences.save(savedChoices));
       }
     });
   }
@@ -53,8 +53,8 @@ export class ReportFilters {
         this.settingsService.load(),
         this.preferences.load(),
       ]);
-      this.apply(saved, settings);
-      this.lastSaved = JSON.stringify(this.choices());
+      this.restore(saved, settings);
+      this.lastSavedSnapshot = JSON.stringify(this.toSavedPreferences());
       this.settings.set(settings);
       return true;
     } catch {
@@ -63,17 +63,17 @@ export class ReportFilters {
     }
   }
 
-  private apply(saved: StoredPreferences, settings: ReportSettings): void {
-    this.range.set(parseRange(text(saved['range_main']) || settings.defaultRange));
-    this.option.set(toUsageOption(text(saved['option']) || settings.defaultOption));
-    this.featureGroup.set(text(saved['my_feature']) || settings.defaultFeatureGroup);
+  private restore(saved: StoredPreferences, settings: ReportSettings): void {
+    this.range.set(parseRange(preferenceText(saved['range_main']) || settings.defaultRange));
+    this.option.set(toUsageOption(preferenceText(saved['option']) || settings.defaultOption));
+    this.featureGroup.set(preferenceText(saved['my_feature']) || settings.defaultFeatureGroup);
     this.bands.set(bandsFrom(saved['lmh_check']));
     this.serverStatus.set(serverStatusFrom(saved['act_inact']));
     this.notExpired.set(saved['not_expired'] !== 'N');
     this.myColumns.set(myColumnsFrom(saved['my_columns']));
   }
 
-  private choices(): StoredPreferences {
+  private toSavedPreferences(): StoredPreferences {
     return {
       range_main: formatRange(this.range()),
       option: this.option(),
@@ -85,8 +85,10 @@ export class ReportFilters {
   }
 }
 
-function text(value: unknown): string {
-  return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+function preferenceText(preferenceValue: unknown): string {
+  return typeof preferenceValue === 'string' || typeof preferenceValue === 'number'
+    ? String(preferenceValue)
+    : '';
 }
 
 interface StoredBands {
@@ -96,35 +98,37 @@ interface StoredBands {
   boolred: boolean;
 }
 
-const colourKey: Record<UsageBand, 'boolgreen' | 'boolyellow' | 'boolred'> = {
+const BAND_PREFERENCE_KEYS: Record<UsageBand, 'boolgreen' | 'boolyellow' | 'boolred'> = {
   low: 'boolgreen',
   medium: 'boolyellow',
   high: 'boolred',
 };
 
 export function bandsFrom(saved: unknown): UsageBand[] {
-  const flags = saved as Partial<StoredBands> | undefined;
-  if (!flags || typeof flags !== 'object') {
+  const savedFlags = saved as Partial<StoredBands> | undefined;
+  if (!savedFlags || typeof savedFlags !== 'object') {
     return [...ALL_BANDS];
   }
-  return ALL_BANDS.filter((band) => flags[colourKey[band]] !== false);
+  return ALL_BANDS.filter((band) => savedFlags[BAND_PREFERENCE_KEYS[band]] !== false);
 }
 
 export function bandsToStored(bands: UsageBand[]): StoredBands {
-  const has = (band: UsageBand) => bands.includes(band);
+  const includesBand = (band: UsageBand) => bands.includes(band);
   return {
-    bandstate: (has('low') ? 4 : 0) | (has('medium') ? 2 : 0) | (has('high') ? 1 : 0),
-    boolgreen: has('low'),
-    boolyellow: has('medium'),
-    boolred: has('high'),
+    bandstate:
+      (includesBand('low') ? 4 : 0) |
+      (includesBand('medium') ? 2 : 0) |
+      (includesBand('high') ? 1 : 0),
+    boolgreen: includesBand('low'),
+    boolyellow: includesBand('medium'),
+    boolred: includesBand('high'),
   };
 }
 
 export function serverStatusFrom(saved: unknown): ServerStatus {
-  const status = saved as Partial<ServerStatus> | undefined;
-  if (!status || typeof status !== 'object') {
+  const savedStatus = saved as Partial<ServerStatus> | undefined;
+  if (!savedStatus || typeof savedStatus !== 'object') {
     return { ...DEFAULT_SERVER_STATUS };
   }
-  return { active: status.active !== false, inactive: status.inactive === true };
+  return { active: savedStatus.active !== false, inactive: savedStatus.inactive === true };
 }
-

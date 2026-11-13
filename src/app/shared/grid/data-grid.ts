@@ -44,16 +44,14 @@ import { ApiService } from '../../core/api/api.service';
 import { Column, ROW_NUMBER_COLUMN, formatNumber } from './columns';
 import { applyMyColumns } from './my-columns';
 
-// The grid features the company app's reports use. ValidationModule explains misconfigured
-// columns in the console during development only.
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   TextFilterModule,
   NumberFilterModule,
   SetFilterModule,
   QuickFilterModule,
-  RowApiModule, // the row count
-  RenderApiModule, // renumbering rows
+  RowApiModule,
+  RenderApiModule,
   CellStyleModule,
   ColumnMenuModule,
   ContextMenuModule,
@@ -74,7 +72,7 @@ const THEME = themeBalham.withParams({
   headerTextColor: '#ffffff',
   headerColumnBorder: { color: 'rgba(255, 255, 255, 0.35)' },
   headerColumnBorderHeight: '100%',
-  oddRowBackgroundColor: '#f3f3f3',
+  oddRowBackgroundColor: '#f5f9fd',
   columnBorder: { color: 'rgba(189, 195, 199, 0.5)' },
 });
 
@@ -207,9 +205,9 @@ export class DataGrid<T> {
   );
 
   constructor() {
-    const key = inject(ApiService).getSetting('AG_GRID_LICENSE_KEY');
-    if (key && !licenseApplied) {
-      LicenseManager.setLicenseKey(key);
+    const licenseKey = inject(ApiService).getSetting('AG_GRID_LICENSE_KEY');
+    if (licenseKey && !licenseApplied) {
+      LicenseManager.setLicenseKey(licenseKey);
       licenseApplied = true;
     }
   }
@@ -237,6 +235,6 @@ export class DataGrid<T> {
   }
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (char) => `&#${char.codePointAt(0)};`);
+function escapeHtml(htmlText: string): string {
+  return htmlText.replace(/[&<>"']/g, (char) => `&#${char.codePointAt(0)};`);
 }

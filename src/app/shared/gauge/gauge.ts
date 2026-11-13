@@ -7,22 +7,22 @@ const START_ANGLE = 180;
 const END_ANGLE = 0;
 
 function pointOnCircle(angleDeg: number, radius: number): { x: number; y: number } {
-  const angleRad = (angleDeg * Math.PI) / 180;
+  const angleRadians = (angleDeg * Math.PI) / 180;
   return {
-    x: CENTER + radius * Math.cos(angleRad),
-    y: CENTER - radius * Math.sin(angleRad),
+    x: CENTER + radius * Math.cos(angleRadians),
+    y: CENTER - radius * Math.sin(angleRadians),
   };
 }
 
-export function angleForPercent(percent: number): number {
-  const clamped = Math.min(Math.max(percent, 0), 100);
-  return START_ANGLE + (clamped / 100) * (END_ANGLE - START_ANGLE);
+export function angleForPercent(usagePercent: number): number {
+  const clampedPercent = Math.min(Math.max(usagePercent, 0), 100);
+  return START_ANGLE + (clampedPercent / 100) * (END_ANGLE - START_ANGLE);
 }
 
 export function arcPath(fromPercent: number, toPercent: number): string {
-  const start = pointOnCircle(angleForPercent(fromPercent), RADIUS);
-  const end = pointOnCircle(angleForPercent(toPercent), RADIUS);
-  return `M ${start.x} ${start.y} A ${RADIUS} ${RADIUS} 0 0 1 ${end.x} ${end.y}`;
+  const startPoint = pointOnCircle(angleForPercent(fromPercent), RADIUS);
+  const endPoint = pointOnCircle(angleForPercent(toPercent), RADIUS);
+  return `M ${startPoint.x} ${startPoint.y} A ${RADIUS} ${RADIUS} 0 0 1 ${endPoint.x} ${endPoint.y}`;
 }
 
 interface GaugeZone {

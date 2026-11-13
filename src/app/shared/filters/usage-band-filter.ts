@@ -17,9 +17,9 @@ export const BAND_COLORS: Readonly<Record<UsageBand, string>> = {
   high: '#ef4444',
 };
 
-export function bandOf(percent: number, limits: BandLimits): UsageBand {
-  if (percent < limits.lowBelow) return 'low';
-  if (percent < limits.highFrom) return 'medium';
+export function bandOf(usagePercent: number, limits: BandLimits): UsageBand {
+  if (usagePercent < limits.lowBelow) return 'low';
+  if (usagePercent < limits.highFrom) return 'medium';
   return 'high';
 }
 

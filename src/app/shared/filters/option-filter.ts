@@ -17,11 +17,11 @@ export const WORK_OPTIONS = [
   { value: 'WAM', label: 'Avg Mean (WAM)' },
 ] as const;
 
-export function toUsageOption(text: string): UsageOption {
-  const value = text.trim().toUpperCase();
-  return [...DAY_OPTIONS, ...WORK_OPTIONS].some((option) => option.value === value)
-    ? (value as UsageOption)
-    : 'DP';
+const USAGE_OPTIONS = [...DAY_OPTIONS, ...WORK_OPTIONS];
+
+export function toUsageOption(savedOption: string): UsageOption {
+  const normalizedOption = savedOption.trim().toUpperCase();
+  return USAGE_OPTIONS.find((option) => option.value === normalizedOption)?.value ?? 'DP';
 }
 
 export type PercentField = `p_${Lowercase<UsageOption>}`;
@@ -57,7 +57,7 @@ export class OptionFilter {
 
   protected readonly options = OPTIONS;
 
-  protected pickOption(value: string): void {
-    this.option.set(toUsageOption(value));
+  protected pickOption(selectedOption: string): void {
+    this.option.set(toUsageOption(selectedOption));
   }
 }

@@ -23,9 +23,9 @@ const REPORT_ENTRIES: ReadonlyArray<[string, () => Promise<Type<unknown>>]> = [
 
 export const REPORTS = new Map<string, () => Promise<Type<unknown>>>(REPORT_ENTRIES);
 
-export function assertNoDuplicateReportKeys(entries: ReadonlyArray<[string, unknown]>): void {
-  const uniqueKeys = new Set(entries.map(([key]) => key));
-  if (uniqueKeys.size !== entries.length) {
+export function assertNoDuplicateReportKeys(reportEntries: ReadonlyArray<[string, unknown]>): void {
+  const uniqueReportKeys = new Set(reportEntries.map(([reportKey]) => reportKey));
+  if (uniqueReportKeys.size !== reportEntries.length) {
     throw new Error('reports.ts registers the same report key twice - check REPORT_ENTRIES.');
   }
 }
@@ -35,13 +35,13 @@ assertNoDuplicateReportKeys(REPORT_ENTRIES);
 const RELOADED_AFTER_LOAD_FAILURE = 'esec:reloaded-after-report-load-failure';
 
 export async function loadReport(menu: UserMenu): Promise<Type<unknown>> {
-  const loader = REPORTS.get(`${menu.mainMenuName}/${menu.subMenuName}`);
-  if (!loader) {
+  const reportLoader = REPORTS.get(`${menu.mainMenuName}/${menu.subMenuName}`);
+  if (!reportLoader) {
     return ReportPlaceholderComponent;
   }
 
   try {
-    const component = await loader();
+    const component = await reportLoader();
     sessionStorage.removeItem(RELOADED_AFTER_LOAD_FAILURE);
     return component;
   } catch (error) {

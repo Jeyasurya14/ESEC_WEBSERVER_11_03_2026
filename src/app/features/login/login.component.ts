@@ -31,19 +31,19 @@ export class LoginComponent {
     });
 
   onLoginTypeChange(): void {
-    const selectedType = this.form.controls.loginType.value;
-    const username = this.form.controls.username;
+    const selectedLoginType = this.form.controls.loginType.value;
+    const usernameControl = this.form.controls.username;
 
-    this.loginType.set(selectedType);
+    this.loginType.set(selectedLoginType);
     this.errorMessage.set('');
     this.form.controls.password.reset();
     
-    if (selectedType === 'ADMIN') {
-      username.setValue('admin');
-      username.disable();
+    if (selectedLoginType === 'ADMIN') {
+      usernameControl.setValue('admin');
+      usernameControl.disable();
     } else {
-      username.enable();
-      username.reset();
+      usernameControl.enable();
+      usernameControl.reset();
     }
   }
 
@@ -69,10 +69,10 @@ export class LoginComponent {
     try {
       await this.loginService.signInUser(loginType, username, password);
     } catch (error) {
-      const isNetworkFailure =
+      const isConnectionFailure =
         !(error instanceof Error) || error.name === 'HttpErrorResponse' || error.name === 'TimeoutError';
       this.errorMessage.set(
-        isNetworkFailure
+        isConnectionFailure
           ? 'Unable to connect or complete sign-in. Please try again.'
           : (error as Error).message,
       );

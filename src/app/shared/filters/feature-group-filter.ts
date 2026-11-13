@@ -26,27 +26,30 @@ export class FeatureGroupsService {
   private readonly api = inject(ApiService);
   private readonly loginService = inject(LoginService);
   private readonly storage = inject(BrowserStorage);
-  private readonly loaded = new Map<string, Promise<string[]>>();
+  private readonly groupsByUserId = new Map<string, Promise<string[]>>();
 
   load(): Promise<string[]> {
     const userId = this.loginService.user()?.userId ?? '';
-    let groups = this.loaded.get(userId);
-    if (!groups) {
-      groups = this.fetch(userId);
-      this.loaded.set(userId, groups);
+    let loadedGroups = this.groupsByUserId.get(userId);
+    if (!loadedGroups) {
+      loadedGroups = this.fetch(userId);
+      this.groupsByUserId.set(userId, loadedGroups);
     }
-    return groups;
+    return loadedGroups;
   }
 
   private async fetch(userId: string): Promise<string[]> {
-    const result = await firstValueFrom(
+    const groupResponse = await firstValueFrom(
       this.api.call<Array<{ COLLECTION_NAME: string }>>(
         `call R_A_CLTX_ESEC_MF_LOAD(${sqlString(userId)});`,
       ),
     ).catch(() => null);
 
-    const rows = result?.status === 'PASS' && Array.isArray(result.message) ? result.message : [];
-    const userGroups = rows.map((row) => row.COLLECTION_NAME).filter(Boolean);
+    const groupRows =
+      groupResponse?.status === 'PASS' && Array.isArray(groupResponse.message)
+        ? groupResponse.message
+        : [];
+    const userGroups = groupRows.map((row) => row.COLLECTION_NAME).filter(Boolean);
 
     this.storage.set(StorageKey.featureGroups, userGroups.join(','));
     return [...BUILT_IN_GROUPS, ...userGroups];
@@ -70,9 +73,11 @@ export class FeatureGroupFilter {
   protected readonly groups = signal<string[]>(BUILT_IN_GROUPS);
 
   protected readonly options = computed<DropdownOption[]>(() => {
-    const groups = this.groups();
-    const names = groups.includes(this.group()) ? groups : [this.group(), ...groups];
-    return names.map((name) => ({ value: name, label: name }));
+    const availableGroups = this.groups();
+    const groupNames = availableGroups.includes(this.group())
+      ? availableGroups
+      : [this.group(), ...availableGroups];
+    return groupNames.map((groupName) => ({ value: groupName, label: groupName }));
   });
 
   constructor() {

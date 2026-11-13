@@ -13,29 +13,31 @@ export class MenuService {
       return adminMenus();
     }
 
-    const catalog = await this.loadCatalog();
-    const permissions = await this.loadPermissions(userId);
-    return resolvePermittedMenus(catalog, permissions);
+    const menuCatalog = await this.loadCatalog();
+    const permissionList = await this.loadPermissions(userId);
+    return resolvePermittedMenus(menuCatalog, permissionList);
   }
 
   private async loadCatalog(): Promise<MenuDefinition[]> {
-    const catalog = this.api.centralized
+    const menuCatalog = this.api.centralized
       ? this.api.centralMenus
       : await this.api.loadAsset<MenuDefinition[]>('assets/menu.json');
 
-    if (!Array.isArray(catalog) || catalog.length === 0) {
+    if (!Array.isArray(menuCatalog) || menuCatalog.length === 0) {
       throw new Error('Application menu configuration is missing.');
     }
-    return catalog;
+    return menuCatalog;
   }
 
   private async loadPermissions(userId: string): Promise<string> {
-    const sql = `SELECT RT_A_LIST FROM esms.cltx_user_rt_a WHERE RT_A_ID=${sqlString(userId)}`;
-    const result = await firstValueFrom(this.api.query<MenuPermissionRow[]>(sql));
+    const permissionQuery = `SELECT RT_A_LIST FROM esms.cltx_user_rt_a WHERE RT_A_ID=${sqlString(userId)}`;
+    const permissionResponse = await firstValueFrom(
+      this.api.query<MenuPermissionRow[]>(permissionQuery),
+    );
 
-    if (result?.status !== 'PASS' || !Array.isArray(result.message)) {
+    if (permissionResponse?.status !== 'PASS' || !Array.isArray(permissionResponse.message)) {
       throw new Error('User details loaded, but menu permissions could not be loaded.');
     }
-    return result.message[0]?.RT_A_LIST ?? '';
+    return permissionResponse.message[0]?.RT_A_LIST ?? '';
   }
 }

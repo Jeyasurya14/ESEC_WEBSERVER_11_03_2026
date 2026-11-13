@@ -115,8 +115,10 @@ export class Dropdown {
   });
 
   protected readonly activeOptionId = computed(() => {
-    const active = this.activeValue();
-    return this.open() && active !== null ? this.optionId(active) : null;
+    const activeOptionValue = this.activeValue();
+    return this.open() && activeOptionValue !== null
+      ? this.optionId(activeOptionValue)
+      : null;
   });
 
   constructor() {
@@ -124,14 +126,14 @@ export class Dropdown {
       if (!this.open()) {
         return;
       }
-      const close = () => this.open.set(false);
-      document.addEventListener('scroll', close, { capture: true, passive: true });
-      onCleanup(() => document.removeEventListener('scroll', close, { capture: true }));
+      const closeDropdown = () => this.open.set(false);
+      document.addEventListener('scroll', closeDropdown, { capture: true, passive: true });
+      onCleanup(() => document.removeEventListener('scroll', closeDropdown, { capture: true }));
     });
   }
 
-  protected optionId(value: string): string {
-    return `${this.listId}-${value}`;
+  protected optionId(optionValue: string): string {
+    return `${this.listId}-${optionValue}`;
   }
 
   protected toggle(): void {
@@ -139,15 +141,19 @@ export class Dropdown {
     this.open.set(opening);
     if (opening) {
       this.activeValue.set(this.value());
-      const rect = this.element.nativeElement.getBoundingClientRect();
-      this.menuPosition.set({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      const triggerBounds = this.element.nativeElement.getBoundingClientRect();
+      this.menuPosition.set({
+        top: triggerBounds.bottom + 4,
+        left: triggerBounds.left,
+        width: triggerBounds.width,
+      });
     }
   }
 
-  protected choose(value: string): void {
+  protected choose(selectedOptionValue: string): void {
     this.open.set(false);
-    if (value !== this.value()) {
-      this.valueChange.emit(value);
+    if (selectedOptionValue !== this.value()) {
+      this.valueChange.emit(selectedOptionValue);
     }
   }
 
@@ -168,20 +174,20 @@ export class Dropdown {
   }
 
   protected onEnter(): void {
-    const active = this.activeValue();
-    if (this.open() && active !== null) {
-      this.choose(active);
+    const activeOptionValue = this.activeValue();
+    if (this.open() && activeOptionValue !== null) {
+      this.choose(activeOptionValue);
     }
   }
 
   private moveActive(step: 1 | -1): void {
-    const flat = this.options();
-    if (flat.length === 0) {
+    const allOptions = this.options();
+    if (allOptions.length === 0) {
       return;
     }
-    const currentIndex = flat.findIndex((option) => option.value === this.activeValue());
-    const nextIndex = Math.min(Math.max(currentIndex + step, 0), flat.length - 1);
-    this.activeValue.set(flat[nextIndex].value);
+    const currentIndex = allOptions.findIndex((option) => option.value === this.activeValue());
+    const nextIndex = Math.min(Math.max(currentIndex + step, 0), allOptions.length - 1);
+    this.activeValue.set(allOptions[nextIndex].value);
   }
 
   @HostListener('document:click', ['$event'])

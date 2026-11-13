@@ -24,59 +24,74 @@ const QUARTERS_LISTED = 8;
 const YEARS_LISTED = 5;
 
 export function rangeCall(
-  procedure: string,
+  procedureName: string,
   range: ReportRange,
-  before: string[],
-  after: string[],
+  leadingArguments: string[],
+  trailingArguments: string[],
 ): string {
-  const { suffix, values } = rangeArguments(range);
-  const args = [...before, ...values, ...after].map(sqlString).join(',');
-  return `call ${procedure}${suffix}(${args});`;
+  const { procedureSuffix, rangeValues } = rangeArguments(range);
+  const allArguments = [...leadingArguments, ...rangeValues, ...trailingArguments]
+    .map(sqlString)
+    .join(',');
+  return `call ${procedureName}${procedureSuffix}(${allArguments});`;
 }
 
-function rangeArguments(range: ReportRange): { suffix: string; values: string[] } {
-  switch (range.kind) {
+function rangeArguments(selectedRange: ReportRange): {
+  procedureSuffix: string;
+  rangeValues: string[];
+} {
+  switch (selectedRange.kind) {
     case 'days':
-      return { suffix: '', values: [range.days] };
+      return { procedureSuffix: '', rangeValues: [selectedRange.days] };
     case 'month':
-      return { suffix: '_month_year', values: [String(range.month), String(range.year)] };
+      return {
+        procedureSuffix: '_month_year',
+        rangeValues: [String(selectedRange.month), String(selectedRange.year)],
+      };
     case 'quarter':
-      return { suffix: '_qtr_year', values: [String(range.quarter), String(range.year)] };
+      return {
+        procedureSuffix: '_qtr_year',
+        rangeValues: [String(selectedRange.quarter), String(selectedRange.year)],
+      };
     case 'year':
-      return { suffix: '_year', values: [String(range.year)] };
+      return { procedureSuffix: '_year', rangeValues: [String(selectedRange.year)] };
   }
 }
 
-export function parseRange(text: string): ReportRange {
-  const value = text.trim();
-  const quarter = /^Q([1-4])-(\d{4})$/i.exec(value);
-  const month = /^([A-Za-z]{3})-(\d{4})$/.exec(value);
+export function parseRange(savedRange: string): ReportRange {
+  const rangeText = savedRange.trim();
+  const quarterMatch = /^Q([1-4])-(\d{4})$/i.exec(rangeText);
+  const monthMatch = /^([A-Za-z]{3})-(\d{4})$/.exec(rangeText);
 
-  if (quarter) {
-    return { kind: 'quarter', quarter: Number(quarter[1]), year: Number(quarter[2]) };
+  if (quarterMatch) {
+    return { kind: 'quarter', quarter: Number(quarterMatch[1]), year: Number(quarterMatch[2]) };
   }
-  if (month && monthIndex(month[1]) >= 0) {
-    return { kind: 'month', month: monthIndex(month[1]) + 1, year: Number(month[2]) };
+  if (monthMatch && monthIndex(monthMatch[1]) >= 0) {
+    return {
+      kind: 'month',
+      month: monthIndex(monthMatch[1]) + 1,
+      year: Number(monthMatch[2]),
+    };
   }
-  if (/^\d{4}$/.test(value)) {
-    return { kind: 'year', year: Number(value) };
+  if (/^\d{4}$/.test(rangeText)) {
+    return { kind: 'year', year: Number(rangeText) };
   }
 
-  const days = value === '7' ? '07' : value.toUpperCase();
-  const known = DAY_RANGES.some((range) => range.value === days);
-  return { kind: 'days', days: known ? days : '30' };
+  const dayRange = rangeText === '7' ? '07' : rangeText.toUpperCase();
+  const isKnownDayRange = DAY_RANGES.some((preset) => preset.value === dayRange);
+  return { kind: 'days', days: isKnownDayRange ? dayRange : '30' };
 }
 
-export function formatRange(range: ReportRange): string {
-  switch (range.kind) {
+export function formatRange(selectedRange: ReportRange): string {
+  switch (selectedRange.kind) {
     case 'days':
-      return range.days;
+      return selectedRange.days;
     case 'month':
-      return `${MONTHS[range.month - 1]}-${range.year}`;
+      return `${MONTHS[selectedRange.month - 1]}-${selectedRange.year}`;
     case 'quarter':
-      return `Q${range.quarter}-${range.year}`;
+      return `Q${selectedRange.quarter}-${selectedRange.year}`;
     case 'year':
-      return String(range.year);
+      return String(selectedRange.year);
   }
 }
 
@@ -91,23 +106,26 @@ export function periodsFor(kind: 'month' | 'quarter' | 'year', today: Date): Per
   switch (kind) {
     case 'month':
       return Array.from({ length: MONTHS_LISTED }, (_, back) => {
-        const date = new Date(year, today.getMonth() - back, 1);
-        const range: ReportRange = {
+        const monthDate = new Date(year, today.getMonth() - back, 1);
+        const monthRange: ReportRange = {
           kind: 'month',
-          year: date.getFullYear(),
-          month: date.getMonth() + 1,
+          year: monthDate.getFullYear(),
+          month: monthDate.getMonth() + 1,
         };
-        return { label: `${MONTHS[date.getMonth()]} - ${date.getFullYear()}`, range };
+        return {
+          label: `${MONTHS[monthDate.getMonth()]} - ${monthDate.getFullYear()}`,
+          range: monthRange,
+        };
       });
     case 'quarter': {
-      const current = Math.floor(today.getMonth() / 3);
+      const currentQuarterIndex = Math.floor(today.getMonth() / 3);
       return Array.from({ length: QUARTERS_LISTED }, (_, back) => {
-        const index = current - back;
-        const quarterYear = year + Math.floor(index / 4);
-        const quarter = (((index % 4) + 4) % 4) + 1;
+        const quarterIndex = currentQuarterIndex - back;
+        const quarterYear = year + Math.floor(quarterIndex / 4);
+        const quarterNumber = (((quarterIndex % 4) + 4) % 4) + 1;
         return {
-          label: `Q${quarter} - ${quarterYear}`,
-          range: { kind: 'quarter', year: quarterYear, quarter },
+          label: `Q${quarterNumber} - ${quarterYear}`,
+          range: { kind: 'quarter', year: quarterYear, quarter: quarterNumber },
         };
       });
     }
@@ -119,8 +137,8 @@ export function periodsFor(kind: 'month' | 'quarter' | 'year', today: Date): Per
   }
 }
 
-function sameRange(a: ReportRange, b: ReportRange): boolean {
-  return formatRange(a) === formatRange(b);
+function sameRange(firstRange: ReportRange, secondRange: ReportRange): boolean {
+  return formatRange(firstRange) === formatRange(secondRange);
 }
 
 const KIND_OPTIONS: DropdownOption[] = [
@@ -176,15 +194,15 @@ export class RangeFilter {
     return String(Math.max(index, 0));
   });
 
-  protected pickKind(value: string): void {
-    if (value === 'month' || value === 'quarter' || value === 'year') {
-      this.range.set(periodsFor(value, this.today)[0].range);
+  protected pickKind(selectedKind: string): void {
+    if (selectedKind === 'month' || selectedKind === 'quarter' || selectedKind === 'year') {
+      this.range.set(periodsFor(selectedKind, this.today)[0].range);
     } else {
-      this.range.set({ kind: 'days', days: value });
+      this.range.set({ kind: 'days', days: selectedKind });
     }
   }
 
-  protected pickPeriod(value: string): void {
-    this.range.set(this.periods()[Number(value)].range);
+  protected pickPeriod(selectedPeriodIndex: string): void {
+    this.range.set(this.periods()[Number(selectedPeriodIndex)].range);
   }
 }

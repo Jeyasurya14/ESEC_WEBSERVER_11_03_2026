@@ -11,6 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { UserMenu } from '../../../core/models';
+
 import { TAB_ID, TabService } from '../../../features/tabs/tab.service';
 import { ExpiryFilter } from '../../../shared/filters/expiry-filter';
 import { FeatureGroupFilter } from '../../../shared/filters/feature-group-filter';
@@ -66,22 +67,22 @@ export class Organization implements OnInit {
   readonly gaugeReady = signal(true);
 
   readonly rows = computed(() => {
-    const settings = this.filters.settings();
-    if (!settings) {
+    const reportSettings = this.filters.settings();
+    if (!reportSettings) {
       return [];
     }
-    const choices = {
+    const filterChoices = {
       serverStatus: this.filters.serverStatus(),
       notExpired: this.filters.notExpired(),
       option: this.filters.option(),
       bands: this.filters.bands(),
     };
-    return visibleRows(this.data.rows(), choices, settings, new Date());
+    return visibleRows(this.data.rows(), filterChoices, reportSettings, new Date());
   });
 
   readonly columns = computed(() => {
-    const settings = this.filters.settings();
-    return settings ? organizationColumns(settings) : [];
+    const reportSettings = this.filters.settings();
+    return reportSettings ? organizationColumns(reportSettings) : [];
   });
 
   readonly tiles = computed(() =>
@@ -92,17 +93,17 @@ export class Organization implements OnInit {
     if (this.view() === 'grid') {
       return this.rowCount();
     }
-    const searching = this.filters.search().trim().length > 0;
-    return rowCountText(this.tiles().length, this.rows().length, searching);
+    const hasSearchText = this.filters.search().trim().length > 0;
+    return rowCountText(this.tiles().length, this.rows().length, hasSearchText);
   });
 
   constructor() {
     effect(() => {
       this.filters.range();
       this.filters.featureGroup();
-      const settings = this.filters.settings();
-      if (settings) {
-        untracked(() => this.load(settings));
+      const reportSettings = this.filters.settings();
+      if (reportSettings) {
+        untracked(() => this.load(reportSettings));
       }
     });
 
@@ -123,9 +124,9 @@ export class Organization implements OnInit {
   }
 
   refresh(): void {
-    const settings = this.filters.settings();
-    if (settings) {
-      this.load(settings);
+    const reportSettings = this.filters.settings();
+    if (reportSettings) {
+      this.load(reportSettings);
     } else {
       void this.start();
     }
@@ -137,10 +138,10 @@ export class Organization implements OnInit {
   }
 
   toggleView(): void {
-    const next = this.view() === 'grid' ? 'gauge' : 'grid';
-    this.view.set(next);
+    const nextView = this.view() === 'grid' ? 'gauge' : 'grid';
+    this.view.set(nextView);
 
-    if (next === 'gauge') {
+    if (nextView === 'gauge') {
       this.gaugeReady.set(false);
       setTimeout(() => this.gaugeReady.set(true));
     }
@@ -152,12 +153,14 @@ export class Organization implements OnInit {
     }
   }
 
-  private load(settings: ReportSettings): void {
-    const sql = organizationCall(
+  private load(reportSettings: ReportSettings): void {
+    const procedureCall = organizationCall(
       this.data.userId(),
       this.filters.range(),
       this.filters.featureGroup(),
     );
-    void this.data.load(sql, (rows) => prepareRows(rows, settings.workingHoursPerDay));
+    void this.data.load(procedureCall, (rows) =>
+      prepareRows(rows, reportSettings.workingHoursPerDay),
+    );
   }
 }

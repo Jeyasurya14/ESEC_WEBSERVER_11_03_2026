@@ -29,18 +29,18 @@ export class ApiService {
       return;
     }
 
-    const reply = await firstValueFrom(
+    const configResponse = await firstValueFrom(
       this.post<{ settingsData: Setting[]; menuData: MenuDefinition[] }>('web_report_config', {}),
     );
-    if (reply.status !== 'PASS' || !Array.isArray(reply.message?.settingsData)) {
+    if (configResponse.status !== 'PASS' || !Array.isArray(configResponse.message?.settingsData)) {
       throw new Error('Unable to load centralized application settings');
     }
-    this.settings = reply.message.settingsData;
-    this.centralMenus = reply.message.menuData;
+    this.settings = configResponse.message.settingsData;
+    this.centralMenus = configResponse.message.menuData;
   }
 
-  getSetting(name: string): string {
-    return this.settings.find((setting) => setting._DESC === name)?._VALUE ?? '';
+  getSetting(settingName: string): string {
+    return this.settings.find((setting) => setting._DESC === settingName)?._VALUE ?? '';
   }
 
   post<T>(endpoint: string, body: object): Observable<ApiResult<T>> {

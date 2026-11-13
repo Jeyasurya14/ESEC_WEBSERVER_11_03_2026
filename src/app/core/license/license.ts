@@ -38,21 +38,22 @@ export function evaluateLicense(encryptedValue: string | undefined, today: Date)
 function decryptLicenseDate(encryptedValue: string): string {
   try {
     const plainText = CryptoJS.AES.decrypt(encryptedValue, LICENSE_KEY).toString(CryptoJS.enc.Utf8);
-    const value: unknown = JSON.parse(plainText);
-    return typeof value === 'string' ? value : '';
+    const decryptedValue: unknown = JSON.parse(plainText);
+    return typeof decryptedValue === 'string' ? decryptedValue : '';
   } catch {
     return '';
   }
 }
 
-function parseLicenseDate(text: string): Date | null {
-  if (!/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(text)) {
+function parseLicenseDate(dateText: string): Date | null {
+  if (!/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(dateText)) {
     return null;
   }
 
-  const [year, month, day] = text.split(/[-/]/).map(Number);
+  const [year, month, day] = dateText.split(/[-/]/).map(Number);
   const date = new Date(year, month - 1, day);
-  const isRealDate = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  const isRealDate =
+    date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 
   return isRealDate ? date : null;
 }

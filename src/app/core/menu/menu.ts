@@ -4,19 +4,19 @@ export function resolvePermittedMenus(
   catalog: MenuDefinition[],
   permissionList: string,
 ): UserMenu[] {
-  const grantedKeys = new Set(permissionList.split(','));
+  const permittedKeys = new Set(permissionList.split(','));
   const permitted: UserMenu[] = [];
   const seen = new Set<string>();
 
   for (const menu of catalog) {
     const mainMenuName = menu.RT_M_NAME.trim().toUpperCase();
 
-    for (const screen of menu.RT_M_LIST.split(',')) {
-      const subMenuName = screen.trim();
-      const key = `${mainMenuName}_${subMenuName.toUpperCase()}`;
+    for (const screenName of menu.RT_M_LIST.split(',')) {
+      const subMenuName = screenName.trim();
+      const permissionKey = `${mainMenuName}_${subMenuName.toUpperCase()}`;
 
-      if (subMenuName !== '' && grantedKeys.has(key) && !seen.has(key)) {
-        seen.add(key);
+      if (subMenuName !== '' && permittedKeys.has(permissionKey) && !seen.has(permissionKey)) {
+        seen.add(permissionKey);
         permitted.push({ mainMenuName, subMenuName });
       }
     }
@@ -70,18 +70,18 @@ const MENUS_WITHOUT_SIDEBAR_ICON = new Set([
 ]);
 
 export function sidebarMenuNames(menus: UserMenu[]): string[] {
-  const names: string[] = [];
+  const menuNames: string[] = [];
 
   for (const { mainMenuName } of menus) {
-    const alreadyListed = names.includes(mainMenuName);
-    const hasNoIcon = MENUS_WITHOUT_SIDEBAR_ICON.has(mainMenuName);
-    if (!alreadyListed && !hasNoIcon) {
-      names.push(mainMenuName);
+    const isAlreadyListed = menuNames.includes(mainMenuName);
+    const hasNoSidebarIcon = MENUS_WITHOUT_SIDEBAR_ICON.has(mainMenuName);
+    if (!isAlreadyListed && !hasNoSidebarIcon) {
+      menuNames.push(mainMenuName);
     }
   }
 
-  const withoutAdmin = names.filter((name) => name !== 'ADMIN');
-  const hasAdmin = withoutAdmin.length < names.length;
+  const nonAdminMenuNames = menuNames.filter((menuName) => menuName !== 'ADMIN');
+  const includesAdminMenu = nonAdminMenuNames.length < menuNames.length;
 
-  return hasAdmin ? [...withoutAdmin, 'ADMIN'] : withoutAdmin;
+  return includesAdminMenu ? [...nonAdminMenuNames, 'ADMIN'] : nonAdminMenuNames;
 }

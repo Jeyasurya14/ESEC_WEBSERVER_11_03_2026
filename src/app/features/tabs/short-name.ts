@@ -26,15 +26,17 @@ const SHORT_NAMES: Readonly<Record<string, string>> = {
 
 const MAX_UNLISTED_LENGTH = 5;
 
-export function shortModuleName(name: string): string {
-  const known = SHORT_NAMES[name.toUpperCase()];
-  if (known) {
-    return known;
+export function shortModuleName(moduleName: string): string {
+  const knownShortName = SHORT_NAMES[moduleName.toUpperCase()];
+  if (knownShortName) {
+    return knownShortName;
   }
 
-  const words = name.trim().split(/\s+/);
-  if (words.length > 1) {
-    return words.map((word) => word[0]).join('').toUpperCase();
+  const nameParts = moduleName.trim().split(/\s+/);
+  if (nameParts.length > 1) {
+    return nameParts.map((part) => part[0]).join('').toUpperCase();
   }
-  return name.length > MAX_UNLISTED_LENGTH ? name.slice(0, MAX_UNLISTED_LENGTH - 1) : name;
+  return moduleName.length > MAX_UNLISTED_LENGTH
+    ? moduleName.slice(0, MAX_UNLISTED_LENGTH - 1)
+    : moduleName;
 }

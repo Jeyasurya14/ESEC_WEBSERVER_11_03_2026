@@ -24,8 +24,8 @@ export class OnstartComponent implements OnInit {
 
   readonly state = signal<StartupState>({ kind: 'connecting' });
   readonly message = computed(() => {
-    const state = this.state();
-    return state.kind === 'connecting' ? '' : state.message;
+    const startupState = this.state();
+    return startupState.kind === 'connecting' ? '' : startupState.message;
   });
 
   ngOnInit(): void {
@@ -40,9 +40,9 @@ export class OnstartComponent implements OnInit {
       await this.api.loadSettings();
       await this.checkLicense();     
     } catch (error) {
-      const timedOut = error instanceof Error && error.name === 'TimeoutError';
+      const requestTimedOut = error instanceof Error && error.name === 'TimeoutError';
       this.block(
-        timedOut
+        requestTimedOut
           ? 'Request Timed Out - Please check your connection'
           : 'Unable to load configuration or connect to the Node server.',
       );
@@ -54,19 +54,21 @@ export class OnstartComponent implements OnInit {
   }
 
   private async checkLicense(): Promise<void> {
-    const reply = await firstValueFrom(
+    const licenseResponse = await firstValueFrom(
       this.api.query<Array<{ ESEC_VALUE: string }>>(
         "SELECT ESEC_VALUE FROM esms.cltx_esec WHERE ESEC_DESC = 'LICENSE_WEB'",
       ),
     );
-    if (reply.status !== 'PASS') {
+    if (licenseResponse.status !== 'PASS') {
       return this.block('Database Server - Connection Error');
     }
 
-    const stored = Array.isArray(reply.message) ? reply.message[0]?.ESEC_VALUE : undefined;
-    const license = evaluateLicense(stored, new Date());
+    const encryptedLicense = Array.isArray(licenseResponse.message)
+      ? licenseResponse.message[0]?.ESEC_VALUE
+      : undefined;
+    const licenseVerdict = evaluateLicense(encryptedLicense, new Date());
 
-    switch (license.status) {
+    switch (licenseVerdict.status) {
       case 'invalid':
         return this.block('Invalid License');
       case 'expired':
@@ -74,7 +76,7 @@ export class OnstartComponent implements OnInit {
       case 'expiring':
         return this.state.set({
           kind: 'renewal-reminder',
-          message: `License valid until ${license.expiryText}. Please renew soon.`,
+          message: `License valid until ${licenseVerdict.expiryText}. Please renew soon.`,
         });
       case 'valid':
         return this.enterApplication();

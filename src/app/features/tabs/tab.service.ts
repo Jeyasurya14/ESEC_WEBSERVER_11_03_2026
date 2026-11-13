@@ -57,8 +57,8 @@ export class TabService {
     const tab: Tab = { id: this.nextId++, menu, component, pinned: false };
 
     this.tabs.update((tabs) => {
-      const pinnedCount = tabs.filter((existing) => existing.pinned).length;
-      return [...tabs.slice(0, pinnedCount), tab, ...tabs.slice(pinnedCount)];
+      const pinnedTabCount = tabs.filter((existingTab) => existingTab.pinned).length;
+      return [...tabs.slice(0, pinnedTabCount), tab, ...tabs.slice(pinnedTabCount)];
     });
     this.activeId.set(tab.id);
   }
@@ -81,14 +81,14 @@ export class TabService {
   }
 
   closeLeftOf(id: number): void {
-    const at = this.indexOf(id);
-    this.removeWhere((tab, index) => index < at && !tab.pinned);
+    const targetTabIndex = this.indexOf(id);
+    this.removeWhere((tab, tabIndex) => tabIndex < targetTabIndex && !tab.pinned);
     this.activate(id);
   }
 
   closeRightOf(id: number): void {
-    const at = this.indexOf(id);
-    this.removeWhere((tab, index) => index > at && !tab.pinned);
+    const targetTabIndex = this.indexOf(id);
+    this.removeWhere((tab, tabIndex) => tabIndex > targetTabIndex && !tab.pinned);
     this.activate(id);
   }
 
@@ -99,10 +99,10 @@ export class TabService {
         return tabs;
       }
 
-      const others = tabs.filter((candidate) => candidate.id !== id);
-      const moved = { ...tab, pinned: !tab.pinned };
-      const position = moved.pinned ? 0 : others.filter((other) => other.pinned).length;
-      return [...others.slice(0, position), moved, ...others.slice(position)];
+      const otherTabs = tabs.filter((candidate) => candidate.id !== id);
+      const updatedTab = { ...tab, pinned: !tab.pinned };
+      const insertAt = updatedTab.pinned ? 0 : otherTabs.filter((otherTab) => otherTab.pinned).length;
+      return [...otherTabs.slice(0, insertAt), updatedTab, ...otherTabs.slice(insertAt)];
     });
     this.activate(id);
   }
@@ -122,19 +122,23 @@ export class TabService {
   }
 
   private removeWhere(shouldRemove: (tab: Tab, index: number) => boolean): void {
-    const before = this.tabs();
+    const existingTabs = this.tabs();
     const activeIndex = this.indexOf(this.activeId() ?? -1);
-    const after = before.filter((tab, index) => !shouldRemove(tab, index));
+    const remainingTabs: Tab[] = [];
 
-    before
-      .filter((tab, index) => shouldRemove(tab, index))
-      .forEach((tab) => this.setRefreshHandle(tab.id, null));
+    for (const [tabIndex, tab] of existingTabs.entries()) {
+      if (shouldRemove(tab, tabIndex)) {
+        this.setRefreshHandle(tab.id, null);
+      } else {
+        remainingTabs.push(tab);
+      }
+    }
 
-    this.tabs.set(after);
+    this.tabs.set(remainingTabs);
 
-    if (!after.some((tab) => tab.id === this.activeId())) {
-      const replacement = after[Math.min(Math.max(activeIndex, 0), after.length - 1)];
-      this.activeId.set(replacement?.id ?? null);
+    if (!remainingTabs.some((tab) => tab.id === this.activeId())) {
+      const nextActiveTab = remainingTabs[Math.min(Math.max(activeIndex, 0), remainingTabs.length - 1)];
+      this.activeId.set(nextActiveTab?.id ?? null);
     }
   }
 }

@@ -158,6 +158,10 @@ button:disabled {
     box-shadow: none;
   }
 
+  .filter {
+    border: 1px solid gray;
+  }
+
   .filter-label {
     color: $filter-label;
     font-weight: 600;

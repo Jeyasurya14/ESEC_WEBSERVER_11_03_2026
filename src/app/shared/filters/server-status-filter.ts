@@ -6,9 +6,10 @@ export interface ServerStatus {
   inactive: boolean;
 }
 
-export function matchesServerStatus(status: unknown, filter: ServerStatus): boolean {
-  const installed = typeof status === 'string' && status.toLowerCase() === 'installed';
-  return installed ? filter.active : filter.inactive;
+export function matchesServerStatus(serverStatus: unknown, selectedStatuses: ServerStatus): boolean {
+  const isInstalled =
+    typeof serverStatus === 'string' && serverStatus.toLowerCase() === 'installed';
+  return isInstalled ? selectedStatuses.active : selectedStatuses.inactive;
 }
 
 @Component({
@@ -25,7 +26,10 @@ export function matchesServerStatus(status: unknown, filter: ServerStatus): bool
 export class ServerStatusFilter {
   readonly status = model.required<ServerStatus>();
 
-  protected toggle(key: keyof ServerStatus): void {
-    this.status.update((current) => ({ ...current, [key]: !current[key] }));
+  protected toggle(statusKey: keyof ServerStatus): void {
+    this.status.update((currentStatus) => ({
+      ...currentStatus,
+      [statusKey]: !currentStatus[statusKey],
+    }));
   }
 }

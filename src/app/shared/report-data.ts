@@ -22,30 +22,33 @@ export class ReportData<T> {
 
   readonly userId = computed(() => this.loginService.user()?.userId ?? '');
 
-  async load(sql: string, prepare: (rows: T[]) => T[] = (rows) => rows): Promise<void> {
-    const request = ++this.latestRequest;
-    const isLatest = () => request === this.latestRequest;
+  async load(
+    procedureCall: string,
+    transformRows: (rows: T[]) => T[] = (rows) => rows,
+  ): Promise<void> {
+    const requestId = ++this.latestRequest;
+    const isCurrentRequest = () => requestId === this.latestRequest;
 
     this.loading.set(true);
     this.error.set('');
 
     try {
-      const result = await firstValueFrom(this.api.call<T[]>(sql));
-      if (!isLatest()) {
+      const response = await firstValueFrom(this.api.call<T[]>(procedureCall));
+      if (!isCurrentRequest()) {
         return;
       }
-      if (result?.status === 'PASS' && Array.isArray(result.message)) {
-        this.rows.set(prepare(result.message));
+      if (response?.status === 'PASS' && Array.isArray(response.message)) {
+        this.rows.set(transformRows(response.message));
       } else {
-        const serverMessage = typeof result?.message === 'string' ? result.message : '';
+        const serverMessage = typeof response?.message === 'string' ? response.message : '';
         this.showError(serverMessage || 'No data found.');
       }
     } catch {
-      if (isLatest()) {
+      if (isCurrentRequest()) {
         this.showError('Unable to load the report. Please refresh to try again.');
       }
     } finally {
-      if (isLatest()) {
+      if (isCurrentRequest()) {
         this.loading.set(false);
         this.loadedAt.set(new Date());
       }
