@@ -70,7 +70,7 @@ ModuleRegistry.registerModules([
 
 const THEME = themeBalham.withParams({
   fontFamily: 'inherit',
-  headerBackgroundColor: '#586980',
+  headerBackgroundColor: '#1e293b',
   headerTextColor: '#ffffff',
   headerColumnBorder: { color: 'rgba(255, 255, 255, 0.35)' },
   headerColumnBorderHeight: '100%',

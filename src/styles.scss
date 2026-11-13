@@ -9,9 +9,6 @@ body {
   background: #f2f5f8;
   color: #20364a;
   font-family: 'Segoe UI', sans-serif;
-  // Chromium's default blue tap flash on touch devices; every interactive
-  // element already shows its own hover/active/focus state, so this is
-  // just noise on top of it.
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -26,10 +23,6 @@ h1 {
   margin-top: 0;
 }
 
-// A default look for plain <button> elements. Wrapping the states in :where()
-// keeps their specificity at zero, so any component (an icon button, the
-// dropdown trigger, ...) can still override background/color with a single
-// class of its own instead of fighting this rule for specificity.
 button {
   padding: $spacing-3 $spacing-5;
   border: 0;
@@ -63,11 +56,10 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 3px solid #4d93bf;
-  outline-offset: 3px;
+  outline: 1px solid #4d93bf;
+  outline-offset: 1px;
 }
 
-/* Local Flaticon SVG files. A mask lets each icon inherit the text colour. */
 .app-icon {
   display: inline-block;
   width: var(--icon-size, 20px);
@@ -79,32 +71,17 @@ button:disabled {
   mask: var(--icon-url) center / contain no-repeat;
 }
 
-// Every report component adds this class (host: { class: 'report-page' }) for the standard page padding.
 .report-page {
   display: block;
   padding: 16px;
 }
 
-// A report that fills its tab, e.g. a filter toolbar above a grid (host: { class: 'report-page report-fill' }).
 .report-fill {
   display: flex;
   flex-direction: column;
   height: 100%;
   padding: 0;
 }
-
-// ---- Report filter toolbar (shared/filters). Global because every filter control uses it.
-//
-// Every filter renders as a `.filter` (a single label + control) or a `.filter-group` (several
-// controls under one label, e.g. the usage-band checkboxes). Each one that sits directly in the
-// toolbar becomes its own soft-shadowed "chip"; a `.filter` nested inside a `.filter-group` stays
-// plain so chips never nest inside chips.
-//
-// The toolbar is one row, not several: search sits pinned on the left and `.toolbar-trailing`
-// (row count, view toggle) pinned on the right, never pushed off-screen; `.toolbar-filters` in
-// between (grouped into `.filter-cluster`s with a `.filter-divider` between them, so related
-// filters read as one block) takes whatever space is left and scrolls on its own if a very long
-// row of filters doesn't fit it.
 
 .report-toolbar {
   display: flex;
@@ -178,8 +155,6 @@ button:disabled {
     box-shadow: $shadow-xs;
   }
 
-  // A filter nested inside a group (the usage-band checkboxes, a range filter's own label)
-  // reuses the group's chip instead of drawing one of its own.
   .filter-group .filter {
     height: auto;
     padding: 0;
@@ -222,15 +197,11 @@ button:disabled {
   }
 }
 
-// ---- Report grid header details, as in the company app (colours and icons: shared/grid/data-grid.ts).
-// Global because AG Grid builds this markup itself.
-
 .ag-header-cell-label,
 .ag-header-group-cell-label {
   justify-content: center;
 }
 
-// A filtered column shows a white filter mark after its caption, instead of the standard icon.
 .ag-header-cell .ag-filter-icon {
   display: none;
 }
@@ -249,7 +220,6 @@ button:disabled {
   bottom: 3px;
 }
 
-// Percentage cells in report grids: a dot in the usage band's colour, then the value.
 .percent-cell {
   display: inline-flex;
   align-items: center;

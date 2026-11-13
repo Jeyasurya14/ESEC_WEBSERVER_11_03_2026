@@ -14,7 +14,6 @@ import {
 export interface DropdownOption {
   value: string;
   label: string;
-  /** Options sharing the same group show under one heading, in the order they first appear. */
   group?: string;
 }
 
@@ -25,15 +24,6 @@ interface DropdownGroup {
 
 let nextDropdownId = 0;
 
-/**
- * A styled replacement for `<select>`: a button that shows the chosen option and opens a
- * popup list on click. Browsers render a native `<select>`'s open list themselves, so it can't
- * be restyled to match the rest of the app - this draws the whole list itself instead.
- *
- * The real DOM focus never leaves the trigger button; the highlighted option is tracked with
- * `aria-activedescendant`, the same technique a native combobox uses, so no focus-juggling code
- * is needed when a user opens, arrows through and picks an option with the keyboard.
- */
 @Component({
   selector: 'app-dropdown',
   template: `
@@ -102,9 +92,6 @@ export class Dropdown {
   protected readonly open = signal(false);
   protected readonly activeValue = signal<string | null>(null);
 
-  // The menu is fixed-positioned (not absolute, under the trigger) and placed here in pixels,
-  // because several of this app's toolbars scroll horizontally - an absolutely-positioned menu
-  // would be clipped by that scroll container the moment it reached past its bottom edge.
   protected readonly menuPosition = signal<{ top: number; left: number; width: number } | null>(
     null,
   );
@@ -133,8 +120,6 @@ export class Dropdown {
   });
 
   constructor() {
-    // Closes the menu the moment anything scrolls underneath it, instead of leaving it floating
-    // in place while its trigger moves (the fixed position doesn't track a scrolling ancestor).
     effect((onCleanup) => {
       if (!this.open()) {
         return;
