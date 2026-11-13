@@ -2,17 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { BandLimits, bandColor, bandOf } from '../filters/usage-band-filter';
 import { Gauge } from './gauge';
 
-/** One labelled number shown under a gauge tile, e.g. `{ label: 'User', value: '1,204' }`. */
 export interface GaugeStat {
   label: string;
   value: string;
 }
 
-/**
- * A card built around one `Gauge`: a title, the dial itself, and a row of labelled numbers
- * underneath. Any report can build its own list of `GaugeStat`s, so this card has no idea what
- * "Issued (Max)" or "True Denial" mean - it just lays out whatever it's given.
- */
 @Component({
   selector: 'app-gauge-tile',
   imports: [Gauge],
@@ -38,7 +32,6 @@ export class GaugeTile {
   readonly limits = input.required<BandLimits>();
   readonly stats = input<readonly GaugeStat[]>([]);
 
-  /** The same band colour the gauge fills with - picked up by a thin accent border on the card. */
   protected readonly accentColor = computed(() =>
     bandColor(bandOf(this.percent(), this.limits()), this.limits()),
   );

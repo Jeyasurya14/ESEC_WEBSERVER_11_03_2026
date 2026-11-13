@@ -63,11 +63,6 @@ export class Organization implements OnInit {
   readonly rowCount = signal('');
   readonly view = signal<OrganizationView>('grid');
 
-  /**
-   * False for one tick right after switching to the gauge view, so the toolbar's click repaints
-   * a lightweight "Preparing gauges…" message immediately instead of the browser sitting frozen
-   * while every tile (there can be hundreds) builds - see toggleView.
-   */
   readonly gaugeReady = signal(true);
 
   readonly rows = computed(() => {
@@ -89,12 +84,10 @@ export class Organization implements OnInit {
     return settings ? organizationColumns(settings) : [];
   });
 
-  /** The gauge view's own tiles - the same filtered rows as the grid, reshaped for `app-gauge-tile`. */
   readonly tiles = computed(() =>
     searchTiles(organizationTiles(this.rows(), this.filters.option()), this.filters.search()),
   );
 
-  /** "Rows : ..." reads from the grid's own count in grid view, and the tile count in gauge view. */
   readonly rowCountLabel = computed(() => {
     if (this.view() === 'grid') {
       return this.rowCount();
@@ -113,9 +106,6 @@ export class Organization implements OnInit {
       }
     });
 
-    // Puts this report's refresh control in the shared status bar instead of its own toolbar -
-    // see TabsComponent for how a tab id ends up here. Nothing to do when there isn't one (a
-    // test rendering this component directly, say).
     const tabId = inject(TAB_ID, { optional: true });
     if (tabId !== null) {
       const tabs = inject(TabService);
