@@ -144,10 +144,6 @@ button:disabled {
     flex-shrink: 0;
     align-items: center;
     gap: $spacing-2;
-  }
-
-  .filter-group,
-  .filter {
     height: $filter-height;
     padding: 0 $spacing-3;
     background: $filter-bg;
