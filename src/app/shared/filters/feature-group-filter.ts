@@ -1,13 +1,17 @@
+import { apiRequest, resourceRequest } from '../../core/api/api-request';
 import {
   ChangeDetectionStrategy,
   Component,
   Injectable,
+  DestroyRef,
   computed,
+  resource,
   inject,
   model,
   signal,
+  Injector,
 } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+
 import { ApiService, sqlString } from '../../core/api/api.service';
 import { LoginService } from '../../core/auth/login.service';
 import { BrowserStorage, StorageKey } from '../../core/storage/browser-storage.service';
@@ -23,15 +27,30 @@ export function featureGroupParam(group: string): string {
 
 @Injectable({ providedIn: 'root' })
 export class FeatureGroupsService {
+  private readonly injector = inject(Injector);
+
   private readonly api = inject(ApiService);
   private readonly loginService = inject(LoginService);
   private readonly storage = inject(BrowserStorage);
   private readonly groupsByUserId = new Map<string, Promise<string[]>>();
+  readonly revision = signal(0);
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.groupsByUserId.clear());
+  }
+
+  invalidate(): void {
+    this.groupsByUserId.clear();
+    this.revision.update((value) => value + 1);
+  }
 
   load(): Promise<string[]> {
     const userId = this.loginService.user()?.userId ?? '';
+    if (!userId) return Promise.resolve([...BUILT_IN_GROUPS]);
     let loadedGroups = this.groupsByUserId.get(userId);
     if (!loadedGroups) {
+      // Only the active user needs cached groups; do not retain previous sessions.
+      this.groupsByUserId.clear();
       loadedGroups = this.fetch(userId);
       this.groupsByUserId.set(userId, loadedGroups);
     }
@@ -39,11 +58,16 @@ export class FeatureGroupsService {
   }
 
   private async fetch(userId: string): Promise<string[]> {
-    const groupResponse = await firstValueFrom(
-      this.api.call<Array<{ COLLECTION_NAME: string }>>(
-        `call R_A_CLTX_ESEC_MF_LOAD(${sqlString(userId)});`,
+    const groupResponse = await resourceRequest(this.injector, (abortSignal) =>
+      apiRequest(
+        this.api.call<Array<{ COLLECTION_NAME: string }>>(
+          `call R_A_CLTX_ESEC_MF_LOAD(${sqlString(userId)});`,
+        ),
+        abortSignal,
       ),
     ).catch(() => null);
+
+    if (groupResponse?.status !== 'PASS') this.groupsByUserId.delete(userId);
 
     const groupRows =
       groupResponse?.status === 'PASS' && Array.isArray(groupResponse.message)
@@ -51,8 +75,9 @@ export class FeatureGroupsService {
         : [];
     const userGroups = groupRows.map((row) => row.COLLECTION_NAME).filter(Boolean);
 
-    this.storage.set(StorageKey.featureGroups, userGroups.join(','));
-    return [...BUILT_IN_GROUPS, ...userGroups];
+    if (this.loginService.user()?.userId === userId)
+      this.storage.set(StorageKey.featureGroups, userGroups.join(','));
+    return [...new Set([...BUILT_IN_GROUPS, ...userGroups])];
   }
 }
 
@@ -62,7 +87,7 @@ export class FeatureGroupsService {
   template: `
     <label class="filter">
       <span class="filter-label">Feature</span>
-      <app-dropdown [options]="options()" [(value)]="group" />
+      <app-dropdown ariaLabel="Feature" [options]="options()" [(value)]="group" />
     </label>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,7 +95,17 @@ export class FeatureGroupsService {
 export class FeatureGroupFilter {
   readonly group = model.required<string>();
 
-  protected readonly groups = signal<string[]>(BUILT_IN_GROUPS);
+  private readonly groupService = inject(FeatureGroupsService);
+  private readonly loginService = inject(LoginService);
+  private readonly groupData = resource({
+    params: () => ({
+      revision: this.groupService.revision(),
+      userId: this.loginService.user()?.userId ?? '',
+    }),
+    defaultValue: BUILT_IN_GROUPS,
+    loader: () => this.groupService.load(),
+  });
+  protected readonly groups = computed(() => this.groupData.value());
 
   protected readonly options = computed<DropdownOption[]>(() => {
     const availableGroups = this.groups();
@@ -79,10 +114,4 @@ export class FeatureGroupFilter {
       : [this.group(), ...availableGroups];
     return groupNames.map((groupName) => ({ value: groupName, label: groupName }));
   });
-
-  constructor() {
-    void inject(FeatureGroupsService)
-      .load()
-      .then((groups) => this.groups.set(groups));
-  }
 }

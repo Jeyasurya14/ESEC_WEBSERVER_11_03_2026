@@ -37,18 +37,27 @@ export function matchesBands(
   selected: readonly UsageBand[],
   limits: BandLimits,
 ): boolean {
-  if (ALL_BANDS.every((band) => selected.includes(band))) {
-    return true;
+  return bandMatcher(selected, limits)(percent);
+}
+
+/**
+ * `matchesBands` with the selection resolved once - build it outside a row loop so each row
+ * costs one Set lookup instead of re-scanning the selection.
+ */
+export function bandMatcher(
+  selected: readonly UsageBand[],
+  limits: BandLimits,
+): (percent: unknown) => boolean {
+  const selectedBands = new Set(selected);
+  if (ALL_BANDS.every((band) => selectedBands.has(band))) {
+    return () => true;
   }
-  if (
-    percent === null ||
-    percent === undefined ||
-    percent === '' ||
-    Number.isNaN(Number(percent))
-  ) {
-    return false;
-  }
-  return selected.includes(bandOf(Number(percent), limits));
+  return (percent) => {
+    if (percent === null || percent === undefined || percent === '') return false;
+    const value = Number(percent);
+    if (Number.isNaN(value)) return false;
+    return selectedBands.has(bandOf(value, limits));
+  };
 }
 
 @Component({

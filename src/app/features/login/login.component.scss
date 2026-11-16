@@ -25,7 +25,9 @@
   border-top: 3px solid $primary;
   border-radius: 14px;
   background: $white;
-  box-shadow: 0 16px 48px rgba(30, 41, 59, 0.06), $shadow-xs;
+  box-shadow:
+    0 16px 48px rgba(30, 41, 59, 0.06),
+    $shadow-xs;
 }
 
 .brand {
@@ -103,7 +105,9 @@ select {
   color: $gray-900;
   font: inherit;
   font-size: 14px;
-  transition: border-color $transition-fast, box-shadow $transition-fast;
+  transition:
+    border-color $transition-fast,
+    box-shadow $transition-fast;
 }
 
 select {
@@ -186,7 +190,9 @@ select:disabled {
   color: $white;
   font-size: 14px;
   font-weight: 600;
-  transition: background $transition-fast, border-color $transition-fast;
+  transition:
+    background $transition-fast,
+    border-color $transition-fast;
 }
 
 .login-button:hover {

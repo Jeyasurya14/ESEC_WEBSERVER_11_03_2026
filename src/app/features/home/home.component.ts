@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { LoginService } from '../../core/auth/login.service';
 import { UserMenu } from '../../core/models';
-import { RefreshButton } from '../../shared/refresh-button/refresh-button';
+import { StatusBar } from '../../shared/status-bar/status-bar';
 import { TabService } from '../tabs/tab.service';
 import { TabsComponent } from '../tabs/tabs.component';
 import { HeaderComponent } from './header/header.component';
@@ -9,7 +9,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 
 @Component({
   selector: 'app-home',
-  imports: [HeaderComponent, RefreshButton, SidebarComponent, TabsComponent],
+  imports: [HeaderComponent, StatusBar, SidebarComponent, TabsComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
   providers: [TabService],
@@ -21,8 +21,6 @@ export class HomeComponent {
 
   readonly selectedMenu = computed(() => this.tabs.activeTab()?.menu ?? null);
   readonly hasTabs = computed(() => this.tabs.tabs().length > 0);
-  /** The active tab's refresh control, if it put one up - see TabService.setRefreshHandle. */
-  readonly refreshHandle = computed(() => this.tabs.activeRefreshHandle());
   readonly sidebarVisible = signal(true);
   readonly notice = signal('');
 

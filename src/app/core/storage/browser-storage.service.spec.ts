@@ -24,9 +24,14 @@ describe('browser storage', () => {
 
     const stored = localStorage.getItem('loggedInUsername')!;
     expect(stored).not.toContain('john');
-    expect(JSON.parse(CryptoJS.AES.decrypt(stored, 'pass$1234').toString(CryptoJS.enc.Utf8))).toBe('john');
+    expect(JSON.parse(CryptoJS.AES.decrypt(stored, 'pass$1234').toString(CryptoJS.enc.Utf8))).toBe(
+      'john',
+    );
 
-    localStorage.setItem('loggedInType', CryptoJS.AES.encrypt(JSON.stringify('ADMIN'), 'pass$1234').toString());
+    localStorage.setItem(
+      'loggedInType',
+      CryptoJS.AES.encrypt(JSON.stringify('ADMIN'), 'pass$1234').toString(),
+    );
     expect(storage.getHidden(StorageKey.loginType)).toBe('ADMIN');
   });
 

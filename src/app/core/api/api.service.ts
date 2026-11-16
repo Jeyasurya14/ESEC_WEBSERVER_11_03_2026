@@ -1,17 +1,21 @@
-import { Injectable, inject } from '@angular/core';
+import { namedValues } from '../utils/data';
+import { apiRequest, resourceRequest } from './api-request';
+import { Injectable, inject, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, firstValueFrom, timeout } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 import { ApiResult, MenuDefinition, ServerConfig, Setting } from '../models';
 
 const TIMEOUT_MS = 10_000;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly http = inject(HttpClient);
-  private baseUrl = '';
-  private settings: Setting[] = [];
+  private readonly injector = inject(Injector);
 
-  centralized = false;
+  private readonly http = inject(HttpClient);
+  private serverUrl = '';
+  private appSettings = new Map<string, string>();
+
+  isCentralized = false;
   centralMenus: MenuDefinition[] = [];
 
   async loadSettings(): Promise<void> {
@@ -20,51 +24,53 @@ export class ApiService {
     if (!config?.NODE_IP || !config.NODE_PORT) {
       throw new Error('Invalid assets/config.json');
     }
-    
-    this.baseUrl = `${config.NODE_IP}:${config.NODE_PORT}/`;
-    this.centralized = config.CENTRALIZED === true || config.CENTRALIZED === 'true';
 
-    if (!this.centralized) {
-      this.settings = await this.loadAsset<Setting[]>('assets/settings.json');
+    this.serverUrl = `${config.NODE_IP}:${config.NODE_PORT}/`;
+    this.isCentralized = config.CENTRALIZED === true || config.CENTRALIZED === 'true';
+
+    if (!this.isCentralized) {
+      const settings = await this.loadAsset<Setting[]>('assets/settings.json');
+      this.appSettings = namedValues(settings);
       return;
     }
 
-    const configResponse = await firstValueFrom(
-      this.post<{ settingsData: Setting[]; menuData: MenuDefinition[] }>('web_report_config', {}),
+    const configResponse = await resourceRequest(this.injector, (abortSignal) =>
+      apiRequest(
+        this.post<{ settingsData: Setting[]; menuData: MenuDefinition[] }>('web_report_config', {}),
+        abortSignal,
+      ),
     );
     if (configResponse.status !== 'PASS' || !Array.isArray(configResponse.message?.settingsData)) {
       throw new Error('Unable to load centralized application settings');
     }
-    this.settings = configResponse.message.settingsData;
+    this.appSettings = namedValues(configResponse.message.settingsData);
     this.centralMenus = configResponse.message.menuData;
   }
 
   getSetting(settingName: string): string {
-    return this.settings.find((setting) => setting._DESC === settingName)?._VALUE ?? '';
+    return this.appSettings.get(settingName) ?? '';
   }
 
   post<T>(endpoint: string, body: object): Observable<ApiResult<T>> {
-    return this.http
-      .post<ApiResult<T>>(this.baseUrl + endpoint, body)
-      .pipe(timeout(TIMEOUT_MS));
+    return this.http.post<ApiResult<T>>(this.serverUrl + endpoint, body).pipe(timeout(TIMEOUT_MS));
   }
 
   query<T>(sql: string): Observable<ApiResult<T>> {
     return this.post<T>('post_view_query', { sql });
   }
 
-  /** Runs a stored procedure, e.g. "call esms_m.r_organization_grid(...)". Quote inputs with `sqlString()`. */
   call<T>(sql: string): Observable<ApiResult<T>> {
     return this.post<T>('post_view_call', { sql });
   }
 
-  /** Runs a statement or procedure that changes data, e.g. saving preferences. */
   write<T>(sql: string): Observable<ApiResult<T>> {
     return this.post<T>('post_insert_update', { sql });
   }
 
   loadAsset<T>(path: string): Promise<T> {
-    return firstValueFrom(this.http.get<T>(path).pipe(timeout(TIMEOUT_MS)));
+    return resourceRequest(this.injector, (abortSignal) =>
+      apiRequest(this.http.get<T>(path).pipe(timeout(TIMEOUT_MS)), abortSignal),
+    );
   }
 }
 

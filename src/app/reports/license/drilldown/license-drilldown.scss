@@ -1,0 +1,32 @@
+:host {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  min-width: 0;
+}
+.opening-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.open-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  color: #9f2534;
+  font-size: 12px;
+  background: #fff5f5;
+}
+.open-error button {
+  padding: 4px 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #e3aeb5;
+  border-radius: 4px;
+}

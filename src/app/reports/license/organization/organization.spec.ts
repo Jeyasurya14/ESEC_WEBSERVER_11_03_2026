@@ -1,25 +1,37 @@
+import { instance } from '../../../../testing/instances';
+import { literal } from '../../../core/utils/data';
+import { reportSettings, organizationRow } from '../../../../testing/report-fixtures';
+import { GaugeTile } from '../../../shared/gauge/gauge-tile';
+import { DataGrid } from '../../../shared/grid/data-grid';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../../core/api/api.service';
 import { LoginService } from '../../../core/auth/login.service';
 import { TAB_ID, TabService } from '../../../features/tabs/tab.service';
-import { ReportSettings } from '../../../shared/report-settings.service';
-import { Organization } from './organization';
-import { OrganizationRow, organizationCall, prepareRows, visibleRows } from './organization.data';
 
-const settings = { lowBelow: 50, highFrom: 80, workingHoursPerDay: 12 } as ReportSettings;
+import { Organization } from './organization';
+import {
+  OrganizationRow,
+  organizationCall,
+  organizationColumns,
+  prepareRows,
+  visibleRows,
+} from './organization.data';
+
+const settings = reportSettings({ lowBelow: 50, highFrom: 80, workingHoursPerDay: 12 });
 
 function row(values: Partial<OrganizationRow>): OrganizationRow {
-  return {
+  return organizationRow({
     status: 'Installed',
     expiry: '2099-01-01',
     p_dp: 60,
     tlh_24: 24,
     tot_du_q: 6,
     ...values,
-  } as OrganizationRow;
+  });
 }
 
 describe('Organization data rules', () => {
@@ -49,13 +61,24 @@ describe('Organization data rules', () => {
     const filters = {
       serverStatus: { active: true, inactive: false },
       notExpired: true,
-      option: 'DP' as const,
-      bands: ['medium' as const],
+      option: literal('DP'),
+      bands: [literal('medium')],
     };
 
-    expect(visibleRows(rows, filters, settings, new Date(2026, 0, 1)).map((r) => r.sw)).toEqual([
-      'kept',
-    ]);
+    expect(visibleRows(rows, filters, settings, new Date(2026, 0, 1)).map((row) => row.sw)).toEqual(
+      ['kept'],
+    );
+  });
+
+  it('makes the Software column a clickable link only when given a selection callback', () => {
+    const onSelect = vi.fn();
+    const softwareColumnClass = (columns: ReturnType<typeof organizationColumns>) => {
+      const column = columns.find((candidate) => 'field' in candidate && candidate.field === 'sw');
+      return column && 'cellClass' in column ? column.cellClass : undefined;
+    };
+
+    expect(softwareColumnClass(organizationColumns(settings))).toBeUndefined();
+    expect(softwareColumnClass(organizationColumns(settings, onSelect))).toBe('link-cell');
   });
 });
 
@@ -66,6 +89,7 @@ describe('Organization report', { timeout: 20_000 }, () => {
   let savedChoices: object;
 
   beforeEach(() => {
+    TestBed.overrideComponent(GaugeTile, { set: { template: '' } });
     reportReply = {
       status: 'PASS',
       message: [row({ sw: 'CATIA', status: 'Installed' }), row({ status: 'Uninstalled' })],
@@ -90,6 +114,7 @@ describe('Organization report', { timeout: 20_000 }, () => {
       providers: [
         { provide: ApiService, useValue: api },
         { provide: LoginService, useValue: { user: signal({ userId: 'john' }) } },
+        TabService,
       ],
     });
   });
@@ -103,14 +128,70 @@ describe('Organization report', { timeout: 20_000 }, () => {
   }
 
   const reportCalls = () =>
-    api.call.mock.calls.map(([sql]) => sql as string).filter((sql) => sql.includes('organization'));
+    api.call.mock.calls.map(([sql]) => String(sql)).filter((sql) => sql.includes('organization'));
 
   it('loads once with the default range and feature group, and shows active servers only', async () => {
     const fixture = await open();
 
     expect(reportCalls()).toEqual(["call esms_m.r_organization_grid('john','YTD','Pri');"]);
-    expect(fixture.componentInstance.rows().map((r) => r.sw)).toEqual(['CATIA']);
+    expect(fixture.componentInstance.rows().map((row) => row.sw)).toEqual(['CATIA']);
     expect(fixture.nativeElement.querySelector('.report-toolbar')).not.toBeNull();
+  });
+
+  it('uses status-bar range and Usage Per Day controls for the active organization report', async () => {
+    TestBed.overrideComponent(DataGrid, { set: { template: '' } });
+    TestBed.configureTestingModule({ providers: [{ provide: TAB_ID, useValue: 1 }] });
+    const tabs = TestBed.inject(TabService);
+    tabs.activeTabId.set(1);
+    const fixture = await open();
+    const controls = tabs.activeReportHandle()!.controls!();
+    controls.range!.set({ kind: 'year', year: 2025 });
+    controls.parameters!.set({ usageHours: 8 });
+    await fixture.whenStable();
+    expect(reportCalls()).toHaveLength(2);
+    expect(reportCalls().at(-1)).toBe("call esms_m.r_organization_grid_year('john','2025','Pri');");
+    expect(fixture.componentInstance.reportData.rows()[0].tlh_24).toBe(8);
+    expect(fixture.componentInstance.filters.range()).toEqual({ kind: 'year', year: 2025 });
+  });
+  it('scrolls through 3000 gauges with bounded cards and resets after filtering', async () => {
+    TestBed.overrideComponent(DataGrid, { set: { template: '' } });
+    reportReply = {
+      status: 'PASS',
+      message: Array.from({ length: 3000 }, (_, index) => row({ sw: `CAD${index}` })),
+    };
+    const fixture = await open();
+    const report = fixture.componentInstance;
+    report.viewMode.set('gauge');
+    await fixture.whenStable();
+    expect(report.gaugeCards()).toHaveLength(3000);
+    const cards = () => fixture.debugElement.queryAll(By.directive(GaugeTile));
+    expect(cards().length).toBeGreaterThan(0);
+    expect(cards().length).toBeLessThanOrEqual(15);
+    expect(fixture.nativeElement.querySelector('.gauge-pages')).toBeNull();
+    const viewport = instance(fixture.nativeElement.querySelector('.gauge-viewport'), HTMLElement);
+    Object.defineProperties(viewport, {
+      clientWidth: { value: 960, configurable: true },
+      clientHeight: { value: 780, configurable: true },
+    });
+    async function scrollTo(top: number) {
+      viewport.scrollTop = top;
+      viewport.dispatchEvent(new Event('scroll'));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await fixture.whenStable();
+    }
+    await scrollTo(406 * 50);
+    expect(cards().length).toBeLessThanOrEqual(15);
+    expect(instance(cards()[0].componentInstance, GaugeTile).title()).toBe('CAD144');
+    instance(fixture.nativeElement.querySelector('.gauge-card'), HTMLButtonElement).click();
+    expect(report.selectedGauge()?.row).toBe(report.reportData.rows()[144]);
+    await scrollTo(405984 + 40 - 780);
+    expect(instance(cards().at(-1)!.componentInstance, GaugeTile).title()).toBe('CAD2999');
+    expect(cards().length).toBeLessThanOrEqual(15);
+    report.filters.search.set('CAD2999');
+    await fixture.whenStable();
+    expect(viewport.scrollTop).toBe(0);
+    expect(cards()).toHaveLength(1);
+    expect(instance(cards()[0].componentInstance, GaugeTile).title()).toBe('CAD2999');
   });
 
   it('briefly shows the gauge view as not-ready, so a click repaints before the tiles build', async () => {
@@ -118,16 +199,28 @@ describe('Organization report', { timeout: 20_000 }, () => {
 
     vi.useFakeTimers();
     try {
-      expect(fixture.componentInstance.gaugeReady()).toBe(true);
+      expect(fixture.componentInstance.gaugesReady()).toBe(true);
       fixture.componentInstance.toggleView();
-      expect(fixture.componentInstance.view()).toBe('gauge');
-      expect(fixture.componentInstance.gaugeReady()).toBe(false);
+      expect(fixture.componentInstance.viewMode()).toBe('gauge');
+      expect(fixture.componentInstance.gaugesReady()).toBe(false);
 
       vi.runAllTimers();
-      expect(fixture.componentInstance.gaugeReady()).toBe(true);
+      expect(fixture.componentInstance.gaugesReady()).toBe(true);
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('treats every click on the same gauge as a new report request', async () => {
+    const fixture = await open();
+    const selected = fixture.componentInstance.gaugeCards()[0];
+    fixture.componentInstance.openDrilldown(selected);
+    const first = fixture.componentInstance.selectedGauge();
+    fixture.componentInstance.openDrilldown(selected);
+    const second = fixture.componentInstance.selectedGauge();
+    expect(first).toEqual(second);
+    expect(first).not.toBe(second);
+    await fixture.whenStable();
   });
 
   it('reloads when the range changes, but not when a browser-side filter changes', async () => {
@@ -154,7 +247,7 @@ describe('Organization report', { timeout: 20_000 }, () => {
     fixture.componentInstance.filters.notExpired.set(false);
     await fixture.whenStable();
 
-    const saved = (api.write.mock.calls.at(-1) as [string])[0];
+    const saved = String(api.write.mock.calls.at(-1)?.[0]);
     expect(saved).toContain('"not_expired":"N"');
     expect(saved).toContain('"landing_page":"Dashboard"');
   });
@@ -164,26 +257,37 @@ describe('Organization report', { timeout: 20_000 }, () => {
     const fixture = await open();
 
     expect(fixture.componentInstance.rows()).toEqual([]);
-    expect(fixture.componentInstance.data.error()).toBe('No data for the selected period');
-    expect(fixture.componentInstance.data.loading()).toBe(false);
+    expect(fixture.componentInstance.reportData.error()).toBe('No data for the selected period');
+    expect(fixture.componentInstance.reportData.loading()).toBe(false);
   });
 
   it("puts its refresh handle in the status bar under its own tab's id, and clears it on destroy", async () => {
-    TestBed.configureTestingModule({ providers: [TabService, { provide: TAB_ID, useValue: 42 }] });
+    TestBed.configureTestingModule({
+      providers: [
+        TabService,
+        {
+          provide: TAB_ID,
+          useFactory: (tabs: TabService) => tabs.activeTabId(),
+          deps: [TabService],
+        },
+      ],
+    });
     const tabs = TestBed.inject(TabService);
-    tabs.activate(42);
+    await tabs.open({ mainMenuName: 'DASHBOARD', subMenuName: 'Refresh test' });
 
     const fixture = await open();
-    expect(tabs.activeRefreshHandle()?.loading()).toBe(false);
-    expect(tabs.activeRefreshHandle()?.asOn()).toBe(fixture.componentInstance.data.asOn());
-    expect(tabs.activeRefreshHandle()?.asOn()).not.toBe('');
+    expect(tabs.activeReportHandle()?.loading()).toBe(false);
+    expect(tabs.activeReportHandle()?.lastUpdated()).toBe(
+      fixture.componentInstance.reportData.lastUpdated(),
+    );
+    expect(tabs.activeReportHandle()?.lastUpdated()).not.toBe('');
 
     const callsBefore = reportCalls().length;
-    tabs.activeRefreshHandle()?.refresh();
+    tabs.activeReportHandle()?.refresh();
     await fixture.whenStable();
     expect(reportCalls().length).toBeGreaterThan(callsBefore);
 
     fixture.destroy();
-    expect(tabs.activeRefreshHandle()).toBeNull();
+    expect(tabs.activeReportHandle()).toBeNull();
   });
 });

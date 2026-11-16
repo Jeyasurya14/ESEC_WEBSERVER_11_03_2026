@@ -6,7 +6,10 @@ export interface ServerStatus {
   inactive: boolean;
 }
 
-export function matchesServerStatus(serverStatus: unknown, selectedStatuses: ServerStatus): boolean {
+export function matchesServerStatus(
+  serverStatus: unknown,
+  selectedStatuses: ServerStatus,
+): boolean {
   const isInstalled =
     typeof serverStatus === 'string' && serverStatus.toLowerCase() === 'installed';
   return isInstalled ? selectedStatuses.active : selectedStatuses.inactive;
@@ -18,7 +21,11 @@ export function matchesServerStatus(serverStatus: unknown, selectedStatuses: Ser
   template: `
     <span class="filter-label">License Server</span>
     <app-check-filter label="Active" [checked]="status().active" (toggled)="toggle('active')" />
-    <app-check-filter label="Inactive" [checked]="status().inactive" (toggled)="toggle('inactive')" />
+    <app-check-filter
+      label="Inactive"
+      [checked]="status().inactive"
+      (toggled)="toggle('inactive')"
+    />
   `,
   host: { class: 'filter-group', role: 'group', 'aria-label': 'License server status' },
   changeDetection: ChangeDetectionStrategy.OnPush,

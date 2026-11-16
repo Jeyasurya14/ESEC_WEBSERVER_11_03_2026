@@ -1,8 +1,8 @@
+import { optionGroups } from './dropdown.utils';
 import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  HostListener,
   computed,
   effect,
   inject,
@@ -17,9 +17,10 @@ export interface DropdownOption {
   group?: string;
 }
 
-interface DropdownGroup {
-  heading: string | null;
-  options: DropdownOption[];
+interface MenuPosition {
+  top: number;
+  left: number;
+  width: number;
 }
 
 let nextDropdownId = 0;
@@ -30,9 +31,9 @@ let nextDropdownId = 0;
     <button
       type="button"
       class="dropdown-trigger"
-      [attr.aria-label]="ariaLabel()"
-      [attr.aria-expanded]="open()"
-      [attr.aria-controls]="open() ? listId : null"
+      [attr.aria-label]="triggerName()"
+      [attr.aria-expanded]="isOpen()"
+      [attr.aria-controls]="isOpen() ? listId : null"
       [attr.aria-activedescendant]="activeOptionId()"
       aria-haspopup="listbox"
       (click)="toggle()"
@@ -44,12 +45,12 @@ let nextDropdownId = 0;
       <span class="dropdown-chevron" aria-hidden="true"></span>
     </button>
 
-    @if (open()) {
+    @if (isOpen()) {
       <ul
         class="dropdown-menu"
         role="listbox"
         [id]="listId"
-        [attr.aria-label]="ariaLabel()"
+        [attr.aria-label]="ariaLabel() || selectedLabel()"
         [style.top.px]="menuPosition()?.top"
         [style.left.px]="menuPosition()?.left"
         [style.min-width.px]="menuPosition()?.width"
@@ -77,7 +78,11 @@ let nextDropdownId = 0;
     }
   `,
   styleUrl: './dropdown.scss',
-  host: { class: 'dropdown' },
+  host: {
+    class: 'dropdown',
+    '(document:click)': 'closeOnOutsideClick($event)',
+    '(document:keydown.escape)': 'closeOnEscape()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Dropdown {
@@ -89,44 +94,38 @@ export class Dropdown {
   private readonly element = inject(ElementRef<HTMLElement>);
   protected readonly listId = `dropdown-${++nextDropdownId}`;
 
-  protected readonly open = signal(false);
+  protected readonly isOpen = signal(false);
   protected readonly activeValue = signal<string | null>(null);
 
-  protected readonly menuPosition = signal<{ top: number; left: number; width: number } | null>(
-    null,
+  protected readonly menuPosition = signal<MenuPosition | null>(null);
+
+  protected readonly selectedLabel = computed(
+    () =>
+      this.options().find((option) => option.value === this.value())?.label || 'Select an option',
   );
 
-  protected readonly selectedLabel = computed(() => {
-    return this.options().find((option) => option.value === this.value())?.label ?? '';
+  // Keep the spoken name in sync with the visible selection; append its field context.
+  protected readonly triggerName = computed(() => {
+    const selection = this.selectedLabel();
+    const context = this.ariaLabel()?.trim();
+    return context && context.toLowerCase() !== selection.toLowerCase()
+      ? `${selection}, ${context}`
+      : selection;
   });
 
-  protected readonly groups = computed<DropdownGroup[]>(() => {
-    const groups: DropdownGroup[] = [];
-    for (const option of this.options()) {
-      const heading = option.group ?? null;
-      let group = groups.find((candidate) => candidate.heading === heading);
-      if (!group) {
-        group = { heading, options: [] };
-        groups.push(group);
-      }
-      group.options.push(option);
-    }
-    return groups;
-  });
+  protected readonly groups = computed(() => optionGroups(this.options()));
 
   protected readonly activeOptionId = computed(() => {
     const activeOptionValue = this.activeValue();
-    return this.open() && activeOptionValue !== null
-      ? this.optionId(activeOptionValue)
-      : null;
+    return this.isOpen() && activeOptionValue !== null ? this.optionId(activeOptionValue) : null;
   });
 
   constructor() {
     effect((onCleanup) => {
-      if (!this.open()) {
+      if (!this.isOpen()) {
         return;
       }
-      const closeDropdown = () => this.open.set(false);
+      const closeDropdown = () => this.isOpen.set(false);
       document.addEventListener('scroll', closeDropdown, { capture: true, passive: true });
       onCleanup(() => document.removeEventListener('scroll', closeDropdown, { capture: true }));
     });
@@ -137,8 +136,8 @@ export class Dropdown {
   }
 
   protected toggle(): void {
-    const opening = !this.open();
-    this.open.set(opening);
+    const opening = !this.isOpen();
+    this.isOpen.set(opening);
     if (opening) {
       this.activeValue.set(this.value());
       const triggerBounds = this.element.nativeElement.getBoundingClientRect();
@@ -151,7 +150,7 @@ export class Dropdown {
   }
 
   protected choose(selectedOptionValue: string): void {
-    this.open.set(false);
+    this.isOpen.set(false);
     if (selectedOptionValue !== this.value()) {
       this.valueChange.emit(selectedOptionValue);
     }
@@ -159,7 +158,7 @@ export class Dropdown {
 
   protected onArrowDown(event: Event): void {
     event.preventDefault();
-    if (this.open()) {
+    if (this.isOpen()) {
       this.moveActive(1);
     } else {
       this.toggle();
@@ -168,14 +167,14 @@ export class Dropdown {
 
   protected onArrowUp(event: Event): void {
     event.preventDefault();
-    if (this.open()) {
+    if (this.isOpen()) {
       this.moveActive(-1);
     }
   }
 
   protected onEnter(): void {
     const activeOptionValue = this.activeValue();
-    if (this.open() && activeOptionValue !== null) {
+    if (this.isOpen() && activeOptionValue !== null) {
       this.choose(activeOptionValue);
     }
   }
@@ -190,15 +189,16 @@ export class Dropdown {
     this.activeValue.set(allOptions[nextIndex].value);
   }
 
-  @HostListener('document:click', ['$event'])
   protected closeOnOutsideClick(event: MouseEvent): void {
-    if (this.open() && !this.element.nativeElement.contains(event.target as Node)) {
-      this.open.set(false);
+    if (
+      this.isOpen() &&
+      (!(event.target instanceof Node) || !this.element.nativeElement.contains(event.target))
+    ) {
+      this.isOpen.set(false);
     }
   }
 
-  @HostListener('document:keydown.escape')
   protected closeOnEscape(): void {
-    this.open.set(false);
+    this.isOpen.set(false);
   }
 }

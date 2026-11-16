@@ -92,7 +92,11 @@ $strip-bg: $gray-100;
       left: -$flare;
       width: $flare;
       height: $flare;
-      background: radial-gradient(circle at 0 0, transparent $flare, $white calc(#{$flare} + 0.5px));
+      background: radial-gradient(
+        circle at 0 0,
+        transparent $flare,
+        $white calc(#{$flare} + 0.5px)
+      );
     }
 
     .tab-label::after {
@@ -102,7 +106,11 @@ $strip-bg: $gray-100;
       right: -$flare;
       width: $flare;
       height: $flare;
-      background: radial-gradient(circle at 100% 0, transparent $flare, $white calc(#{$flare} + 0.5px));
+      background: radial-gradient(
+        circle at 100% 0,
+        transparent $flare,
+        $white calc(#{$flare} + 0.5px)
+      );
     }
   }
 }
@@ -169,7 +177,9 @@ $strip-bg: $gray-100;
   background: none;
   color: $gray-500;
   cursor: default;
-  transition: background $transition-fast, color $transition-fast;
+  transition:
+    background $transition-fast,
+    color $transition-fast;
 
   .app-icon {
     --icon-size: 10px;

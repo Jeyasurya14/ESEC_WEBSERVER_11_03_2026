@@ -1,25 +1,25 @@
 export const MODULE_ICONS: Readonly<Record<string, string>> = {
   'SOFTWARE DASHBOARD': 'software-dashboard',
-  'DASHBOARD': 'dashboard',
-  'LICENSE': 'key',
+  DASHBOARD: 'dashboard',
+  LICENSE: 'key',
   'LICENSE MANAGER': 'key',
-  'CLOUD': 'cloud',
-  'PROCESS': 'processor',
-  'ASSET': 'computer',
+  CLOUD: 'cloud',
+  PROCESS: 'processor',
+  ASSET: 'computer',
   'SOFTWARE REGISTER': 'register',
-  'COMPLIANCE': 'compliance',
-  'ADMIN': 'settings',
+  COMPLIANCE: 'compliance',
+  ADMIN: 'settings',
   'ESEC INFO': 'information',
-  'SPEND': 'money',
-  'SOFTWARE': 'applications',
-  'COST': 'money',
-  'BILLING': 'money',
-  'HPC': 'server',
+  SPEND: 'money',
+  SOFTWARE: 'applications',
+  COST: 'money',
+  BILLING: 'money',
+  HPC: 'server',
   'MULTI SITE': 'network',
   'CUSTOM LICENSE': 'custom-license',
   'PLANNER PORTAL': 'planner',
   'SOFTWARE RESERVATION': 'reservation',
-  'CHATBOT': 'chatbot',
+  CHATBOT: 'chatbot',
   'PROJECT PORTAL': 'project',
 };
 
@@ -45,5 +45,5 @@ export const LICENSE_MANAGER_SHORTCUTS: readonly LicenseManagerShortcut[] = [
   { letter: 'V', title: 'Vendor', screen: 'Vendor' },
 ];
 
-export const PANEL_HEIGHT_PX = 240;
+export const PANEL_HEIGHT_PX = 560;
 export const PANEL_BOTTOM_GAP_PX = 8;

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
 import { LoginService, LoginType } from '../../core/auth/login.service';
@@ -8,6 +8,7 @@ import { LoginService, LoginType } from '../../core/auth/login.service';
   imports: [ReactiveFormsModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   private readonly loginService = inject(LoginService);
@@ -24,11 +25,11 @@ export class LoginComponent {
   readonly adUsernamePlaceholder = this.api.getSetting('LOGIN_USER_PLACEHOLDER');
   readonly adPasswordPlaceholder = this.api.getSetting('LOGIN_PASSWORD_PLACEHOLDER');
 
-    readonly form = this.formBuilder.nonNullable.group({
-      loginType: ['AD LOGIN' as LoginType, Validators.required],
-      username: ['', Validators.required],
-      password: ['', Validators.required],
-    });
+  readonly form = this.formBuilder.nonNullable.group({
+    loginType: this.formBuilder.nonNullable.control<LoginType>('AD LOGIN', Validators.required),
+    username: ['', Validators.required],
+    password: ['', Validators.required],
+  });
 
   onLoginTypeChange(): void {
     const selectedLoginType = this.form.controls.loginType.value;
@@ -37,7 +38,7 @@ export class LoginComponent {
     this.loginType.set(selectedLoginType);
     this.errorMessage.set('');
     this.form.controls.password.reset();
-    
+
     if (selectedLoginType === 'ADMIN') {
       usernameControl.setValue('admin');
       usernameControl.disable();
@@ -70,11 +71,13 @@ export class LoginComponent {
       await this.loginService.signInUser(loginType, username, password);
     } catch (error) {
       const isConnectionFailure =
-        !(error instanceof Error) || error.name === 'HttpErrorResponse' || error.name === 'TimeoutError';
+        !(error instanceof Error) ||
+        error.name === 'HttpErrorResponse' ||
+        error.name === 'TimeoutError';
       this.errorMessage.set(
         isConnectionFailure
           ? 'Unable to connect or complete sign-in. Please try again.'
-          : (error as Error).message,
+          : error.message,
       );
     } finally {
       this.form.controls.password.reset();

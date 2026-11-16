@@ -1,19 +1,17 @@
-import { Component } from '@angular/core';
+import { instance } from '../../../testing/instances';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { provideHighchartsCharts } from '../charts/highcharts.config';
 import { BAND_COLORS, BandLimits } from '../filters/usage-band-filter';
 import { GaugeStat, GaugeTile } from './gauge-tile';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-gauge-tile-host',
   imports: [GaugeTile],
   template: `
-    <app-gauge-tile
-      [title]="title"
-      [percent]="percent"
-      [limits]="limits"
-      [stats]="stats"
-    />
+    <app-gauge-tile [title]="title" [percent]="percent" [limits]="limits" [stats]="stats" />
   `,
 })
 class HostComponent {
@@ -27,6 +25,10 @@ class HostComponent {
 }
 
 describe('GaugeTile', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHighchartsCharts()] });
+  });
+
   it('shows the title and every stat it is given', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
@@ -55,7 +57,7 @@ describe('GaugeTile', () => {
   it("accents the card with the gauge's own band colour", () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
-    const tile = fixture.nativeElement.querySelector('app-gauge-tile') as HTMLElement;
+    const tile = instance(fixture.nativeElement.querySelector('app-gauge-tile'), HTMLElement);
 
     // 72% is medium (>= 60, < 80) under this host's limits.
     expect(tile.style.getPropertyValue('--tile-accent')).toBe(BAND_COLORS.medium);

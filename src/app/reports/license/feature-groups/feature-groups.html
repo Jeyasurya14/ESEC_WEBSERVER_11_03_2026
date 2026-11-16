@@ -1,0 +1,81 @@
+<div class="report-toolbar" role="toolbar" aria-label="My Feature">
+  <app-search-filter [(text)]="searchText" />
+
+  <span class="filter-divider" aria-hidden="true"></span>
+
+  <label class="filter">
+    <span class="filter-label">Group</span>
+    <app-dropdown
+      ariaLabel="Feature group"
+      [options]="groupOptions()"
+      [value]="selectedGroup()"
+      (valueChange)="selectGroup($event)"
+    />
+  </label>
+
+  <input
+    class="group-input"
+    type="text"
+    placeholder="New group name"
+    aria-label="New group name"
+    [value]="newGroupName()"
+    (input)="newGroupName.set(inputValue($event))"
+    (keydown.enter)="createGroup()"
+  />
+  <button type="button" class="action-button" [disabled]="isSaving()" (click)="createGroup()">
+    Create
+  </button>
+  <button
+    type="button"
+    class="action-button"
+    [disabled]="isSaving() || !canEdit()"
+    (click)="deleteGroup()"
+  >
+    Delete group
+  </button>
+
+  <div class="toolbar-trailing">
+    @if (statusMessage()) {
+      <span class="status-message">{{ statusMessage() }}</span>
+    }
+    <span class="row-count">Selected : {{ selectedCount() }} / {{ rows().length }}</span>
+    <button
+      type="button"
+      class="action-button primary"
+      [disabled]="!canEdit() || !hasChanges() || isSaving() || groupLoading()"
+      (click)="save()"
+    >
+      Save
+    </button>
+  </div>
+</div>
+
+<div class="report-toolbar" role="toolbar" aria-label="Feature group reports">
+  <span class="filter-label">Group reports</span>
+  @for (view of reportViews; track view) {
+    <button
+      type="button"
+      class="action-button"
+      [disabled]="!selectedGroup() || isSaving()"
+      (click)="openReport(view)"
+    >
+      {{ view }}
+    </button>
+  }
+  <button
+    type="button"
+    class="action-button"
+    [disabled]="!selectedGroup() || isSaving()"
+    (click)="openReport('Utilization', true)"
+  >
+    Compare
+  </button>
+</div>
+
+<app-data-grid
+  [rows]="rows()"
+  [columns]="columns"
+  [search]="searchText()"
+  [loading]="reportData.loading()"
+  [emptyText]="reportData.error()"
+/>

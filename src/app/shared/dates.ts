@@ -40,6 +40,11 @@ export function formatDate(value: unknown): string {
   return `${pad(date.getDate())}-${MONTHS[date.getMonth()]}-${date.getFullYear()}`;
 }
 
+/** MySQL DATE parameters use the local calendar date, without a UTC conversion. */
+export function formatSqlDate(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 function asText(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }
@@ -54,7 +59,9 @@ function localDate(year: number, month: number, day: number): Date | null {
   }
   const date = new Date(year, month, day);
   date.setFullYear(year);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day
+    ? date
+    : null;
 }
 
 function pad(value: number): string {

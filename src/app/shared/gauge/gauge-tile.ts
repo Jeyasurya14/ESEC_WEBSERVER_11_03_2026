@@ -11,16 +11,22 @@ export interface GaugeStat {
   selector: 'app-gauge-tile',
   imports: [Gauge],
   template: `
+    <div class="gauge-tile-header">
+      <span class="gauge-tile-eyebrow">License usage</span>
+      <span class="gauge-tile-badge"><span aria-hidden="true"></span>{{ usageBand() }} usage</span>
+    </div>
     <p class="gauge-tile-title" [title]="title()">{{ title() }}</p>
     <app-gauge [percent]="percent()" [limits]="limits()" [ariaLabel]="title()" />
-    <div class="gauge-tile-stats">
-      @for (stat of stats(); track stat.label) {
-        <div class="gauge-tile-stat">
-          <span class="gauge-tile-stat-value">{{ stat.value }}</span>
-          <span class="gauge-tile-stat-label">{{ stat.label }}</span>
-        </div>
-      }
-    </div>
+    @if (stats().length) {
+      <dl class="gauge-tile-stats">
+        @for (stat of stats(); track stat.label) {
+          <div class="gauge-tile-stat">
+            <dt class="gauge-tile-stat-label">{{ stat.label }}</dt>
+            <dd class="gauge-tile-stat-value" [title]="stat.value">{{ stat.value }}</dd>
+          </div>
+        }
+      </dl>
+    }
   `,
   styleUrl: './gauge-tile.scss',
   host: { '[style.--tile-accent]': 'accentColor()' },
@@ -32,7 +38,8 @@ export class GaugeTile {
   readonly limits = input.required<BandLimits>();
   readonly stats = input<readonly GaugeStat[]>([]);
 
-  protected readonly accentColor = computed(() =>
-    bandColor(bandOf(this.percent(), this.limits()), this.limits()),
+  protected readonly usageBand = computed(() =>
+    bandOf(Number.isFinite(this.percent()) ? this.percent() : 0, this.limits()),
   );
+  protected readonly accentColor = computed(() => bandColor(this.usageBand(), this.limits()));
 }

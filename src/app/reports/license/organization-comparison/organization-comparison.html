@@ -1,0 +1,58 @@
+<div class="report-toolbar" role="toolbar" aria-label="Organization year month filters">
+  <app-search-filter [(text)]="filters.search" />
+  <label class="filter"
+    ><span class="filter-label">Show by</span
+    ><app-dropdown
+      ariaLabel="Show by"
+      [options]="comparisonModes"
+      [value]="comparisonMode()"
+      (valueChange)="chooseMode($event)"
+  /></label>
+  @if (comparisonMode() === 'year') {
+    <label class="filter"
+      ><span class="filter-label">Years</span
+      ><input [value]="years()" (change)="years.set(inputValue($event))"
+    /></label>
+  } @else {
+    <label class="filter"
+      ><span class="filter-label">{{ comparisonMode() === 'month' ? 'From' : 'Month' }}</span
+      ><input type="month" [value]="startMonth()" (change)="startMonth.set(inputValue($event))"
+    /></label>
+    @if (comparisonMode() === 'month') {
+      <label class="filter"
+        ><span class="filter-label">To</span
+        ><input type="month" [value]="endMonth()" (change)="endMonth.set(inputValue($event))"
+      /></label>
+    } @else {
+      <label class="filter"
+        ><span class="filter-label">Year</span
+        ><input
+          type="number"
+          min="2000"
+          max="2100"
+          [value]="compareYear()"
+          (change)="compareYear.set(+inputValue($event))"
+      /></label>
+    }
+  }
+  <app-option-filter [(option)]="filters.option" />
+  <app-check-filter
+    label="Primary Feature"
+    [checked]="primaryFeaturesOnly()"
+    (toggled)="primaryFeaturesOnly.set(!primaryFeaturesOnly())"
+  />
+  <app-server-status-filter [(status)]="filters.serverStatus" />
+  <span class="toolbar-trailing row-count">Rows : {{ rowCount() || '0' }}</span>
+</div>
+@if (validationError()) {
+  <p class="report-message" role="alert">{{ validationError() }}</p>
+}
+<app-data-grid
+  [rows]="rows()"
+  [columns]="columns()"
+  [search]="filters.search()"
+  [loading]="reportData.loading()"
+  [emptyText]="reportData.error()"
+  (rowCount)="rowCount.set($event)"
+  (filtersCleared)="filters.search.set('')"
+/>

@@ -15,13 +15,17 @@
       [attr.aria-expanded]="sidebarVisible()"
       (click)="toggleSidebar.emit()"
     >
-      <span class="app-icon" style="--icon-url: url('assets/icons/flaticon/menu.svg')" aria-hidden="true"></span>
+      <span
+        class="app-icon"
+        style="--icon-url: url('assets/icons/flaticon/menu.svg')"
+        aria-hidden="true"
+      ></span>
     </button>
     <button
       #profileButton
       class="avatar"
       type="button"
-      aria-label="Open user settings"
+      [attr.aria-label]="avatarInitial() + ', open user settings'"
       aria-controls="user-settings"
       [attr.aria-expanded]="profileOpen()"
       (click)="toggleProfile()"

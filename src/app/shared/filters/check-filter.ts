@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   template: `
     <label class="chip-toggle" [class.active]="checked()" [style.--chip-color]="dotColor()">
       <input type="checkbox" class="check-input" [checked]="checked()" (change)="toggled.emit()" />
-      @if (!checked() && dotColor(); as color) {
+      @if (dotColor(); as color) {
         <span class="check-dot" [style.background]="color" aria-hidden="true"></span>
       }
       {{ label() }}

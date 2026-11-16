@@ -3,19 +3,23 @@ import {
   StoredPreferences,
   UserPreferencesService,
 } from '../../core/preferences/user-preferences.service';
-import { myColumnsFrom } from '../grid/my-columns';
+import { readColumnVisibility } from '../grid/column-visibility';
 import { ReportSettings, ReportSettingsService } from '../report-settings.service';
 import { UsageOption, toUsageOption } from './option-filter';
 import { ReportRange, formatRange, parseRange } from './range-filter';
 import { ServerStatus } from './server-status-filter';
 import { ALL_BANDS, UsageBand } from './usage-band-filter';
+import { isRecord } from '../../core/utils/data';
+import { BrowserStorage } from '../../core/storage/browser-storage.service';
+import { reportParameter, restoreReportDefaults } from '../status-bar/report-controls';
 
 const DEFAULT_SERVER_STATUS: Readonly<ServerStatus> = { active: true, inactive: false };
 
 @Injectable()
 export class ReportFilters {
   private readonly settingsService = inject(ReportSettingsService);
-  private readonly preferences = inject(UserPreferencesService);
+  private readonly preferenceService = inject(UserPreferencesService);
+  private readonly storage = inject(BrowserStorage);
 
   readonly settings = signal<ReportSettings | null>(null);
   readonly error = signal('');
@@ -28,7 +32,7 @@ export class ReportFilters {
   readonly notExpired = signal(true);
 
   readonly search = signal('');
-  readonly myColumns = signal<Record<string, boolean>>(myColumnsFrom(undefined));
+  readonly hiddenColumns = signal<Record<string, boolean>>(readColumnVisibility(undefined));
 
   private lastSavedSnapshot = '';
 
@@ -41,21 +45,30 @@ export class ReportFilters {
       const snapshot = JSON.stringify(savedChoices);
       if (snapshot !== this.lastSavedSnapshot) {
         this.lastSavedSnapshot = snapshot;
-        untracked(() => void this.preferences.save(savedChoices));
+        untracked(() => void this.preferenceService.save(savedChoices));
       }
     });
   }
 
-  async start(): Promise<boolean> {
+  async start(initialRange?: ReportRange): Promise<boolean> {
     this.error.set('');
     try {
-      const [settings, saved] = await Promise.all([
+      const [settings, savedPreferences] = await Promise.all([
         this.settingsService.load(),
-        this.preferences.load(),
+        this.preferenceService.load(),
       ]);
-      this.restore(saved, settings);
+      this.restore(savedPreferences, settings);
+      restoreReportDefaults(this.storage, savedPreferences);
+      if (initialRange) this.range.set(initialRange);
       this.lastSavedSnapshot = JSON.stringify(this.toSavedPreferences());
-      this.settings.set(settings);
+      this.settings.set({
+        ...settings,
+        workingHoursPerDay: reportParameter(
+          this.storage,
+          'usageHours',
+          settings.workingHoursPerDay,
+        ),
+      });
       return true;
     } catch {
       this.error.set('Unable to load the report settings. Please refresh to try again.');
@@ -63,14 +76,20 @@ export class ReportFilters {
     }
   }
 
-  private restore(saved: StoredPreferences, settings: ReportSettings): void {
-    this.range.set(parseRange(preferenceText(saved['range_main']) || settings.defaultRange));
-    this.option.set(toUsageOption(preferenceText(saved['option']) || settings.defaultOption));
-    this.featureGroup.set(preferenceText(saved['my_feature']) || settings.defaultFeatureGroup);
-    this.bands.set(bandsFrom(saved['lmh_check']));
-    this.serverStatus.set(serverStatusFrom(saved['act_inact']));
-    this.notExpired.set(saved['not_expired'] !== 'N');
-    this.myColumns.set(myColumnsFrom(saved['my_columns']));
+  private restore(savedPreferences: StoredPreferences, settings: ReportSettings): void {
+    this.range.set(
+      parseRange(preferenceText(savedPreferences['range_main']) || settings.defaultRange),
+    );
+    this.option.set(
+      toUsageOption(preferenceText(savedPreferences['option']) || settings.defaultOption),
+    );
+    this.featureGroup.set(
+      preferenceText(savedPreferences['my_feature']) || settings.defaultFeatureGroup,
+    );
+    this.bands.set(bandsFrom(savedPreferences['lmh_check']));
+    this.serverStatus.set(serverStatusFrom(savedPreferences['act_inact']));
+    this.notExpired.set(savedPreferences['not_expired'] !== 'N');
+    this.hiddenColumns.set(readColumnVisibility(savedPreferences['my_columns']));
   }
 
   private toSavedPreferences(): StoredPreferences {
@@ -104,12 +123,11 @@ const BAND_PREFERENCE_KEYS: Record<UsageBand, 'boolgreen' | 'boolyellow' | 'bool
   high: 'boolred',
 };
 
-export function bandsFrom(saved: unknown): UsageBand[] {
-  const savedFlags = saved as Partial<StoredBands> | undefined;
-  if (!savedFlags || typeof savedFlags !== 'object') {
+export function bandsFrom(savedBands: unknown): UsageBand[] {
+  if (!isRecord(savedBands)) {
     return [...ALL_BANDS];
   }
-  return ALL_BANDS.filter((band) => savedFlags[BAND_PREFERENCE_KEYS[band]] !== false);
+  return ALL_BANDS.filter((band) => savedBands[BAND_PREFERENCE_KEYS[band]] !== false);
 }
 
 export function bandsToStored(bands: UsageBand[]): StoredBands {
@@ -125,10 +143,9 @@ export function bandsToStored(bands: UsageBand[]): StoredBands {
   };
 }
 
-export function serverStatusFrom(saved: unknown): ServerStatus {
-  const savedStatus = saved as Partial<ServerStatus> | undefined;
-  if (!savedStatus || typeof savedStatus !== 'object') {
+export function serverStatusFrom(savedValue: unknown): ServerStatus {
+  if (!isRecord(savedValue)) {
     return { ...DEFAULT_SERVER_STATUS };
   }
-  return { active: savedStatus.active !== false, inactive: savedStatus.inactive === true };
+  return { active: savedValue['active'] !== false, inactive: savedValue['inactive'] === true };
 }

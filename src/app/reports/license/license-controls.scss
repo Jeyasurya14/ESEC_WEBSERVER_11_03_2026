@@ -1,0 +1,112 @@
+:host {
+  min-width: 0;
+}
+input,
+select {
+  max-width: 220px;
+  min-width: 95px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: #24364b;
+  background: #fff;
+  font: inherit;
+}
+input[type='checkbox'] {
+  min-width: auto;
+}
+button.action {
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 6px 12px;
+  color: #244661;
+  background: #f8fafc;
+  font: inherit;
+  cursor: pointer;
+}
+button.action:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.report-message {
+  padding: 10px 16px;
+  color: #9f3425;
+  margin: 0;
+}
+.report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 1px solid #ccd7e3;
+  background: #f5f8fc;
+  padding: 4px 8px;
+}
+.report-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 12px;
+  background: transparent;
+  color: #52657b;
+  font: inherit;
+  cursor: pointer;
+}
+.report-tabs button.active {
+  border-color: #287bc0;
+  color: #145c99;
+  background: #e5eff9;
+}
+.empty {
+  margin: auto;
+  color: #62758c;
+  padding: 24px;
+}
+.report-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.parameter-panel {
+  width: 255px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-right: 1px solid #d5deea;
+  background: #f7faff;
+  padding: 12px;
+  overflow: auto;
+}
+.parameter-panel h2 {
+  font-size: 14px;
+  margin: 0;
+}
+.parameter-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.parameter-panel .feature-choice {
+  flex-direction: row;
+  align-items: start;
+}
+.feature-list {
+  overflow: auto;
+  flex: 1;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.report-result {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+@media (max-width: 800px) {
+  .parameter-panel {
+    width: 200px;
+    min-width: 160px;
+  }
+}

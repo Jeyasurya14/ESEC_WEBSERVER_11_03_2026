@@ -1,7 +1,8 @@
+import { literal } from '../utils/data';
 import { Injectable } from '@angular/core';
 import * as CryptoJS from 'crypto-js';
 
-export const StorageKey = {
+export const StorageKey = literal({
   userId: 'loggedInUsername',
   adUserName: 'ADLoggedInUsername',
   loginType: 'loggedInType',
@@ -10,6 +11,12 @@ export const StorageKey = {
   longDuration: 'SP_REPORT_LONGDURATION',
   percentile: 'SP_REPORT_PERCENTILE',
   defaultPercentile: 'PERCENTILE',
+  cpuHoursPerDay: 'SP_REPORT_CPU_HOURS_PER_DAY',
+  reportStartTime: 'SP_REPORT_STIME',
+  reportEndTime: 'SP_REPORT_ETIME',
+  reportRange: 'SP_REPORT_RANGE_SUB',
+  reportStartDate: 'SP_REPORT_SDATE',
+  reportEndDate: 'SP_REPORT_EDATE',
 
   bandLowBelow: 'LS_CBAND_1_VALUE',
   bandHighFrom: 'LS_CBAND_2_VALUE',
@@ -22,7 +29,7 @@ export const StorageKey = {
   featureGroups: 'MY_FEATURE_GROUP',
   today: 'TODAY_DATE',
   version: 'ESEC_VERSION',
-} as const;
+});
 
 export type StorageKey = (typeof StorageKey)[keyof typeof StorageKey];
 
@@ -32,53 +39,53 @@ const KEPT_ON_SIGN_OUT: ReadonlySet<StorageKey> = new Set([StorageKey.version]);
 
 @Injectable({ providedIn: 'root' })
 export class BrowserStorage {
-  get(key: StorageKey): string | null {
+  get(storageKey: StorageKey): string | null {
     try {
-      return localStorage.getItem(key);
+      return localStorage.getItem(storageKey);
     } catch {
       return null;
     }
   }
 
-  set(key: StorageKey, value: string | number): void {
+  set(storageKey: StorageKey, value: string | number): void {
     try {
-      localStorage.setItem(key, String(value));
+      localStorage.setItem(storageKey, String(value));
     } catch {
       // Storage unavailable: nothing is remembered.
     }
   }
 
-  remove(key: StorageKey): void {
+  remove(storageKey: StorageKey): void {
     try {
-      localStorage.removeItem(key);
+      localStorage.removeItem(storageKey);
     } catch {
       // Storage unavailable: nothing to remove.
     }
   }
 
-  setHidden(key: StorageKey, value: string): void {
-    this.set(key, CryptoJS.AES.encrypt(JSON.stringify(value), OBFUSCATION_KEY).toString());
+  setHidden(storageKey: StorageKey, value: string): void {
+    this.set(storageKey, CryptoJS.AES.encrypt(JSON.stringify(value), OBFUSCATION_KEY).toString());
   }
 
-  getHidden(key: StorageKey): string | null {
-    const stored = this.get(key);
-    if (!stored) {
+  getHidden(storageKey: StorageKey): string | null {
+    const encryptedValue = this.get(storageKey);
+    if (!encryptedValue) {
       return null;
     }
     try {
       const decodedValue: unknown = JSON.parse(
-        CryptoJS.AES.decrypt(stored, OBFUSCATION_KEY).toString(CryptoJS.enc.Utf8),
+        CryptoJS.AES.decrypt(encryptedValue, OBFUSCATION_KEY).toString(CryptoJS.enc.Utf8),
       );
       return typeof decodedValue === 'string' && decodedValue !== '' ? decodedValue : null;
     } catch {
-      return null; // unreadable or tampered with: treat as absent
+      return null;
     }
   }
 
   clearOnSignOut(): void {
-    for (const key of Object.values(StorageKey)) {
-      if (!KEPT_ON_SIGN_OUT.has(key)) {
-        this.remove(key);
+    for (const storageKey of Object.values(StorageKey)) {
+      if (!KEPT_ON_SIGN_OUT.has(storageKey)) {
+        this.remove(storageKey);
       }
     }
   }

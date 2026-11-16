@@ -1,0 +1,95 @@
+<div class="report-toolbar" role="toolbar" aria-label="License usage filters">
+  <app-search-filter [(text)]="filters.search" />
+  <label class="filter"
+    ><span class="filter-label">From</span
+    ><input type="date" [value]="startDate()" (change)="startDate.set(inputValue($event))"
+  /></label>
+  <label class="filter"
+    ><span class="filter-label">To</span
+    ><input type="date" [value]="endDate()" (change)="endDate.set(inputValue($event))"
+  /></label>
+  <app-feature-group-filter [(group)]="filters.featureGroup" />
+  <app-check-filter
+    label="Working Days"
+    [checked]="workingDaysOnly()"
+    (toggled)="workingDaysOnly.set(!workingDaysOnly())"
+  />
+  <span class="toolbar-trailing row-count"
+    >Users : {{ distinctUsers() }} · Rows : {{ rowCount() || '0' }}</span
+  >
+</div>
+<div class="report-tabs" role="tablist" aria-label="Usage views">
+  @for (tab of usageViews; track tab) {
+    <button
+      type="button"
+      role="tab"
+      [class.active]="usageView() === tab"
+      [attr.aria-selected]="usageView() === tab"
+      (click)="usageView.set(tab)"
+    >
+      {{ tab }}
+    </button>
+  }
+</div>
+<div class="report-layout">
+  <aside class="parameter-panel" aria-label="Software selection">
+    <h2>Software</h2>
+    @if (softwareError()) {
+      <p role="alert">{{ softwareError() }}</p>
+      <button class="action" (click)="loadSoftware()">Retry</button>
+    }
+    <button
+      type="button"
+      class="action"
+      (click)="
+        selectedSoftwareNames.set(
+          selectedSoftwareNames().length === softwareOptions().length ? [] : softwareOptions()
+        )
+      "
+    >
+      {{
+        selectedSoftwareNames().length === softwareOptions().length && softwareOptions().length
+          ? 'Clear selection'
+          : 'Select all'
+      }}
+    </button>
+    <div class="feature-list">
+      @for (name of softwareOptions(); track name) {
+        <label class="feature-choice"
+          ><input
+            type="checkbox"
+            [checked]="selectedSoftwareNames().includes(name)"
+            (change)="toggleSoftware(name)"
+          />{{ name }}</label
+        >
+      }
+    </div>
+  </aside>
+  <section class="report-result">
+    @if (usageView() !== 'Summary') {
+      <div class="report-toolbar">
+        <label class="filter"
+          ><span class="filter-label">Group by</span
+          ><app-dropdown
+            ariaLabel="Group by"
+            [options]="groupOptions"
+            [value]="matrixGroup()"
+            (valueChange)="chooseGroup($event)"
+        /></label>
+      </div>
+    }
+    @if (selectedSoftwareNames().length) {
+      <app-data-grid
+        [rows]="rows()"
+        [columns]="columns()"
+        [search]="filters.search()"
+        [loading]="reportData.loading()"
+        [emptyText]="reportData.error()"
+        (rowCount)="rowCount.set($event)"
+        (filtersCleared)="filters.search.set('')"
+      />
+    } @else {
+      <p class="empty">Select software to load license usage.</p>
+    }
+  </section>
+</div>

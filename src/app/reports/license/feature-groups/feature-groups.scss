@@ -1,0 +1,49 @@
+// Layout and toolbar styles are shared (report-fill, report-toolbar); only this screen's extras are here.
+@use '../../../../styles/variables' as *;
+
+.group-input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d7e3f4;
+  border-radius: 7px;
+  font-size: 12px;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: $filter-shadow-focus;
+  }
+}
+
+.action-button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d7e3f4;
+  border-radius: 7px;
+  background: #f7faff;
+  color: $primary-dark;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.primary {
+    border-color: $primary-dark;
+    background: $primary-dark;
+    color: #ffffff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: $filter-shadow-focus;
+  }
+}
+
+.status-message,
+.row-count {
+  color: $gray-900;
+  font-size: 12px;
+}

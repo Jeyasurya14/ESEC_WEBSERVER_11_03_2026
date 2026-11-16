@@ -1,86 +1,117 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
-import { BAND_COLORS, BandLimits } from '../filters/usage-band-filter';
-import { Gauge, angleForPercent, arcPath } from './gauge';
-
-/** Pulls the two end points out of an `arcPath` string, for comparing against expected coordinates. */
-function arcEndpoints(path: string): number[] {
-  return (path.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
-}
-
-describe('angleForPercent', () => {
-  it('maps 0% to the left, 100% to the right and 50% to the top', () => {
-    expect(angleForPercent(0)).toBe(180);
-    expect(angleForPercent(50)).toBe(90);
-    expect(angleForPercent(100)).toBe(0);
-  });
-
-  it('clamps out-of-range percentages instead of pointing past the ends', () => {
-    expect(angleForPercent(-10)).toBe(180);
-    expect(angleForPercent(150)).toBe(0);
-  });
-});
-
-describe('arcPath', () => {
-  it('draws a half circle from the left point to the right point for the full 0-100 range', () => {
-    const [startX, startY, , , , , , endX, endY] = arcEndpoints(arcPath(0, 100));
-    expect(startX).toBeCloseTo(20);
-    expect(startY).toBeCloseTo(100);
-    expect(endX).toBeCloseTo(180);
-    expect(endY).toBeCloseTo(100);
-  });
-});
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { provideHighchartsCharts } from '../charts/highcharts.config';
+import { BandLimits } from '../filters/usage-band-filter';
+import { Gauge } from './gauge';
 
 const LIMITS: BandLimits = { lowBelow: 60, highFrom: 80 };
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-gauge-host',
   imports: [Gauge],
-  template: `<app-gauge [percent]="percent" [limits]="limits" />`,
+  template: `<app-gauge [percent]="percent()" [limits]="limits" [ariaLabel]="ariaLabel" />`,
 })
 class HostComponent {
-  percent = 50;
+  percent = signal(50);
   limits = LIMITS;
+  ariaLabel = 'Acme CAD, server-1, feature-x';
 }
 
 describe('Gauge', () => {
+  afterEach(() => vi.unstubAllGlobals());
   function render(percent: number) {
+    TestBed.configureTestingModule({ providers: [provideHighchartsCharts()] });
     const fixture = TestBed.createComponent(HostComponent);
-    fixture.componentInstance.percent = percent;
+    fixture.componentInstance.percent.set(percent);
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
-    return { element };
+    return { element, fixture };
   }
 
-  it('shows the rounded percentage in the middle of the dial', () => {
-    const { element } = render(50);
+  it('shows the rounded percentage in the readout', () => {
+    const { element } = render(49.6);
     expect(element.querySelector('.gauge-value')?.textContent).toBe('50%');
   });
 
-  it('colours the progress arc for the band the percentage falls in', () => {
-    expect(render(50).element.querySelector('.gauge-progress')?.getAttribute('stroke')).toBe(
-      BAND_COLORS.low, // 50 is below lowBelow (60)
-    );
-    expect(render(90).element.querySelector('.gauge-progress')?.getAttribute('stroke')).toBe(
-      BAND_COLORS.high, // 90 is at/above highFrom (80)
+  it("names the gauge with the caller's label and the current percentage", () => {
+    const { element } = render(50);
+    expect(element.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(
+      'Acme CAD, server-1, feature-x: 50% utilization',
     );
   });
 
-  it('draws the progress arc from empty up to the percentage, so it reads as a fill level', () => {
-    const { element } = render(25);
-    const [, , , , , , , endX] = arcEndpoints(element.querySelector('.gauge-progress')!.getAttribute('d')!);
-    // 0% sits at x=20 (the left end) and 100% at x=180 (the right end); 25% should land well
-    // short of the top (x=100), proving the arc stops at the value instead of always being full.
-    expect(endX).toBeGreaterThan(20);
-    expect(endX).toBeLessThan(100);
+  it('renders a Highcharts gauge chart element for the dial', async () => {
+    const { element, fixture } = render(50);
+    await fixture.whenStable();
+    expect(element.querySelector('.gauge-chart')).not.toBeNull();
   });
 
-  it('still shows the three zone colours regardless of the current value', () => {
-    const { element } = render(10);
-    const zoneColors = Array.from(element.querySelectorAll('.gauge-zone')).map((zone) =>
-      zone.getAttribute('stroke'),
+  it('loads the gauge module, renders its SVG, and updates the live value', async () => {
+    const { element, fixture } = render(50);
+    await fixture.whenStable();
+    expect(element.querySelector('.highcharts-series.highcharts-gauge-series')).not.toBeNull();
+    fixture.componentInstance.percent.set(85);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(element.querySelector('.gauge-value')?.textContent).toBe('85%');
+    expect(element.querySelector('svg.highcharts-root')).not.toBeNull();
+    expect(element.querySelector('svg.highcharts-root')?.getAttribute('height')).toBe('168');
+  });
+
+  it('defers hidden tiles until they enter the viewport and cleans up the observer', async () => {
+    let enter!: IntersectionObserverCallback;
+    let observer!: IntersectionObserver;
+    const entry = (isIntersecting: boolean): IntersectionObserverEntry => ({
+      isIntersecting,
+      intersectionRatio: isIntersecting ? 1 : 0,
+      time: 0,
+      target: document.createElement('div'),
+      rootBounds: null,
+      boundingClientRect: new DOMRectReadOnly(),
+      intersectionRect: new DOMRectReadOnly(),
+    });
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          enter = callback;
+          observer = this;
+        }
+        readonly root = null;
+        readonly rootMargin = '';
+        readonly thresholds = [0];
+        observe() {}
+        unobserve() {}
+        takeRecords(): IntersectionObserverEntry[] {
+          return [];
+        }
+        disconnect = disconnect;
+      },
     );
-    expect(zoneColors).toEqual([BAND_COLORS.low, BAND_COLORS.medium, BAND_COLORS.high]);
+    const { element, fixture } = render(50);
+    await fixture.whenStable();
+    expect(element.querySelector('highcharts-chart')).toBeNull();
+    enter([entry(true)], observer);
+    await fixture.whenStable();
+    expect(element.querySelector('.highcharts-gauge-series')).not.toBeNull();
+    enter([entry(false)], observer);
+    await fixture.whenStable();
+    expect(element.querySelector('highcharts-chart')).toBeNull();
+    enter([entry(true)], observer);
+    await fixture.whenStable();
+    expect(element.querySelector('.highcharts-gauge-series')).not.toBeNull();
+    fixture.destroy();
+    expect(disconnect).toHaveBeenCalled();
+  });
+
+  it('keeps invalid values out of the readout and accessible name', () => {
+    const { element } = render(NaN);
+    expect(element.querySelector('.gauge-value')?.textContent).toBe('0%');
+    expect(element.querySelector('[role="img"]')?.getAttribute('aria-label')).toContain(
+      '0% utilization',
+    );
   });
 });

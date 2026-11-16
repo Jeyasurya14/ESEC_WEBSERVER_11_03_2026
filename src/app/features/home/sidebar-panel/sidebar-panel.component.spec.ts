@@ -1,3 +1,4 @@
+import { instance } from '../../../../testing/instances';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { SidebarPanelComponent } from './sidebar-panel.component';
@@ -7,13 +8,14 @@ describe('selected report identity', () => {
     const fixture = TestBed.createComponent(SidebarPanelComponent);
     fixture.componentRef.setInput('isOpen', true);
     fixture.componentRef.setInput('screens', [
-      { mainMenuName: 'LICENSE', subMenuName: 'Department' }
+      { mainMenuName: 'LICENSE', subMenuName: 'Department' },
     ]);
     fixture.componentRef.setInput('selectedMenu', {
-      mainMenuName: 'DASHBOARD', subMenuName: 'Department'
+      mainMenuName: 'DASHBOARD',
+      subMenuName: 'Department',
     });
     fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('.action-chip') as HTMLButtonElement;
+    const button = instance(fixture.nativeElement.querySelector('.action-chip'), HTMLButtonElement);
     expect(button.getAttribute('aria-pressed')).toBe('false');
     expect(button.classList.contains('active')).toBe(false);
   });

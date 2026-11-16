@@ -1,3 +1,4 @@
+import { instance } from '../../../testing/instances';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -44,7 +45,7 @@ describe('reference header and sidebar UI', () => {
   }
 
   function click(element: HTMLElement, selector: string): void {
-    const button = element.querySelector(selector) as HTMLButtonElement;
+    const button = instance(element.querySelector(selector), HTMLElement);
     button.click();
   }
 
@@ -54,6 +55,9 @@ describe('reference header and sidebar UI', () => {
     expect(element.querySelector('.header-title')?.textContent).toBe('License Monitoring System');
     expect(element.querySelector('.logo-image')?.getAttribute('src')).toBe('company_logo.png');
     expect(element.querySelector('.avatar')?.textContent?.trim()).toBe('J');
+    expect(element.querySelector('.avatar')?.getAttribute('aria-label')).toBe(
+      'J, open user settings',
+    );
     expect(element.querySelectorAll('app-sidebar .menu-item')).toHaveLength(3);
     expect(element.querySelector('app-sidebar button[aria-label="ADMIN"]')).toBeNull();
     expect(element.querySelector('.menu-item[aria-label="LICENSE MANAGER"]')).toBeNull();
@@ -66,7 +70,7 @@ describe('reference header and sidebar UI', () => {
     const element: HTMLElement = fixture.nativeElement;
     click(element, 'button[aria-label="DASHBOARD"]');
     fixture.detectChanges();
-    const input = element.querySelector('.filter-input') as HTMLInputElement;
+    const input = instance(element.querySelector('.filter-input'), HTMLInputElement);
     input.value = 'department';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
@@ -84,7 +88,7 @@ describe('reference header and sidebar UI', () => {
     const element: HTMLElement = fixture.nativeElement;
     click(element, 'button[aria-label="DASHBOARD"]');
     fixture.detectChanges();
-    const input = element.querySelector('.filter-input') as HTMLInputElement;
+    const input = instance(element.querySelector('.filter-input'), HTMLInputElement);
     input.value = 'not-a-report';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
@@ -93,15 +97,16 @@ describe('reference header and sidebar UI', () => {
     fixture.detectChanges();
     click(element, 'button[aria-label="DASHBOARD"]');
     fixture.detectChanges();
-    expect((element.querySelector('.filter-input') as HTMLInputElement).value).toBe('');
+    expect(instance(element.querySelector('.filter-input'), HTMLInputElement).value).toBe('');
   });
 
   it('closes on Escape and returns focus to the module button', () => {
     const fixture = createHome();
     document.body.appendChild(fixture.nativeElement);
-    const button = fixture.nativeElement.querySelector(
-      'button[aria-label="DASHBOARD"]',
-    ) as HTMLButtonElement;
+    const button = instance(
+      fixture.nativeElement.querySelector('button[aria-label="DASHBOARD"]'),
+      HTMLButtonElement,
+    );
     button.click();
     fixture.detectChanges();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -120,7 +125,7 @@ describe('reference header and sidebar UI', () => {
 
   it('opens the profile and closes it on outside click', () => {
     const fixture = createHome();
-    click(fixture.nativeElement, 'button[aria-label="Open user settings"]');
+    click(fixture.nativeElement, 'button.avatar');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#user-settings')).not.toBeNull();
     expect(fixture.nativeElement.querySelectorAll('#user-settings button')).toHaveLength(4);
@@ -131,22 +136,25 @@ describe('reference header and sidebar UI', () => {
 
   it('keeps unimplemented profile actions explicit and logout uses the existing clear-session flow', () => {
     const fixture = createHome();
-    click(fixture.nativeElement, 'button[aria-label="Open user settings"]');
+    click(fixture.nativeElement, 'button.avatar');
     fixture.detectChanges();
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('#user-settings button'),
-    ) as HTMLButtonElement[];
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('#user-settings button')).map(
+      (button) => instance(button, HTMLButtonElement),
+    );
     buttons.find((button) => button.textContent?.includes('My Feature'))?.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.notice()).toContain('not available');
-    click(fixture.nativeElement, 'button[aria-label="Open user settings"]');
+    click(fixture.nativeElement, 'button.avatar');
     fixture.detectChanges();
     const profileButtons = Array.from(
       fixture.nativeElement.querySelectorAll('#user-settings button'),
-    ) as HTMLButtonElement[];
-    const logout = profileButtons.find((button) => {
-      return button.textContent?.trim() === 'Logout';
-    }) as HTMLButtonElement;
+    ).map((button) => instance(button, HTMLButtonElement));
+    const logout = instance(
+      profileButtons.find((button) => {
+        return button.textContent?.trim() === 'Logout';
+      }),
+      HTMLButtonElement,
+    );
     logout.click();
     expect(signOut).toHaveBeenCalledOnce();
   });
@@ -155,10 +163,12 @@ describe('reference header and sidebar UI', () => {
     const fixture = createHome();
     const element: HTMLElement = fixture.nativeElement;
     expect(
-      (element.querySelector('.menu-textitem[aria-label="Vendor"]') as HTMLButtonElement).disabled,
+      instance(element.querySelector('.menu-textitem[aria-label="Vendor"]'), HTMLButtonElement)
+        .disabled,
     ).toBe(false);
     expect(
-      (element.querySelector('.menu-textitem[aria-label="Bentley"]') as HTMLButtonElement).disabled,
+      instance(element.querySelector('.menu-textitem[aria-label="Bentley"]'), HTMLButtonElement)
+        .disabled,
     ).toBe(true);
     click(element, '.menu-textitem[aria-label="Vendor"]');
     await fixture.whenStable();
@@ -168,7 +178,10 @@ describe('reference header and sidebar UI', () => {
   it('opens and closes the same module with its sidebar button', () => {
     const fixture = createHome();
     const element: HTMLElement = fixture.nativeElement;
-    const button = element.querySelector('button[aria-label="DASHBOARD"]') as HTMLButtonElement;
+    const button = instance(
+      element.querySelector('button[aria-label="DASHBOARD"]'),
+      HTMLButtonElement,
+    );
     button.click();
     fixture.detectChanges();
     expect(button.getAttribute('aria-expanded')).toBe('true');

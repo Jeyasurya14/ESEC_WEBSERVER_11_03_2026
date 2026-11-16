@@ -1,41 +1,48 @@
 <nav #sidebar id="application-sidebar" class="sidebar" aria-label="Application modules">
-  @for (module of modules(); track module) {
-    <button
-      #buttonClk
-      type="button"
-      class="menu-item"
-      [class.selected]="selectedModule() === module"
-      [title]="module"
-      [attr.aria-label]="module"
-      [attr.aria-expanded]="panelOpen() && selectedModule() === module"
-      aria-controls="sidebar-panel"
-      (click)="openModule(module, buttonClk)"
-    >
-      <span
-        class="app-icon"
-        [style.--icon-url]="'url(' + getIcon(module) + ')'"
-        aria-hidden="true"
-      ></span>
-    </button>
-  }
-
-  <div class="sidebar-text" aria-label="License Manager shortcuts">
-    @for (shortcut of shortcuts(); track shortcut.title) {
+  <div class="sidebar-modules" (scroll)="panelOpen.set(false)">
+    @for (module of modules(); track module) {
       <button
+        #buttonClk
         type="button"
-        class="menu-textitem"
-        [class.selected]="
-          selectedMenu()?.mainMenuName === licenseManagerMenu &&
-          selectedMenu()?.subMenuName === shortcut.menu?.subMenuName
-        "
-        [title]="shortcut.title"
-        [attr.aria-label]="shortcut.title"
-        [disabled]="!shortcut.menu"
-        (click)="selectSidebarReport(shortcut.menu)"
+        class="menu-item"
+        [class.selected]="selectedMenu()?.mainMenuName === module"
+        [class.panel-active]="panelOpen() && selectedModule() === module"
+        [title]="module"
+        [attr.aria-label]="module"
+        [attr.aria-expanded]="panelOpen() && selectedModule() === module"
+        [attr.aria-current]="selectedMenu()?.mainMenuName === module ? 'true' : null"
+        aria-controls="sidebar-panel"
+        (click)="openModule(module, buttonClk)"
       >
-        <span>{{ shortcut.letter }}</span>
+        <span
+          class="app-icon"
+          [style.--icon-url]="'url(' + getIcon(module) + ')'"
+          aria-hidden="true"
+        ></span>
       </button>
     }
+  </div>
+
+  <div class="sidebar-text" aria-label="License Manager shortcuts">
+    <span class="shortcut-heading" title="License Manager shortcuts" aria-hidden="true">LM</span>
+    <div class="shortcut-grid">
+      @for (shortcut of shortcuts(); track shortcut.title) {
+        <button
+          type="button"
+          class="menu-textitem"
+          [class.selected]="
+            selectedMenu()?.mainMenuName === licenseManagerMenu &&
+            selectedMenu()?.subMenuName === shortcut.menu?.subMenuName
+          "
+          [title]="shortcut.title"
+          [attr.aria-label]="shortcut.title"
+          [disabled]="!shortcut.menu"
+          (click)="selectSidebarReport(shortcut.menu)"
+        >
+          <span>{{ shortcut.letter }}</span>
+        </button>
+      }
+    </div>
   </div>
 </nav>
 

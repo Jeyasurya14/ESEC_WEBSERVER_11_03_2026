@@ -1,12 +1,19 @@
-import { Component } from '@angular/core';
+import { instance } from '../../../testing/instances';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { Dropdown, DropdownOption } from './dropdown';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-dropdown-host',
   imports: [Dropdown],
-  template: `<app-dropdown ariaLabel="Fruit" [options]="options" [value]="value" (valueChange)="value = $event" />`,
+  template: `<app-dropdown
+    ariaLabel="Fruit"
+    [options]="options"
+    [value]="value"
+    (valueChange)="value = $event"
+  />`,
 })
 class HostComponent {
   readonly options: DropdownOption[] = [
@@ -22,7 +29,7 @@ describe('Dropdown', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
-    const trigger = () => element.querySelector('.dropdown-trigger') as HTMLButtonElement;
+    const trigger = () => instance(element.querySelector('.dropdown-trigger'), HTMLButtonElement);
     const options = () => Array.from(element.querySelectorAll('.dropdown-option'));
     return { fixture, element, trigger, options };
   }
@@ -30,6 +37,7 @@ describe('Dropdown', () => {
   it('shows the selected option label on the closed trigger', () => {
     const { trigger } = render();
     expect(trigger().textContent).toContain('Apple');
+    expect(trigger().getAttribute('aria-label')).toBe('Apple, Fruit');
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -57,6 +65,21 @@ describe('Dropdown', () => {
     expect(fixture.componentInstance.value).toBe('pear');
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
     expect(trigger().textContent).toContain('Pear');
+    expect(trigger().getAttribute('aria-label')).toBe('Pear, Fruit');
+  });
+
+  it('uses the visible label for unnamed and empty dropdowns', () => {
+    const fixture = TestBed.createComponent(Dropdown);
+    fixture.componentRef.setInput('options', []);
+    fixture.componentRef.setInput('value', '');
+    fixture.detectChanges();
+    const trigger = instance(fixture.nativeElement, HTMLElement).querySelector('button')!;
+    expect(trigger.textContent?.trim()).toBe('Select an option');
+    expect(trigger.getAttribute('aria-label')).toBe('Select an option');
+    fixture.componentRef.setInput('options', [{ value: 'day', label: 'Day' }]);
+    fixture.componentRef.setInput('value', 'day');
+    fixture.detectChanges();
+    expect(trigger.getAttribute('aria-label')).toBe('Day');
   });
 
   it('closes on Escape without changing the value', () => {
@@ -89,7 +112,7 @@ describe('Dropdown', () => {
     trigger().click();
     fixture.detectChanges();
 
-    const menu = element.querySelector('.dropdown-menu') as HTMLElement;
+    const menu = instance(element.querySelector('.dropdown-menu'), HTMLElement);
     expect(getComputedStyle(menu).position).toBe('fixed');
     expect(menu.style.top).not.toBe('');
     expect(menu.style.left).not.toBe('');

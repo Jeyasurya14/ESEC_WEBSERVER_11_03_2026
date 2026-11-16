@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { formatCompact, formatNumber, numberColumn, percentCell, toNumber } from './columns';
+import { GridFixture } from '../../../testing/grid-fixture';
+import { instance } from '../../../testing/instances';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  formatCompact,
+  formatNumber,
+  linkColumn,
+  numberColumn,
+  percentCell,
+  toNumber,
+} from './columns';
 
 describe('grid formatting', () => {
   it('adds thousands separators and leaves empty values empty', () => {
@@ -31,21 +40,36 @@ describe('grid formatting', () => {
   });
 
   it('draws a band-coloured dot next to a percentage, as text not markup', () => {
-    const cell = percentCell(85, { lowBelow: 50, highFrom: 80 }) as HTMLElement;
+    const cell = instance(percentCell(85, { lowBelow: 50, highFrom: 80 }), HTMLElement);
     expect(cell.textContent).toBe('85');
-    expect((cell.firstChild as HTMLElement).style.background).toBe('rgb(239, 68, 68)');
+    expect(instance(cell.firstChild, HTMLElement).style.background).toBe('rgb(239, 68, 68)');
     expect(percentCell('', { lowBelow: 50, highFrom: 80 })).toBe('');
+  });
+
+  it('styles a link column as clickable and calls back with the clicked row', () => {
+    const onClick = vi.fn();
+    const column = linkColumn<{ name: string }>('name', 'Feature', onClick);
+    expect(column.cellClass).toBe('link-cell');
+
+    const row = { name: 'MATLAB_Report_Gen' };
+    using grid = new GridFixture(row);
+    column.onCellClicked?.(grid.click(row));
+    expect(onClick).toHaveBeenCalledWith(row);
+
+    onClick.mockClear();
+    column.onCellClicked?.(grid.click(undefined));
+    expect(onClick).not.toHaveBeenCalled();
   });
 
   it('reads numbers sent as text as numbers, so they sort and filter numerically', () => {
     const column = numberColumn<{ p_dp: string }>('p_dp', '%');
-    const valueOf = (text: string) =>
-      (column.valueGetter as (params: { data: { p_dp: string } }) => unknown)({
-        data: { p_dp: text },
-      });
+    using grid = new GridFixture({ p_dp: '' });
+    const getter = column.valueGetter;
+    if (typeof getter !== 'function') throw new Error('Missing number getter');
+    const readValue = (text: string) => getter(grid.valueParams({ p_dp: text }));
 
-    expect(valueOf('100')).toBe(100);
-    expect(valueOf('9.5')).toBe(9.5);
+    expect(readValue('100')).toBe(100);
+    expect(readValue('9.5')).toBe(9.5);
     expect(toNumber('')).toBeNull();
     expect(toNumber('n/a')).toBeNull();
   });

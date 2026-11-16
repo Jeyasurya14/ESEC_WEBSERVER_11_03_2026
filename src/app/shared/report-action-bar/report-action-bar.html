@@ -1,0 +1,52 @@
+<div
+  #frame
+  class="action-bar"
+  [class.has-overflow]="hasOverflow()"
+  role="toolbar"
+  aria-orientation="horizontal"
+  [attr.aria-label]="label()"
+  [attr.aria-busy]="busy()"
+  (keydown)="onKeydown($event)"
+>
+  <button
+    type="button"
+    class="scroll-button"
+    aria-label="Previous report views"
+    tabindex="-1"
+    [hidden]="!hasOverflow()"
+    [disabled]="!canScrollBack()"
+    (click)="scroll(-1)"
+  >
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 5-5 5 5 5" /></svg>
+  </button>
+  <div #viewport class="action-viewport" (scroll)="measure()">
+    <div #track class="action-track">
+      @for (action of actions(); track action.id) {
+        <button
+          #actionButton
+          type="button"
+          class="report-action"
+          [class.active]="activeId() === action.id"
+          [attr.aria-pressed]="activeId() === action.id"
+          [disabled]="action.disabled"
+          [attr.tabindex]="tabStop() === action.id ? 0 : -1"
+          (focus)="focusAction(action.id, actionButton)"
+          (click)="choose(action)"
+        >
+          {{ action.label }}
+        </button>
+      }
+    </div>
+  </div>
+  <button
+    type="button"
+    class="scroll-button"
+    aria-label="Next report views"
+    tabindex="-1"
+    [hidden]="!hasOverflow()"
+    [disabled]="!canScrollForward()"
+    (click)="scroll(1)"
+  >
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" /></svg>
+  </button>
+</div>

@@ -1,0 +1,328 @@
+<div
+  class="report-toolbar detail-toolbar"
+  [class.heatmap-toolbar]="view() === 'heatmap'"
+  role="toolbar"
+  [attr.aria-label]="reportInfo().title + ' filters'"
+>
+  <app-search-filter [(text)]="searchText" />
+  <label class="filter"
+    ><span class="filter-label">From</span
+    ><input type="date" [value]="parameters().start" (change)="change('start', inputValue($event))"
+  /></label>
+  <label class="filter"
+    ><span class="filter-label">To</span
+    ><input type="date" [value]="parameters().end" (change)="change('end', inputValue($event))"
+  /></label>
+  @if (
+    reportInfo().times &&
+    (view() !== 'checkoutUser' || parameters().checkoutView === 'time') &&
+    (view() !== 'qos' || parameters().businessHours)
+  ) {
+    <input
+      type="time"
+      aria-label="Start time"
+      [value]="parameters().startTime"
+      (change)="change('startTime', inputValue($event))"
+    />
+    <input
+      type="time"
+      aria-label="End time"
+      [value]="parameters().endTime"
+      (change)="change('endTime', inputValue($event))"
+    />
+  }
+  @if (reportInfo().granularities; as granularities) {
+    <label class="filter"
+      ><span class="filter-label">Period</span
+      ><select
+        [value]="parameters().granularity"
+        (change)="changeSelect('granularity', inputValue($event))"
+      >
+        @for (period of granularities; track period) {
+          <option [value]="period">{{ period === 'qtr' ? 'Quarter' : period }}</option>
+        }
+      </select></label
+    >
+  }
+  @if (reportInfo().workingDays) {
+    <app-check-filter
+      label="Working Days"
+      [checked]="parameters().workingDays"
+      (toggled)="change('workingDays', !parameters().workingDays)"
+    />
+  }
+  @if (reportInfo().hours) {
+    @if (view() === 'month' || view() === 'hours' || view() === 'longDuration') {
+      <label class="filter"
+        ><span class="filter-label">Hours</span
+        ><input
+          type="number"
+          min="0.01"
+          step="0.25"
+          [value]="parameters().workingHours"
+          (change)="change('workingHours', +inputValue($event))"
+      /></label>
+    }
+    @if (view() === 'assetInfo' || view() === 'qos' || view() === 'utilizationHours') {
+      <app-check-filter
+        label="Business hours"
+        [checked]="parameters().businessHours"
+        (toggled)="change('businessHours', !parameters().businessHours)"
+      />
+    }
+  }
+  @if (view() === 'checkoutUser') {
+    <select
+      aria-label="Checkout mode"
+      [value]="parameters().checkoutView"
+      (change)="changeSelect('checkoutView', inputValue($event))"
+    >
+      <option value="date">Date</option>
+      <option value="time">Date and Time</option>
+    </select>
+  }
+  @if (view() === 'usage') {
+    <select
+      aria-label="Usage view"
+      [value]="parameters().usageView"
+      (change)="changeSelect('usageView', inputValue($event))"
+    >
+      <option value="summary">Summary</option>
+      <option value="daywise">Daywise Summary</option>
+      <option value="session">Daywise Session</option>
+      <option value="matrix">Matrix</option>
+    </select>
+    @if (selectedUser()) {
+      <button type="button" class="action" (click)="selectedUser.set('')">
+        Clear user: {{ selectedUser() }}
+      </button>
+    }
+  }
+  @if (view() === 'usage' || view() === 'utilizationHours') {
+    <select
+      aria-label="Group usage by"
+      [value]="groupField()"
+      (change)="groupField.set(inputValue($event))"
+    >
+      <option value="">Users</option>
+      <option value="divn">{{ settings().divisionLabel }}</option>
+      <option value="dept">{{ settings().departmentLabel }}</option>
+      <option value="g_name">Group</option>
+      <option value="wksn">Computer</option>
+    </select>
+  }
+  @if (view() === 'utilizationHours' && parameters().granularity === 'month') {
+    <app-check-filter
+      label="New calculation"
+      [checked]="parameters().newCalculation"
+      (toggled)="change('newCalculation', !parameters().newCalculation)"
+    />
+  }
+  @if (view() === 'heatmap') {
+    <label
+      >Min %
+      <input
+        type="number"
+        min="0"
+        [value]="chartSettings().minimum"
+        (change)="changeChart('minimum', +inputValue($event))"
+    /></label>
+    <label
+      >Max %
+      <input
+        type="number"
+        min="0"
+        [value]="chartSettings().maximum"
+        (change)="changeChart('maximum', +inputValue($event))"
+    /></label>
+    <app-check-filter
+      label="Show zero"
+      [checked]="chartSettings().showZero"
+      (toggled)="changeChart('showZero', !chartSettings().showZero)"
+    />
+  }
+  <span class="toolbar-trailing row-count">Rows: {{ gridRows().length }}</span>
+  @if (reportInfo().chart) {
+    <select aria-label="Report layout" [value]="layout()" (change)="setLayout(inputValue($event))">
+      <option value="split">Grid and Chart</option>
+      <option value="chart">Chart</option>
+      <option value="grid">Grid</option>
+    </select>
+  }
+</div>
+@if (view() === 'history' || view() === 'qos') {
+  <div class="analysis-controls" role="group" aria-label="Capacity analysis">
+    <label
+      >Percentile
+      <input
+        type="number"
+        min="0"
+        max="100"
+        [value]="chartSettings().percentile"
+        (change)="changeChart('percentile', +inputValue($event))"
+    /></label>
+    <label
+      >Reduction
+      <input
+        type="number"
+        min="1"
+        [value]="parameters().reduction"
+        (change)="change('reduction', +inputValue($event))"
+    /></label>
+    <label
+      >Capacity
+      <input
+        type="number"
+        min="0"
+        [value]="chartSettings().capacity"
+        (change)="changeChart('capacity', +inputValue($event))"
+    /></label>
+    @if (view() === 'qos') {
+      <select
+        aria-label="QOS category"
+        [value]="parameters().category"
+        (change)="changeSelect('category', inputValue($event))"
+      >
+        <option value="date">Days</option>
+        <option value="points">Data Points</option>
+      </select>
+      <app-check-filter
+        label="Linear levels"
+        [checked]="chartSettings().linear"
+        (toggled)="changeChart('linear', !chartSettings().linear)"
+      />
+      <select
+        aria-label="Polynomial comparison"
+        [value]="chartSettings().polynomial"
+        (change)="changeChart('polynomial', +inputValue($event))"
+      >
+        <option value="0">No fit</option>
+        <option value="2">Order 2</option>
+        <option value="3">Order 3</option>
+        <option value="4">Order 4</option>
+      </select>
+    }
+  </div>
+}
+@if (reportInfo().chart && view() !== 'heatmap') {
+  <div class="analysis-controls" role="group" aria-label="Chart controls">
+    <app-check-filter
+      label="Percentage"
+      [checked]="chartSettings().percentage"
+      (toggled)="changeChart('percentage', !chartSettings().percentage)"
+    />
+    <app-check-filter
+      label="Labels"
+      [checked]="chartSettings().labels"
+      (toggled)="changeChart('labels', !chartSettings().labels)"
+    />
+    <app-check-filter
+      label="Allow overlap"
+      [checked]="chartSettings().overlap"
+      (toggled)="changeChart('overlap', !chartSettings().overlap)"
+    />
+    @if (view() === 'utilization') {
+      @for (item of chartSeries; track item.id) {
+        @if (!chartSettings().percentage || item.id !== 'ISSUED') {
+          <app-check-filter
+            [label]="item.label"
+            [dotColor]="item.color"
+            [checked]="chartSettings().visible.includes(item.id)"
+            (toggled)="toggleSeries(item.id)"
+          />
+        }
+      }
+    }
+  </div>
+}
+@if (view() === 'utilizationHours') {
+  <div class="detail-statistics">
+    <button type="button" class="action" (click)="selectedRow.set({ allUsers: true })">
+      Distinct users: {{ usageStats().users }}
+    </button>
+    · Available hours: {{ usageStats().available.toFixed(2) }} · Used hours:
+    {{ usageStats().used.toFixed(2) }} · Utilization: {{ usageStats().percentage.toFixed(2) }}%
+  </div>
+}
+@if (mainData.error()) {
+  <div class="report-error" role="alert">
+    {{ mainData.error() }} <button type="button" class="action" (click)="refresh()">Retry</button>
+  </div>
+}
+@if (view() === 'heatmap' && layout() !== 'grid') {
+  <app-heatmap-controls
+    [colors]="settings().heatmapColors"
+    [metric]="chartSettings().heatmapMetric"
+    (metricChange)="changeChart('heatmapMetric', $event)"
+    [used]="chartSettings().showUsed"
+    (usedChange)="changeChart('showUsed', $event)"
+    [issued]="chartSettings().showIssued"
+    (issuedChange)="changeChart('showIssued', $event)"
+    [hidden]="chartSettings().hiddenBands ?? []"
+    (hiddenChange)="changeChart('hiddenBands', $event)"
+    [descending]="chartSettings().dateDescending ?? false"
+    (descendingChange)="changeChart('dateDescending', $event)"
+  />
+}
+<div
+  class="detail-content"
+  [class.heatmap-content]="view() === 'heatmap'"
+  [class.split]="layout() === 'split' && reportInfo().chart"
+>
+  @if (layout() !== 'chart' || !reportInfo().chart) {
+    <app-data-grid
+      [rows]="gridRows()"
+      [columns]="columns()"
+      [search]="searchText()"
+      [loading]="mainData.loading()"
+      [emptyText]="mainData.error() || 'No data to show.'"
+      (filtersCleared)="searchText.set('')"
+      (rowSelected)="selectRow($event)"
+    />
+  }
+  @if (layout() !== 'grid' && reportInfo().chart) {
+    <app-report-chart
+      [source]="chartData()"
+      [options]="chartOptions()"
+      [label]="reportInfo().title"
+      (retry)="refresh(view() === 'utilizationHours')"
+    />
+  }
+</div>
+@if (view() === 'history' || view() === 'qos' || (view() === 'debugData' && selectedRow())) {
+  <section class="detail-secondary" aria-label="Analysis and session details">
+    <header>
+      {{
+        view() === 'debugData'
+          ? 'Session details'
+          : view() === 'history'
+            ? 'Data points and 100% utilization'
+            : 'Usage distribution'
+      }}
+      @if (selectedRow()) {
+        <button type="button" class="action" (click)="selectedRow.set(null)">Close</button>
+      }
+    </header>
+    @if (extraData.error()) {
+      <div role="alert">
+        {{ extraData.error() }}
+        <button type="button" class="action" (click)="refresh(true)">Retry</button>
+      </div>
+    }
+    <app-data-grid
+      [rows]="extraData.rows()"
+      [columns]="extraColumns()"
+      [loading]="extraData.loading()"
+      [emptyText]="extraData.error()"
+    />
+  </section>
+}
+@if (selectedRow() && (groupField() || selectedRow()!['allUsers'])) {
+  <section class="detail-secondary" aria-label="Selected group users">
+    <header>
+      Group users
+      <button type="button" class="action" (click)="selectedRow.set(null)">Close</button>
+    </header>
+    <app-data-grid [rows]="selectedRows()" [columns]="selectedColumns()" />
+  </section>
+}

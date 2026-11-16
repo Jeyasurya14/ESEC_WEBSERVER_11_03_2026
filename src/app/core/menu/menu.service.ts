@@ -1,11 +1,14 @@
-import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { apiRequest, resourceRequest } from '../api/api-request';
+import { Injectable, inject, Injector } from '@angular/core';
+
 import { LoginType, MenuDefinition, MenuPermissionRow, UserMenu } from '../models';
 import { ApiService, sqlString } from '../api/api.service';
-import { adminMenus, resolvePermittedMenus } from './menu';
+import { adminMenus, resolvePermittedMenus } from './menu-rules';
 
 @Injectable({ providedIn: 'root' })
 export class MenuService {
+  private readonly injector = inject(Injector);
+
   private readonly api = inject(ApiService);
 
   async loadMenu(loginType: LoginType, userId: string): Promise<UserMenu[]> {
@@ -19,7 +22,7 @@ export class MenuService {
   }
 
   private async loadCatalog(): Promise<MenuDefinition[]> {
-    const menuCatalog = this.api.centralized
+    const menuCatalog = this.api.isCentralized
       ? this.api.centralMenus
       : await this.api.loadAsset<MenuDefinition[]>('assets/menu.json');
 
@@ -31,8 +34,8 @@ export class MenuService {
 
   private async loadPermissions(userId: string): Promise<string> {
     const permissionQuery = `SELECT RT_A_LIST FROM esms.cltx_user_rt_a WHERE RT_A_ID=${sqlString(userId)}`;
-    const permissionResponse = await firstValueFrom(
-      this.api.query<MenuPermissionRow[]>(permissionQuery),
+    const permissionResponse = await resourceRequest(this.injector, (abortSignal) =>
+      apiRequest(this.api.query<MenuPermissionRow[]>(permissionQuery), abortSignal),
     );
 
     if (permissionResponse?.status !== 'PASS' || !Array.isArray(permissionResponse.message)) {

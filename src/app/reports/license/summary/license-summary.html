@@ -1,0 +1,84 @@
+<div class="summary-toolbar" role="toolbar" aria-label="Summary chart settings">
+  <fieldset class="mode-options">
+    <legend class="visually-hidden">Utilization display</legend>
+    <label
+      ><input
+        type="radio"
+        [name]="'summary-mode-' + instanceId"
+        [checked]="chartMode() === 'value'"
+        (change)="setMode('value')"
+      />
+      Value</label
+    >
+    <label
+      ><input
+        type="radio"
+        [name]="'summary-mode-' + instanceId"
+        [checked]="chartMode() === 'percentage'"
+        (change)="setMode('percentage')"
+      />
+      Percentage</label
+    >
+  </fieldset>
+  @for (item of chartSeries(); track item.id) {
+    <app-check-filter
+      [label]="item.label"
+      [dotColor]="item.color"
+      [checked]="visibleSeries().includes(item.id)"
+      (toggled)="toggleSeries(item.id)"
+    />
+  }
+</div>
+<div class="summary-heading">
+  <h1>{{ title() }}</h1>
+</div>
+<div class="summary-content" [class.expanded]="expandedPanel() !== null">
+  <div class="summary-charts" [hidden]="expandedPanel() === 'indicators'">
+    @for (chart of summaryData.charts; track chart.id) {
+      <app-license-summary-chart
+        [hidden]="expandedPanel() !== null && expandedPanel() !== chart.id"
+        [title]="chart.title"
+        [period]="chart.id"
+        [data]="chart.data"
+        [mode]="chartMode()"
+        [visible]="visibleSeries()"
+        [expanded]="expandedPanel() === chart.id"
+        (expand)="togglePanel(chart.id)"
+        (retry)="retry(chart.id)"
+      />
+    }
+  </div>
+  <section
+    class="indicators-panel"
+    [hidden]="expandedPanel() !== null && expandedPanel() !== 'indicators'"
+    aria-label="Summary indicators"
+  >
+    <header class="panel-header">
+      <h2>Indicators</h2>
+      <button
+        type="button"
+        class="panel-action"
+        [attr.aria-label]="
+          expandedPanel() === 'indicators' ? 'Restore Indicators' : 'Expand Indicators'
+        "
+        [attr.aria-pressed]="expandedPanel() === 'indicators'"
+        (click)="togglePanel('indicators')"
+      >
+        {{ expandedPanel() === 'indicators' ? 'Restore' : 'Expand' }}
+      </button>
+    </header>
+    @if (summaryData.indicators.error()) {
+      <div class="indicator-error" role="alert">
+        <p>{{ summaryData.indicators.error() }}</p>
+        <button type="button" class="panel-action" (click)="retry('indicators')">Retry</button>
+      </div>
+    } @else {
+      <app-data-grid
+        [rows]="indicators()"
+        [columns]="columns()"
+        [loading]="summaryData.indicators.loading()"
+        emptyText="No indicators to show."
+      />
+    }
+  </section>
+</div>

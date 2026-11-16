@@ -1,0 +1,30 @@
+<div class="report-toolbar" role="toolbar" aria-label="Borrow filters">
+  <app-search-filter [(text)]="filters.search" />
+
+  <span class="filter-divider" aria-hidden="true"></span>
+
+  <div class="toolbar-filters">
+    <div class="filter-cluster">
+      <app-range-filter [(range)]="filters.range" />
+      <app-option-filter [(option)]="filters.option" />
+      <app-feature-group-filter [(group)]="filters.featureGroup" />
+    </div>
+  </div>
+
+  <div class="toolbar-trailing">
+    @if (rowCount()) {
+      <span class="row-count">Rows : {{ rowCount() }}</span>
+    }
+  </div>
+</div>
+
+<app-data-grid
+  [rows]="reportData.rows()"
+  [columns]="columns"
+  [hiddenColumns]="filters.hiddenColumns()"
+  [search]="filters.search()"
+  [loading]="reportData.loading()"
+  [emptyText]="reportData.error()"
+  (rowCount)="rowCount.set($event)"
+  (filtersCleared)="filters.search.set('')"
+/>

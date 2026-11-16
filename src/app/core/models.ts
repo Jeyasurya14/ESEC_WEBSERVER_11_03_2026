@@ -34,10 +34,9 @@ export interface MenuPermissionRow {
 }
 
 /** wire: a user profile comes back as name/value rows, one per field */
-export interface UserDetailRow {
-  _DESC: string;
+export type UserDetailRow = Pick<Setting, '_DESC'> & {
   _VALUE: string | number | null;
-}
+};
 
 export interface UserDetails {
   userId: string;

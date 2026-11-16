@@ -1,56 +1,56 @@
+import { registerLicenseRefresh } from '../report-helpers';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   OnInit,
+  PendingTasks,
   computed,
-  effect,
   inject,
   input,
   signal,
-  untracked,
 } from '@angular/core';
 import { UserMenu } from '../../../core/models';
-
-import { TAB_ID, TabService } from '../../../features/tabs/tab.service';
 import { ExpiryFilter } from '../../../shared/filters/expiry-filter';
 import { FeatureGroupFilter } from '../../../shared/filters/feature-group-filter';
 import { OptionFilter } from '../../../shared/filters/option-filter';
-import { RangeFilter } from '../../../shared/filters/range-filter';
+import { RangeFilter, ReportRange } from '../../../shared/filters/range-filter';
 import { ReportFilters } from '../../../shared/filters/report-filters';
 import { SearchFilter } from '../../../shared/filters/search-filter';
 import { ServerStatusFilter } from '../../../shared/filters/server-status-filter';
 import { ALL_BANDS, UsageBandFilter } from '../../../shared/filters/usage-band-filter';
-import { GaugeTile } from '../../../shared/gauge/gauge-tile';
+import { GaugeGrid } from '../../../shared/gauge/gauge-grid';
 import { DataGrid, rowCountText } from '../../../shared/grid/data-grid';
-import { ReportData } from '../../../shared/report-data';
+import { ReportData, ReportQuery } from '../../../shared/report-data';
 import { ReportSettings } from '../../../shared/report-settings.service';
+import { LicenseDrilldown } from '../drilldown/license-drilldown';
 import {
   OrganizationRow,
-  organizationCall,
-  organizationColumns,
-  organizationTiles,
+  OrganizationTile,
   prepareRows,
   searchTiles,
   visibleRows,
 } from './organization.data';
+import { groupedCall, groupedColumns, groupedTiles, reportScope } from '../grouped-reports';
+import { organizationBreakdownCall } from '../drilldown/breakdown-queries';
 
-/** The two ways this report can show its rows. */
 export type OrganizationView = 'grid' | 'gauge';
+
+export const ORGANIZATION_IMPORTS = [
+  DataGrid,
+  ExpiryFilter,
+  FeatureGroupFilter,
+  GaugeGrid,
+  OptionFilter,
+  LicenseDrilldown,
+  RangeFilter,
+  SearchFilter,
+  ServerStatusFilter,
+  UsageBandFilter,
+];
 
 @Component({
   selector: 'app-organization',
-  imports: [
-    DataGrid,
-    ExpiryFilter,
-    FeatureGroupFilter,
-    GaugeTile,
-    OptionFilter,
-    RangeFilter,
-    SearchFilter,
-    ServerStatusFilter,
-    UsageBandFilter,
-  ],
+  imports: [...ORGANIZATION_IMPORTS],
   templateUrl: './organization.html',
   styleUrl: './organization.scss',
   host: { class: 'report-page report-fill' },
@@ -59,12 +59,15 @@ export type OrganizationView = 'grid' | 'gauge';
 })
 export class Organization implements OnInit {
   readonly menu = input.required<UserMenu>();
+  readonly parentRow = input<OrganizationRow | null>(null);
+  readonly initialRange = input<ReportRange | null>(null);
+  readonly reportLevel = computed(() => reportScope(this.menu().subMenuName));
   readonly filters = inject(ReportFilters);
-  readonly data = inject<ReportData<OrganizationRow>>(ReportData);
+  private readonly pendingTasks = inject(PendingTasks);
+  readonly reportData = inject<ReportData<OrganizationRow>>(ReportData);
   readonly rowCount = signal('');
-  readonly view = signal<OrganizationView>('grid');
-
-  readonly gaugeReady = signal(true);
+  readonly viewMode = signal<OrganizationView>('grid');
+  readonly gaugesReady = signal(true);
 
   readonly rows = computed(() => {
     const reportSettings = this.filters.settings();
@@ -77,58 +80,69 @@ export class Organization implements OnInit {
       option: this.filters.option(),
       bands: this.filters.bands(),
     };
-    return visibleRows(this.data.rows(), filterChoices, reportSettings, new Date());
+    return visibleRows(this.reportData.rows(), filterChoices, reportSettings, new Date());
   });
 
   readonly columns = computed(() => {
     const reportSettings = this.filters.settings();
-    return reportSettings ? organizationColumns(reportSettings) : [];
+    return reportSettings
+      ? groupedColumns(this.reportLevel(), reportSettings, (row) => this.openDrilldownForRow(row))
+      : [];
   });
 
-  readonly tiles = computed(() =>
-    searchTiles(organizationTiles(this.rows(), this.filters.option()), this.filters.search()),
+  readonly gaugeCards = computed(() =>
+    searchTiles(
+      groupedTiles(this.rows(), this.filters.option(), this.reportLevel()),
+      this.filters.search(),
+    ),
   );
 
+  readonly selectedGauge = signal<OrganizationTile | null>(null);
+
   readonly rowCountLabel = computed(() => {
-    if (this.view() === 'grid') {
+    if (this.viewMode() === 'grid') {
       return this.rowCount();
     }
     const hasSearchText = this.filters.search().trim().length > 0;
-    return rowCountText(this.tiles().length, this.rows().length, hasSearchText);
+    return rowCountText(this.gaugeCards().length, this.rows().length, hasSearchText);
   });
 
   constructor() {
-    effect(() => {
-      this.filters.range();
-      this.filters.featureGroup();
+    this.reportData.bind(() => {
       const reportSettings = this.filters.settings();
-      if (reportSettings) {
-        untracked(() => this.load(reportSettings));
-      }
+      return reportSettings ? this.query(reportSettings) : undefined;
     });
 
-    const tabId = inject(TAB_ID, { optional: true });
-    if (tabId !== null) {
-      const tabs = inject(TabService);
-      tabs.setRefreshHandle(tabId, {
-        loading: () => this.data.loading(),
-        refresh: () => this.refresh(),
-        asOn: () => this.data.asOn(),
-      });
-      inject(DestroyRef).onDestroy(() => tabs.setRefreshHandle(tabId, null));
-    }
+    registerLicenseRefresh(
+      this.reportData,
+      () => this.refresh(),
+      () => ({
+        range: { value: this.filters.range, set: (value) => this.filters.range.set(value) },
+        ...(this.filters.settings()
+          ? {
+              parameters: {
+                value: () => ({ usageHours: this.filters.settings()!.workingHoursPerDay }),
+                set: (values) =>
+                  this.filters.settings.update(
+                    (settings) =>
+                      settings && { ...settings, workingHoursPerDay: values.usageHours! },
+                  ),
+              },
+            }
+          : {}),
+      }),
+    );
   }
 
   ngOnInit(): void {
-    void this.start();
+    this.pendingTasks.run(() => this.start());
   }
 
   refresh(): void {
-    const reportSettings = this.filters.settings();
-    if (reportSettings) {
-      this.load(reportSettings);
+    if (this.filters.settings()) {
+      this.reportData.refresh();
     } else {
-      void this.start();
+      this.pendingTasks.run(() => this.start());
     }
   }
 
@@ -138,29 +152,53 @@ export class Organization implements OnInit {
   }
 
   toggleView(): void {
-    const nextView = this.view() === 'grid' ? 'gauge' : 'grid';
-    this.view.set(nextView);
+    const nextView = this.viewMode() === 'grid' ? 'gauge' : 'grid';
+    this.viewMode.set(nextView);
 
     if (nextView === 'gauge') {
-      this.gaugeReady.set(false);
-      setTimeout(() => this.gaugeReady.set(true));
+      this.gaugesReady.set(false);
+      setTimeout(() => this.gaugesReady.set(true));
     }
+  }
+
+  /** Selects a row clicked via its Software link - triggers whichever bottom-tab is armed. */
+  openDrilldownForRow(row: OrganizationRow): void {
+    const [tile] = groupedTiles([row], this.filters.option(), this.reportLevel());
+    this.selectedGauge.set(tile ?? null);
+  }
+
+  openDrilldown(tile: OrganizationTile): void {
+    // Each click is an open request, including a repeated click on the same gauge.
+    this.selectedGauge.set({ ...tile });
   }
 
   private async start(): Promise<void> {
-    if (!(await this.filters.start())) {
-      this.data.fail(this.filters.error());
+    if (!(await this.filters.start(this.initialRange() ?? undefined))) {
+      this.reportData.fail(this.filters.error());
     }
   }
 
-  private load(reportSettings: ReportSettings): void {
-    const procedureCall = organizationCall(
-      this.data.userId(),
-      this.filters.range(),
-      this.filters.featureGroup(),
-    );
-    void this.data.load(procedureCall, (rows) =>
-      prepareRows(rows, reportSettings.workingHoursPerDay),
-    );
+  private query(reportSettings: ReportSettings): ReportQuery<OrganizationRow> {
+    const parent = this.parentRow();
+    const reportLevel = this.reportLevel();
+    const sql = parent
+      ? organizationBreakdownCall(reportLevel, parent, this.filters.range())
+      : groupedCall(
+          reportLevel,
+          this.reportData.userId(),
+          this.filters.range(),
+          this.filters.featureGroup(),
+        );
+    return {
+      kind: 'load',
+      sql,
+      transform: (rows) =>
+        prepareRows(
+          rows.map((row) =>
+            reportLevel === 'group' ? { ...row, qty_r: row.max_qty_r ?? row.qty_r } : row,
+          ),
+          reportSettings.workingHoursPerDay,
+        ),
+    };
   }
 }

@@ -16,8 +16,9 @@
         class="tab-label"
         role="tab"
         [id]="'tab-' + tab.id"
+        [attr.aria-labelledby]="'tab-title-' + tab.id + ' tab-module-' + tab.id"
         [title]="screen + ' · ' + module"
-        [attr.aria-label]="tab.pinned ? screen + ', ' + module + ', pinned' : screen + ', ' + module"
+        [attr.aria-description]="tab.pinned ? module + ', pinned' : module"
         [attr.aria-selected]="active"
         [attr.aria-controls]="'panel-' + tab.id"
         [tabindex]="active ? 0 : -1"
@@ -26,11 +27,14 @@
       >
         @if (tab.pinned) {
           <svg class="pin" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-            <path fill="currentColor" d="M9.8 1.2 14.8 6.2l-1.4 1.4-.9-.4-2.3 2.3.2 3.1-1.2 1.2-2.7-2.7-3.6 3.6-.8-.8 3.6-3.6L2.9 7.6l1.2-1.2 3.1.2 2.3-2.3-.4-.9z" />
+            <path
+              fill="currentColor"
+              d="M9.8 1.2 14.8 6.2l-1.4 1.4-.9-.4-2.3 2.3.2 3.1-1.2 1.2-2.7-2.7-3.6 3.6-.8-.8 3.6-3.6L2.9 7.6l1.2-1.2 3.1.2 2.3-2.3-.4-.9z"
+            />
           </svg>
         }
-        <span class="title">{{ screen }}</span>
-        <span class="sub">{{ shortName(module) }}</span>
+        <span class="title" [id]="'tab-title-' + tab.id">{{ screen }}</span>
+        <span class="sub" [id]="'tab-module-' + tab.id">{{ moduleLabel(module) }}</span>
       </button>
 
       <button
@@ -40,7 +44,11 @@
         [attr.aria-label]="'Close ' + screen"
         (click)="tabService.close(tab.id)"
       >
-        <span class="app-icon" style="--icon-url: url('assets/icons/flaticon/close.svg')" aria-hidden="true"></span>
+        <span
+          class="app-icon"
+          style="--icon-url: url('assets/icons/flaticon/close.svg')"
+          aria-hidden="true"
+        ></span>
       </button>
     </div>
   }
@@ -56,14 +64,20 @@
       [hidden]="!isActive(tab)"
     >
       <ng-container
-        *ngComponentOutlet="tab.component; inputs: { menu: tab.menu }; injector: injectorFor(tab)"
+        *ngComponentOutlet="tab.component; inputs: tab.inputs; injector: injectorFor(tab)"
       />
     </section>
   }
 </div>
 
-@if (menu(); as open) {
-  <ul class="context-menu" role="menu" aria-label="Tab actions" [style.left.px]="open.x" [style.top.px]="open.y">
+@if (contextMenu(); as open) {
+  <ul
+    class="context-menu"
+    role="menu"
+    aria-label="Tab actions"
+    [style.left.px]="open.x"
+    [style.top.px]="open.y"
+  >
     @for (item of menuItems(); track item.action) {
       <li role="presentation" [class.separated]="item.action === 'togglePin'">
         <button type="button" role="menuitem" (click)="run(item.action)">{{ item.label }}</button>

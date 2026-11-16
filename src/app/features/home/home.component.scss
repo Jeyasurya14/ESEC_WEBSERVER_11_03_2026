@@ -107,25 +107,6 @@ dd {
   background: $white;
 }
 
-.status-bar {
-  height: $status-bar-height;
-  min-height: $status-bar-height;
-  display: flex;
-  flex-shrink: 0;
-  justify-content: flex-start;
-  gap: 16px;
-  align-items: center;
-  padding: 0 12px;
-  border-top: 1px solid $border-light;
-  background: $status-bar-bg;
-  color: $gray-500;
-  font-size: $status-text-size;
-}
-
-.status-bar-spacer {
-  flex: 1;
-}
-
 @media (max-width: 640px) {
   .workspace-content {
     padding: 16px;

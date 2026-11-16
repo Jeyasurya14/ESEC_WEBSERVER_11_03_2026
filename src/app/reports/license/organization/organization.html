@@ -1,4 +1,4 @@
-<div class="report-toolbar" role="toolbar" aria-label="Organization filters">
+<div class="report-toolbar" role="toolbar" [attr.aria-label]="menu().subMenuName + ' filters'">
   <app-search-filter [(text)]="filters.search" />
 
   <span class="filter-divider" aria-hidden="true"></span>
@@ -7,7 +7,9 @@
     <div class="filter-cluster">
       <app-range-filter [(range)]="filters.range" />
       <app-option-filter [(option)]="filters.option" />
-      <app-feature-group-filter [(group)]="filters.featureGroup" />
+      @if (!parentRow()) {
+        <app-feature-group-filter [(group)]="filters.featureGroup" />
+      }
     </div>
 
     <span class="filter-divider" aria-hidden="true"></span>
@@ -26,44 +28,48 @@
       <span class="row-count">Rows : {{ rowCountLabel() }}</span>
     }
     <button type="button" class="view-toggle" (click)="toggleView()">
-      {{ view() === 'grid' ? 'Gauge View' : 'Grid View' }}
+      {{ viewMode() === 'grid' ? 'Gauge View' : 'Grid View' }}
     </button>
   </div>
 </div>
 
-@if (view() === 'grid') {
+@if (viewMode() === 'grid') {
   <app-data-grid
     [rows]="rows()"
     [columns]="columns()"
-    [hiddenColumns]="filters.myColumns()"
+    [hiddenColumns]="filters.hiddenColumns()"
     [search]="filters.search()"
-    [loading]="data.loading()"
-    [emptyText]="data.error()"
+    [loading]="reportData.loading()"
+    [emptyText]="reportData.error()"
     (rowCount)="rowCount.set($event)"
     (filtersCleared)="clearFilters()"
   />
 } @else if (filters.settings(); as limits) {
-  @if (tiles().length) {
-    @if (gaugeReady()) {
-      <div class="gauge-grid">
-        @for (tile of tiles(); track tile.title) {
-          <app-gauge-tile
-            [title]="tile.title"
-            [percent]="tile.percent"
-            [stats]="tile.stats"
-            [limits]="limits"
-          />
-        }
-      </div>
+  @if (gaugeCards().length) {
+    @if (gaugesReady()) {
+      <app-gauge-grid
+        [items]="gaugeCards()"
+        [limits]="limits"
+        (itemSelected)="openDrilldown($event)"
+      />
     } @else {
-      <!-- Shown for one tick after switching to this view, so the click repaints straight away
-           instead of the browser sitting frozen while every tile (there can be hundreds) builds. -->
+      <!-- Let the view switch paint before building the visible gauges. -->
       <div class="gauge-loading">
         <img class="gauge-loading-spinner" src="assets/grid/spinner.svg" alt="" />
         <p>Preparing gauges…</p>
       </div>
     }
   } @else {
-    <p class="gauge-empty">{{ data.error() || 'No data to show.' }}</p>
+    <p class="gauge-empty">{{ reportData.error() || 'No data to show.' }}</p>
   }
+}
+
+@if (filters.settings(); as settings) {
+  <app-license-drilldown
+    [tile]="selectedGauge()"
+    [reportSettings]="settings"
+    [allRows]="reportData.rows()"
+    [scope]="reportLevel()"
+    [reportRange]="filters.range()"
+  />
 }

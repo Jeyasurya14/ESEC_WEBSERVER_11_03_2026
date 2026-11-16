@@ -38,6 +38,14 @@ describe('report settings', () => {
     });
   });
 
+  it('reads the heatmap colour scale from the app settings, falling back to the built-in scale', async () => {
+    const { service } = setUp({ HEATMAP_0_50: '#abcdef' });
+
+    const settings = await service.load();
+    expect(settings.heatmapColors.from0To50).toBe('#abcdef');
+    expect(settings.heatmapColors.at100).toBe('#FF0000'); // not overridden: falls back to the default
+  });
+
   it('keeps copies in the browser and starts the report parameters at their defaults', async () => {
     localStorage.clear();
     const { service } = setUp({ CBAND_1_VALUE: '40', CBAND_2_VALUE: '70' });

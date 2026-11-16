@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnChanges, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnChanges,
+  computed,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { UserMenu } from '../../../core/models';
 
 @Component({
@@ -7,9 +15,9 @@ import { UserMenu } from '../../../core/models';
   styleUrl: './sidebar-panel.component.scss',
   host: {
     '[class.is-open]': 'isOpen()',
-    '[style.--panel-offset-top.px]': 'panelTop()'
+    '[style.--panel-offset-top.px]': 'panelTop()',
   },
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarPanelComponent implements OnChanges {
   readonly isOpen = input(false);
@@ -35,7 +43,8 @@ export class SidebarPanelComponent implements OnChanges {
   }
 
   updateFilter(event: Event): void {
-    const searchInput = event.target as HTMLInputElement;
+    const searchInput = event.target;
+    if (!(searchInput instanceof HTMLInputElement)) return;
     this.filterText.set(searchInput.value);
   }
 

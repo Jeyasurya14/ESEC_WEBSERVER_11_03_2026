@@ -42,12 +42,12 @@ describe('range filter', () => {
     expect(
       periodsFor('month', today)
         .slice(0, 2)
-        .map((p) => p.label),
+        .map((period) => period.label),
     ).toEqual(['Jan - 2026', 'Dec - 2025']);
     expect(
       periodsFor('quarter', today)
         .slice(0, 2)
-        .map((p) => p.label),
+        .map((period) => period.label),
     ).toEqual(['Q1 - 2026', 'Q4 - 2025']);
     expect(periodsFor('year', today)[0].range).toEqual({ kind: 'year', year: 2026 });
   });

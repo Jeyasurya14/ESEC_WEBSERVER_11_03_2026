@@ -1,21 +1,22 @@
+import { literal } from '../../core/utils/data';
 import { ChangeDetectionStrategy, Component, model } from '@angular/core';
 import { Dropdown, DropdownOption } from '../dropdown/dropdown';
 
 export type UsageOption = 'DP' | 'DPM' | 'DA' | 'DAM' | 'WP' | 'WPM' | 'WA' | 'WAM';
 
-export const DAY_OPTIONS = [
+export const DAY_OPTIONS = literal([
   { value: 'DP', label: 'Peak (DP)' },
   { value: 'DPM', label: 'Peak Mean (DPM)' },
   { value: 'DA', label: 'Avg (DA)' },
   { value: 'DAM', label: 'Avg Mean (DAM)' },
-] as const;
+]);
 
-export const WORK_OPTIONS = [
+export const WORK_OPTIONS = literal([
   { value: 'WP', label: 'Peak (WP)' },
   { value: 'WPM', label: 'Peak Mean (WPM)' },
   { value: 'WA', label: 'Avg (WA)' },
   { value: 'WAM', label: 'Avg Mean (WAM)' },
-] as const;
+]);
 
 const USAGE_OPTIONS = [...DAY_OPTIONS, ...WORK_OPTIONS];
 
@@ -25,15 +26,35 @@ export function toUsageOption(savedOption: string): UsageOption {
 }
 
 export type PercentField = `p_${Lowercase<UsageOption>}`;
+const PERCENT_FIELDS = {
+  DP: 'p_dp',
+  DPM: 'p_dpm',
+  DA: 'p_da',
+  DAM: 'p_dam',
+  WP: 'p_wp',
+  WPM: 'p_wpm',
+  WA: 'p_wa',
+  WAM: 'p_wam',
+} satisfies Record<UsageOption, PercentField>;
 
 export function percentField(option: UsageOption): PercentField {
-  return `p_${option.toLowerCase()}` as PercentField;
+  return PERCENT_FIELDS[option];
 }
 
 export type QuantityField = `qty_${Lowercase<UsageOption>}`;
+const QUANTITY_FIELDS = {
+  DP: 'qty_dp',
+  DPM: 'qty_dpm',
+  DA: 'qty_da',
+  DAM: 'qty_dam',
+  WP: 'qty_wp',
+  WPM: 'qty_wpm',
+  WA: 'qty_wa',
+  WAM: 'qty_wam',
+} satisfies Record<UsageOption, QuantityField>;
 
 export function quantityField(option: UsageOption): QuantityField {
-  return `qty_${option.toLowerCase()}` as QuantityField;
+  return QUANTITY_FIELDS[option];
 }
 
 const OPTIONS: DropdownOption[] = [
@@ -47,7 +68,12 @@ const OPTIONS: DropdownOption[] = [
   template: `
     <label class="filter">
       <span class="filter-label">Option</span>
-      <app-dropdown [options]="options" [value]="option()" (valueChange)="pickOption($event)" />
+      <app-dropdown
+        ariaLabel="Option"
+        [options]="options"
+        [value]="option()"
+        (valueChange)="pickOption($event)"
+      />
     </label>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

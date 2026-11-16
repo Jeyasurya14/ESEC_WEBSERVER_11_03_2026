@@ -1,0 +1,16 @@
+<app-report-action-bar
+  label="License report views"
+  [actions]="actions()"
+  [activeId]="activeAction().id"
+  [busy]="loading()"
+  (actionSelected)="selectAction($event)"
+/>
+@if (loading()) {
+  <span class="opening-status" role="status">Opening {{ activeAction().label }}…</span>
+}
+@if (error()) {
+  <div class="open-error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" (click)="retry()">Retry</button>
+  </div>
+}

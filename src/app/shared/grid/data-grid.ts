@@ -7,7 +7,6 @@ import {
   isDevMode,
   output,
 } from '@angular/core';
-import { AgChartsCommunityModule } from 'ag-charts-community';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   CellStyleModule,
@@ -19,9 +18,11 @@ import {
   ModelUpdatedEvent,
   ModuleRegistry,
   NumberFilterModule,
+  PinnedRowModule,
   QuickFilterModule,
   RenderApiModule,
   RowApiModule,
+  RowDoubleClickedEvent,
   SideBarDef,
   TextFilterModule,
   ValidationModule,
@@ -35,19 +36,19 @@ import {
   ContextMenuModule,
   ExcelExportModule,
   FiltersToolPanelModule,
-  IntegratedChartsModule,
   LicenseManager,
   SetFilterModule,
   SideBarModule,
 } from 'ag-grid-enterprise';
 import { ApiService } from '../../core/api/api.service';
+import { applyColumnVisibility } from './column-visibility';
 import { Column, ROW_NUMBER_COLUMN, formatNumber } from './columns';
-import { applyMyColumns } from './my-columns';
 
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   TextFilterModule,
   NumberFilterModule,
+  PinnedRowModule,
   SetFilterModule,
   QuickFilterModule,
   RowApiModule,
@@ -62,7 +63,6 @@ ModuleRegistry.registerModules([
   ClipboardModule,
   CsvExportModule,
   ExcelExportModule,
-  IntegratedChartsModule.with(AgChartsCommunityModule),
   ...(isDevMode() ? [ValidationModule] : []),
 ]);
 
@@ -140,6 +140,7 @@ let licenseApplied = false;
       [theme]="theme"
       [icons]="icons"
       [rowData]="rows()"
+      [pinnedTopRowData]="pinnedTopRows()"
       [columnDefs]="shownColumns()"
       [defaultColDef]="defaultColumn"
       [columnMenu]="'legacy'"
@@ -158,6 +159,7 @@ let licenseApplied = false;
       (modelUpdated)="countRows($event)"
       (filterChanged)="renumberRows($event.api)"
       (sortChanged)="renumberRows($event.api)"
+      (rowDoubleClicked)="onRowDoubleClicked($event)"
     />
   `,
   styles: `
@@ -176,6 +178,7 @@ let licenseApplied = false;
 })
 export class DataGrid<T> {
   readonly rows = input.required<T[]>();
+  readonly pinnedTopRows = input<T[]>([]);
   readonly columns = input.required<Column<T>[]>();
 
   readonly hiddenColumns = input<Record<string, boolean>>({});
@@ -189,16 +192,18 @@ export class DataGrid<T> {
 
   readonly filtersCleared = output<void>();
 
+  readonly rowSelected = output<T>();
+
   protected readonly theme = THEME;
   protected readonly icons = ICONS;
   protected readonly defaultColumn = DEFAULT_COLUMN;
   protected readonly sideBar = SIDE_BAR;
   protected readonly loadingTemplate = LOADING_TEMPLATE;
 
-  protected readonly columnHeaderHeight = 26;
-  protected readonly groupHeaderHeight = 26;
+  protected readonly columnHeaderHeight = 32;
+  protected readonly groupHeaderHeight = 32;
   protected readonly shownColumns = computed(() =>
-    applyMyColumns(this.columns(), this.hiddenColumns()),
+    applyColumnVisibility(this.columns(), this.hiddenColumns()),
   );
   protected readonly noRowsTemplate = computed(
     () => `<span>${escapeHtml(this.emptyText()) || ' '}</span>`,
@@ -212,18 +217,17 @@ export class DataGrid<T> {
     }
   }
 
-  protected readonly contextMenu: GetContextMenuItems<T> = (params) => {
+  protected readonly contextMenu: GetContextMenuItems<T> = (menuParams) => {
     const clearFilter = {
       name: 'Clear Filter',
       action: () => {
-        params.api.setFilterModel(null);
+        menuParams.api.setFilterModel(null);
         this.filtersCleared.emit();
       },
     };
-    return params.node ? [clearFilter, 'export', 'chartRange'] : [clearFilter];
+    return menuParams.node ? [clearFilter, 'export'] : [clearFilter];
   };
 
-  /** S.No counts the rows as shown, so it is redrawn after every filter or sort, as in the company app. */
   protected renumberRows(api: GridApi<T>): void {
     api.refreshCells({ columns: [ROW_NUMBER_COLUMN] });
   }
@@ -232,6 +236,12 @@ export class DataGrid<T> {
     this.rowCount.emit(
       rowCountText(api.getDisplayedRowCount(), this.rows().length, api.isAnyFilterPresent()),
     );
+  }
+
+  protected onRowDoubleClicked({ data }: RowDoubleClickedEvent<T>): void {
+    if (data) {
+      this.rowSelected.emit(data);
+    }
   }
 }
 

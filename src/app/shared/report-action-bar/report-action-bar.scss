@@ -1,0 +1,129 @@
+:host {
+  display: block;
+  flex-shrink: 0;
+  min-width: 0;
+  padding: 6px 10px;
+  background: #fff;
+  border-top: 1px solid #dce4ef;
+  box-shadow: 0 -3px 12px rgb(30 50 80 / 4%);
+}
+
+.action-bar {
+  min-width: 0;
+
+  &.has-overflow {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.action-viewport {
+  position: relative;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #c8d4e3 transparent;
+}
+
+.action-track {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: max-content;
+  min-width: 100%;
+  padding: 2px 0;
+}
+
+.report-action,
+.scroll-button {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+
+  &:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
+  }
+
+  &:disabled {
+    color: #97a3b4;
+    cursor: default;
+  }
+}
+
+.report-action {
+  position: relative;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 8px 12px;
+  color: #536176;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  background: transparent;
+  border-radius: 5px;
+
+  &:hover:not(:disabled) {
+    color: #1e40af;
+    background: #f1f5fb;
+  }
+
+  &.active:not(:disabled) {
+    color: #1d4ed8;
+    background: #edf4ff;
+    border-color: #d5e4fc;
+
+    &::after {
+      position: absolute;
+      right: 12px;
+      bottom: 0;
+      left: 12px;
+      height: 2px;
+      content: '';
+      background: #2563eb;
+      border-radius: 2px;
+    }
+  }
+}
+
+.scroll-button {
+  display: grid;
+  width: 28px;
+  height: 32px;
+  padding: 4px;
+  place-items: center;
+  color: #425571;
+  background: #f4f7fb;
+  border-color: #e0e7f0;
+  border-radius: 5px;
+
+  &[hidden] {
+    display: none;
+  }
+  &:disabled {
+    opacity: 0.45;
+  }
+  &:hover:not(:disabled) {
+    background: #e8f0fd;
+  }
+  svg {
+    width: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action-viewport {
+    scroll-behavior: auto;
+  }
+}

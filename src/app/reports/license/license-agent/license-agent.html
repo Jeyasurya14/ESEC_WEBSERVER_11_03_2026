@@ -1,0 +1,40 @@
+<div class="report-toolbar" role="toolbar" aria-label="License and agent combined filters">
+  <label class="filter software-filter">
+    <span class="filter-label">Software</span>
+    <app-dropdown
+      ariaLabel="Software"
+      [options]="softwareOptions()"
+      [value]="softwareName()"
+      (valueChange)="chooseSoftware($event)"
+    />
+  </label>
+
+  <span class="filter-divider" aria-hidden="true"></span>
+
+  <app-search-filter [(text)]="searchText" />
+
+  <div class="toolbar-trailing">
+    <span class="period">{{ periodLabel }}</span>
+    @if (rowCount()) {
+      <span class="row-count">Rows : {{ rowCount() }}</span>
+    }
+  </div>
+</div>
+
+@if (softwareName().trim()) {
+  <app-data-grid
+    [rows]="reportData.rows()"
+    [columns]="columns()"
+    [search]="searchText()"
+    [loading]="reportData.loading()"
+    [emptyText]="reportData.error()"
+    (rowCount)="rowCount.set($event)"
+    (filtersCleared)="searchText.set('')"
+  />
+} @else {
+  <p class="empty">
+    {{
+      softwareError() || reportData.error() || 'Select software to see its license and agent usage.'
+    }}
+  </p>
+}

@@ -1,0 +1,102 @@
+:host {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
+}
+.detail-toolbar {
+  flex-wrap: wrap;
+}
+:host(.heatmap-report) {
+  overflow: hidden;
+}
+.heatmap-toolbar {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 5px 10px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+
+  > * {
+    flex-shrink: 0;
+  }
+
+  input[type='number'] {
+    width: 58px;
+    min-width: 58px;
+  }
+}
+input[type='number'] {
+  width: 76px;
+}
+.analysis-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid #e1e7ef;
+  color: #475569;
+  font-size: 12px;
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+.detail-statistics {
+  padding: 8px 14px;
+  color: #31537a;
+  font-size: 12px;
+  background: #f4f8fd;
+}
+.detail-content {
+  display: flex;
+  flex: 1;
+  min-height: 320px;
+  min-width: 0;
+  &.split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(200px, 1fr) minmax(280px, 1fr);
+    min-height: 540px;
+  }
+}
+.heatmap-content {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 0;
+
+  &.split {
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+.detail-secondary {
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+  border-top: 1px solid #d6e0ee;
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #304d72;
+    background: #f3f7fc;
+  }
+}
+.report-error {
+  padding: 8px 12px;
+  color: #a12636;
+  background: #fff5f5;
+  font-size: 12px;
+}

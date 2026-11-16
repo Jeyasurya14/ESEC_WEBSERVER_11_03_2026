@@ -1,14 +1,28 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewChild, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  viewChild,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'dismissProfileOnOutsideClick($event)',
+    '(document:keydown.escape)': 'dismissProfileOnEscape()',
+  },
 })
 export class HeaderComponent {
   private readonly element = inject(ElementRef<HTMLElement>);
-  @ViewChild('profileButton') private readonly profileButton?: ElementRef<HTMLButtonElement>;
+  private readonly profileButton = viewChild<ElementRef<HTMLButtonElement>>('profileButton');
 
   readonly username = input('');
   readonly showSettings = input(false);
@@ -35,18 +49,16 @@ export class HeaderComponent {
     this.logoutRequested.emit();
   }
 
-  @HostListener('document:click', ['$event'])
   dismissProfileOnOutsideClick(event: MouseEvent): void {
-    if (!this.element.nativeElement.contains(event.target as Node)) {
+    if (!(event.target instanceof Node) || !this.element.nativeElement.contains(event.target)) {
       this.profileOpen.set(false);
     }
   }
 
-  @HostListener('document:keydown.escape')
   dismissProfileOnEscape(): void {
     if (this.profileOpen()) {
       this.profileOpen.set(false);
-      this.profileButton?.nativeElement.focus();
+      this.profileButton()?.nativeElement.focus();
     }
   }
 }

@@ -2,9 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  HostListener,
-  OnChanges,
-  ViewChild,
+  effect,
+  viewChild,
   computed,
   inject,
   input,
@@ -28,10 +27,15 @@ import {
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'dismissSidebarOnEscape()',
+    '(window:resize)': 'closeOnResize()',
+    '(document:click)': 'dismissSidebarOnOutsideClick($event)',
+  },
 })
-export class SidebarComponent implements OnChanges {
+export class SidebarComponent {
   private readonly element = inject(ElementRef<HTMLElement>);
-  @ViewChild('sidebar') private readonly sidebar?: ElementRef<HTMLElement>;
+  private readonly sidebar = viewChild<ElementRef<HTMLElement>>('sidebar');
   private panelTrigger?: HTMLButtonElement;
 
   readonly modules = input<string[]>([]);
@@ -48,22 +52,27 @@ export class SidebarComponent implements OnChanges {
     return this.menus().filter((menu) => menu.mainMenuName === this.selectedModule());
   });
 
-  readonly shortcuts = computed(() => {
-    return LICENSE_MANAGER_SHORTCUTS.map(({ letter, title, screen }) => {
-      const menu = this.menus().find((item) => {
-        return item.mainMenuName === LICENSE_MANAGER_MENU && item.subMenuName === screen;
-      });
-
-      return { letter, title, menu };
-    });
-  });
-
-  ngOnChanges(): void {
-    const menu = this.selectedMenu();
-
-    if (menu) {
-      this.selectedModule.set(menu.mainMenuName);
+  private readonly licenseMenus = computed(() => {
+    const menus = new Map<string, UserMenu>();
+    for (const menu of this.menus()) {
+      if (menu.mainMenuName === LICENSE_MANAGER_MENU && !menus.has(menu.subMenuName))
+        menus.set(menu.subMenuName, menu);
     }
+    return menus;
+  });
+  readonly shortcuts = computed(() =>
+    LICENSE_MANAGER_SHORTCUTS.map(({ letter, title, screen }) => ({
+      letter,
+      title,
+      menu: this.licenseMenus().get(screen),
+    })),
+  );
+
+  constructor() {
+    effect(() => {
+      const menu = this.selectedMenu();
+      if (menu) this.selectedModule.set(menu.mainMenuName);
+    });
   }
 
   getIcon(moduleName: string): string {
@@ -72,7 +81,7 @@ export class SidebarComponent implements OnChanges {
   }
 
   openModule(moduleName: string, button: HTMLButtonElement): void {
-    const sidebar = this.sidebar?.nativeElement;
+    const sidebar = this.sidebar()?.nativeElement;
 
     if (!sidebar) {
       return;
@@ -106,21 +115,18 @@ export class SidebarComponent implements OnChanges {
     this.panelTrigger?.focus();
   }
 
-  @HostListener('document:keydown.escape')
   dismissSidebarOnEscape(): void {
     if (this.panelOpen()) {
       this.closePanel();
     }
   }
 
-  @HostListener('window:resize')
   closeOnResize(): void {
     this.panelOpen.set(false);
   }
 
-  @HostListener('document:click', ['$event'])
   dismissSidebarOnOutsideClick(event: MouseEvent): void {
-    if (!this.element.nativeElement.contains(event.target as Node)) {
+    if (!(event.target instanceof Node) || !this.element.nativeElement.contains(event.target)) {
       this.panelOpen.set(false);
     }
   }

@@ -19,125 +19,154 @@
 .sidebar-panel {
   position: absolute;
   top: var(--panel-offset-top);
-  left: 2px;
-  width: 240px;
-  height: auto;
-  max-height: calc(
-    100dvh - var(--panel-offset-top) - #{$header-height} - #{$status-bar-height} - 12px
-  );
+  left: 6px;
   display: flex;
+  width: min(248px, calc(100vw - #{$sidebar-width} - 16px));
+  max-height: min(
+    560px,
+    calc(100dvh - var(--panel-offset-top) - #{$header-height} - #{$status-bar-height} - 12px)
+  );
   flex-direction: column;
-  background: $white;
-  border: 1px solid $border-color;
-  border-radius: $border-radius-lg;
   overflow: hidden;
-  box-shadow: $shadow-lg;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  background: $white;
+  box-shadow:
+    0 8px 24px rgba(20, 35, 60, 0.12),
+    0 2px 6px rgba(20, 35, 60, 0.04);
   pointer-events: auto;
 }
 
 .sidebar-header-row {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  background-color: #1e293b;
-  gap: $spacing-2;
-  padding: $spacing-2 $spacing-2 $spacing-2 $spacing-3;
-  flex-shrink: 0;
+  gap: 8px;
+  padding: 10px;
 }
 
-// Icon and title share one line.
 .sidebar-icon-title {
-  color: white;
   display: flex;
-  align-items: center;
-  gap: $spacing-2;
   min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-icon-wrap {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid #dce8fc;
+  border-radius: 7px;
+  background: #eff5ff;
+  color: #3271d5;
+  --icon-size: 15px;
 }
 
 .sidebar-title {
   margin: 0;
-  color: white;
   overflow: hidden;
-  font-size: $font-size-lg;
-  font-weight: 600;
-  line-height: 1.3;
+  color: #24344c;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .close-btn {
-  width: 26px;
-  height: 26px;
-  border: none;
-  background: transparent;
-  color: $gray-400;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: $border-radius-sm;
-  cursor: pointer;
+  display: grid;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
-  transition:
-    background $transition-fast,
-    color $transition-fast;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #7f8b9c;
+  --icon-size: 11px;
 
   &:hover {
-    background: $gray-100;
-    color: $gray-600;
+    background: #edf2f8;
+    color: #334155;
   }
-}
-
-.sidebar-divider {
-  height: 1px;
-  background: $border-light;
-  flex-shrink: 0;
 }
 
 .sidebar-filter {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 6px;
-  margin: $spacing-2 $spacing-2 0;
-  padding: 4px 8px;
-  border: 1px solid $border-color;
-  border-radius: $border-radius-md;
-  background: $white;
-  flex-shrink: 0;
-  transition: border-color $transition-fast;
+  margin: 0 10px;
+  padding: 7px 8px;
+  border: 1px solid #e0e7f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  transition:
+    border-color $transition-fast,
+    box-shadow $transition-fast;
 
   &:focus-within {
-    border-color: $primary;
-    box-shadow: 0 0 0 2px rgba($primary, 0.12);
+    border-color: #7ca8ee;
+    background: $white;
+    box-shadow: 0 0 0 3px rgba($primary, 0.09);
   }
 }
 
 .filter-icon {
-  font-size: 12px;
-  color: $gray-400;
-  flex-shrink: 0;
-  --icon-size: 12px;
+  color: #8492a6;
+  --icon-size: 14px;
 }
 
 .filter-input {
-  flex: 1;
+  width: 100%;
   min-width: 0;
-  border: none;
-  background: transparent;
-  font-size: $font-size-sm;
-  color: $gray-800;
+  padding: 0;
+  border: 0;
   outline: none;
-  font-family: inherit;
+  background: transparent;
+  color: #334155;
+  font: inherit;
+  font-size: 12px;
 
   &::placeholder {
-    color: $gray-400;
+    color: #8793a5;
   }
 }
 
+.screen-list-heading {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 5px;
+  color: #8190a4;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.screen-count {
+  min-width: 20px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #f0f3f8;
+  color: #607086;
+  font-size: 9px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .sidebar-body {
-  flex: 1;
   min-height: 0;
-  padding: $spacing-2;
+  padding: 0 6px 6px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #ced8e6 transparent;
 }
 
 .sidebar-actions {
@@ -147,63 +176,79 @@
 }
 
 .action-chip {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid transparent;
-  border-radius: $border-radius-sm;
-  background: transparent;
-  font-size: $font-size-sm;
-  color: $gray-700;
-  cursor: pointer;
-  flex-shrink: 0;
-  text-align: left;
-  transition: all $transition-fast;
   display: flex;
+  width: 100%;
+  min-height: 30px;
+  flex-shrink: 0;
   align-items: center;
-  gap: 6px;
-
-  i {
-    font-size: 13px;
-    color: $gray-400;
-    width: 16px;
-  }
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #526176;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: left;
+  transition:
+    background $transition-fast,
+    color $transition-fast;
 
   &:hover {
-    background: $gray-50;
-    color: $gray-900;
-    i {
-      color: $primary;
-    }
+    background: #f3f6fb;
+    color: #24344c;
   }
 
   &.active {
-    background: $primary-light;
-    color: $primary-dark;
-    border-color: transparent;
-    font-weight: 500;
-    i {
-      color: $primary;
-    }
+    border-color: #deebff;
+    background: #edf4ff;
+    color: #245fb7;
+    font-weight: 600;
+    box-shadow: inset 2px 0 #4b89e6;
+  }
+}
+
+.screen-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.screen-name {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.close-btn,
+.action-chip {
+  &:focus-visible {
+    outline: 2px solid #70a1ee;
+    outline-offset: -2px;
   }
 }
 
 .empty-message {
   display: block;
-  margin: 8px;
-  font-size: $font-size-sm;
-  color: $gray-500;
-}
+  padding: 22px 12px;
+  color: #526176;
+  font-size: 12px;
+  text-align: center;
 
-@media (max-width: 360px) {
-  .sidebar-panel {
-    width: calc(100vw - #{$sidebar-width} - 12px);
+  span {
+    display: block;
+    margin-top: 5px;
+    color: #8793a5;
+    font-size: 11px;
   }
 }
 
-.panel-title-icon {
-  --icon-size: 16px;
-}
-
-.close-btn .app-icon {
-  --icon-size: 13px;
+@media (prefers-reduced-motion: reduce) {
+  .action-chip,
+  .sidebar-filter {
+    transition: none;
+  }
 }

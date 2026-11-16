@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { instance } from '../../../testing/instances';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { RefreshButton } from './refresh-button';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-refresh-button-host',
   imports: [RefreshButton],
   template: `
@@ -27,7 +29,7 @@ describe('RefreshButton', () => {
     fixture.componentInstance.variant = variant;
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
-    const button = () => element.querySelector('button') as HTMLButtonElement;
+    const button = () => instance(element.querySelector('button'), HTMLButtonElement);
     return { fixture, button };
   }
 

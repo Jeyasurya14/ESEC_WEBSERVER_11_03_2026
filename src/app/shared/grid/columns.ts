@@ -1,9 +1,11 @@
 import { ColDef, ColGroupDef } from 'ag-grid-community';
 import { MONTHS, formatDate, parseDate } from '../dates';
 import { BandLimits, bandColor, bandOf } from '../filters/usage-band-filter';
+import { fieldValue } from '../../core/utils/data';
 
 type Field<T> = ColDef<T>['field'];
 export type Column<T> = ColDef<T> | ColGroupDef<T>;
+const NUMBER_FORMAT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 6 });
 
 function isBlank(value: unknown): value is null | undefined | '' {
   return value === null || value === undefined || value === '';
@@ -12,9 +14,7 @@ function isBlank(value: unknown): value is null | undefined | '' {
 export function formatNumber(value: unknown): string {
   if (isBlank(value)) return '';
   const numericValue = Number(value);
-  return Number.isNaN(numericValue)
-    ? asText(value)
-    : numericValue.toLocaleString('en-US', { maximumFractionDigits: 6 });
+  return Number.isNaN(numericValue) ? asText(value) : NUMBER_FORMAT.format(numericValue);
 }
 
 function asText(value: unknown): string {
@@ -51,22 +51,44 @@ export function rowNumberColumn<T>(): ColDef<T> {
     sortable: false,
     filter: false,
     menuTabs: [],
-    valueGetter: (params) => (params.node?.rowIndex ?? 0) + 1,
+    valueGetter: (cell) => (cell.node?.rowIndex ?? 0) + 1,
   };
 }
 
 export function textColumn<T>(
   field: Field<T>,
   headerName: string,
-  extra: Partial<ColDef<T>> = {},
+  columnOptions: Partial<ColDef<T>> = {},
 ): ColDef<T> {
-  return { field, headerName, cellDataType: 'text', ...extra };
+  return { field, headerName, cellDataType: 'text', ...columnOptions };
+}
+
+/**
+ * A text column styled and wired as a clickable link - the company app's convention for "click
+ * this cell to select the row", e.g. the Organization grid's Feature column, which this drives
+ * into the bottom drilldown section.
+ */
+export function linkColumn<T>(
+  field: Field<T>,
+  headerName: string,
+  onClick: (row: T) => void,
+  columnOptions: Partial<ColDef<T>> = {},
+): ColDef<T> {
+  return textColumn(field, headerName, {
+    cellClass: 'link-cell',
+    onCellClicked: (cell) => {
+      if (cell.data) {
+        onClick(cell.data);
+      }
+    },
+    ...columnOptions,
+  });
 }
 
 export function numberColumn<T>(
   field: Field<T>,
   headerName: string,
-  extra: Partial<ColDef<T>> = {},
+  columnOptions: Partial<ColDef<T>> = {},
 ): ColDef<T> {
   return {
     field,
@@ -74,27 +96,26 @@ export function numberColumn<T>(
     type: 'rightAligned',
     cellDataType: 'number',
     filter: 'agNumberColumnFilter',
-    valueGetter: (params) =>
-      toNumber(params.data ? (params.data as Record<string, unknown>)[String(field)] : null),
-    valueFormatter: (params) => formatNumber(params.value),
-    ...extra,
+    valueGetter: (cell) => toNumber(fieldValue(cell.data, String(field))),
+    valueFormatter: (cell) => formatNumber(cell.value),
+    ...columnOptions,
   };
 }
 
 export function toNumber(value: unknown): number | null {
   if (isBlank(value)) return null;
   const numericValue = Number(value);
-  return Number.isNaN(numericValue) ? null : numericValue;
+  return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 export function compactColumn<T>(
   field: Field<T>,
   headerName: string,
-  extra: Partial<ColDef<T>> = {},
+  columnOptions: Partial<ColDef<T>> = {},
 ): ColDef<T> {
   return numberColumn(field, headerName, {
-    valueFormatter: (params) => formatCompact(params.value),
-    ...extra,
+    valueFormatter: (cell) => formatCompact(cell.value),
+    ...columnOptions,
   });
 }
 
@@ -102,29 +123,30 @@ export function percentColumn<T>(
   field: Field<T>,
   headerName: string,
   limits: BandLimits,
-  extra: Partial<ColDef<T>> = {},
+  columnOptions: Partial<ColDef<T>> = {},
 ): ColDef<T> {
   return numberColumn(field, headerName, {
     width: 70,
-    cellRenderer: (params: { value: unknown }) => percentCell(params.value, limits),
-    ...extra,
+    cellRenderer: (cell: { value: unknown }) => percentCell(cell.value, limits),
+    ...columnOptions,
   });
 }
 
 export function dateColumn<T>(
   field: Field<T>,
   headerName: string,
-  extra: Partial<ColDef<T>> = {},
+  columnOptions: Partial<ColDef<T>> = {},
 ): ColDef<T> {
   return {
     field,
     headerName,
     cellDataType: false,
-    valueFormatter: (params) => formatDate(params.value),
-    comparator: (a, b) => (parseDate(a)?.getTime() ?? 0) - (parseDate(b)?.getTime() ?? 0),
+    valueFormatter: (cell) => formatDate(cell.value),
+    comparator: (firstValue, secondValue) =>
+      (parseDate(firstValue)?.getTime() ?? 0) - (parseDate(secondValue)?.getTime() ?? 0),
     filter: 'agSetColumnFilter',
     filterParams: { treeList: true, treeListPathGetter: datePath },
-    ...extra,
+    ...columnOptions,
   };
 }
 
@@ -153,6 +175,9 @@ export function percentCell(value: unknown, limits: BandLimits): HTMLElement | s
   const dot = document.createElement('span');
   dot.className = 'percent-dot';
   dot.style.background = bandColor(bandOf(percent, limits), limits);
-  cell.append(dot, String(value));
+  const label = document.createElement('span');
+  label.className = 'percent-value';
+  label.textContent = String(value);
+  cell.append(dot, label);
   return cell;
 }

@@ -1,0 +1,166 @@
+<div class="report-toolbar" role="toolbar" aria-label="Custom license report filters">
+  <app-search-filter [(text)]="searchText" />
+  <label class="filter"
+    ><span class="filter-label">From</span
+    ><input type="date" [value]="startDate()" (change)="startDate.set(inputValue($event))"
+  /></label>
+  <label class="filter"
+    ><span class="filter-label">To</span
+    ><input type="date" [value]="endDate()" (change)="endDate.set(inputValue($event))"
+  /></label>
+  <app-check-filter
+    label="Working Days"
+    [checked]="workingDaysOnly()"
+    (toggled)="workingDaysOnly.set(!workingDaysOnly())"
+  />
+  @if (
+    reportView() === 'Utilization' || reportView() === 'Merge' || reportView() === 'Percentile'
+  ) {
+    <app-check-filter
+      label="Server Details"
+      [checked]="showDetails()"
+      (toggled)="showDetails.set(!showDetails())"
+    />
+  }
+  @if (reportView() === 'Percentile') {
+    <label class="filter"
+      ><span class="filter-label">Percentile</span
+      ><input
+        type="number"
+        min="1"
+        max="100"
+        [value]="percentileRank()"
+        (change)="setRank(inputValue($event))"
+    /></label>
+  }
+  @if (reportView() === 'Usage') {
+    <app-dropdown
+      [options]="usageOptions"
+      [value]="usageMode()"
+      (valueChange)="chooseUsageMode($event)"
+    />
+  }
+  <span class="toolbar-trailing row-count">Rows : {{ rowCount() || '0' }}</span>
+  <button type="button" class="action" (click)="showChart.set(!showChart())">
+    {{ showChart() ? 'Grid View' : 'Chart View' }}
+  </button>
+</div>
+<div class="report-tabs" role="tablist" aria-label="Custom report views">
+  @for (tab of reportViews; track tab) {
+    <button
+      type="button"
+      role="tab"
+      [class.active]="reportView() === tab"
+      [attr.aria-selected]="reportView() === tab"
+      (click)="reportView.set(tab)"
+    >
+      {{ tab }}
+    </button>
+  }
+</div>
+@if (statusMessage()) {
+  <p class="report-message" role="status">{{ statusMessage() }}</p>
+}
+<div class="report-layout">
+  <aside class="parameter-panel" aria-label="Select parameters">
+    <h2>Select parameters · {{ selectedFeatureIds().size }}</h2>
+    <app-dropdown
+      ariaLabel="Software"
+      [options]="softwareOptions()"
+      [value]="selectedSoftware()"
+      (valueChange)="chooseSoftware($event)"
+    />
+    <app-dropdown
+      ariaLabel="Server"
+      [options]="serverOptions()"
+      [value]="selectedServer()"
+      (valueChange)="selectedServer.set($event)"
+    />
+    <input
+      type="search"
+      aria-label="Find features"
+      placeholder="Find feature…"
+      [value]="featureSearch()"
+      (input)="featureSearch.set(inputValue($event))"
+    />
+    <div>
+      <button type="button" class="action" (click)="selectVisible(true)">Select shown</button>
+      <button type="button" class="action" (click)="selectVisible(false)">Clear shown</button>
+    </div>
+    @if (featuresLoading()) {
+      <p>Loading parameters…</p>
+    }
+    <div class="feature-list">
+      @for (feature of visibleFeatures(); track featureId(feature)) {
+        <label class="feature-choice"
+          ><input
+            type="checkbox"
+            [checked]="selectedFeatureIds().has(featureId(feature))"
+            (change)="toggleFeature(feature)"
+          /><span
+            >{{ feature.lic_name || feature.lic }}<br /><small
+              >{{ feature.sw }} · {{ feature.server }}</small
+            ></span
+          ></label
+        >
+      }
+    </div>
+    <button type="button" class="action" [disabled]="featuresLoading()" (click)="loadFeatures()">
+      Reload parameters
+    </button>
+    <h2>Saved sessions</h2>
+    <app-dropdown
+      ariaLabel="Saved session"
+      [options]="sessionOptions()"
+      [value]="selectedSessionId()"
+      (valueChange)="loadSession($event)"
+    />
+    <input
+      aria-label="Session name"
+      placeholder="Session name"
+      maxlength="50"
+      [value]="sessionName()"
+      (input)="sessionName.set(inputValue($event))"
+    />
+    <div>
+      <button
+        type="button"
+        class="action"
+        [disabled]="isSavingSession() || !sessionName().trim() || !selectedFeatureIds().size"
+        (click)="saveSession()"
+      >
+        Save
+      </button>
+      <button
+        type="button"
+        class="action"
+        [disabled]="isSavingSession() || !selectedSessionId()"
+        (click)="deleteSession()"
+      >
+        Delete
+      </button>
+    </div>
+  </aside>
+  <section class="report-result" aria-label="Custom report results">
+    @if (selectedFeatureIds().size) {
+      @if (
+        showChart() && !reportData.loading() && !reportData.error() && filters.settings();
+        as settings
+      ) {
+        <app-license-chart [rows]="rows()" [settings]="settings" [search]="searchText()" />
+      } @else {
+        <app-data-grid
+          [rows]="rows()"
+          [columns]="columns()"
+          [search]="searchText()"
+          [loading]="reportData.loading()"
+          [emptyText]="reportData.error()"
+          (rowCount)="rowCount.set($event)"
+          (filtersCleared)="searchText.set('')"
+        />
+      }
+    } @else {
+      <p class="empty">Select features to generate {{ reportView() }}.</p>
+    }
+  </section>
+</div>

@@ -1,3 +1,4 @@
+import { literal } from '../../core/utils/data';
 import { ChangeDetectionStrategy, Component, computed, model } from '@angular/core';
 import { sqlString } from '../../core/api/api.service';
 import { Dropdown, DropdownOption } from '../dropdown/dropdown';
@@ -9,7 +10,7 @@ export type ReportRange =
   | { kind: 'quarter'; year: number; quarter: number }
   | { kind: 'year'; year: number };
 
-export const DAY_RANGES = [
+export const DAY_RANGES = literal([
   { value: 'YTD', label: 'YTD' },
   { value: '360', label: '360 Days' },
   { value: '180', label: '180 Days' },
@@ -17,7 +18,7 @@ export const DAY_RANGES = [
   { value: '60', label: '60 Days' },
   { value: '30', label: '30 Days' },
   { value: '07', label: '7 Days' },
-] as const;
+]);
 
 const MONTHS_LISTED = 24;
 const QUARTERS_LISTED = 8;
@@ -154,7 +155,12 @@ const KIND_OPTIONS: DropdownOption[] = [
   template: `
     <label class="filter">
       <span class="filter-label">Range</span>
-      <app-dropdown [options]="kindOptions" [value]="kindValue()" (valueChange)="pickKind($event)" />
+      <app-dropdown
+        ariaLabel="Range"
+        [options]="kindOptions"
+        [value]="kindValue()"
+        (valueChange)="pickKind($event)"
+      />
     </label>
 
     @if (periodOptions().length > 0) {

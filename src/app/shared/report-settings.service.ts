@@ -1,5 +1,7 @@
-import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { namedValues } from '../core/utils/data';
+import { apiRequest, resourceRequest } from '../core/api/api-request';
+import { Injectable, inject, Injector } from '@angular/core';
+
 import { ApiService } from '../core/api/api.service';
 import { Setting } from '../core/models';
 import { BrowserStorage, StorageKey } from '../core/storage/browser-storage.service';
@@ -9,6 +11,7 @@ export interface ReportSettings {
   lowBelow: number;
   highFrom: number;
   bandColors: Readonly<Record<UsageBand, string>>;
+  heatmapColors: HeatmapColorScale;
   workingHoursPerDay: number;
   defaultRange: string;
   defaultOption: string;
@@ -17,6 +20,39 @@ export interface ReportSettings {
   departmentLabel: string;
 }
 
+/** The hourly-usage heatmap's colour for each percentage band, lowest first. */
+export interface HeatmapColorScale {
+  from0To50: string;
+  from50To60: string;
+  from60To70: string;
+  from70To80: string;
+  from80To90: string;
+  from90To99: string;
+  at100: string;
+}
+
+export const DEFAULT_HEATMAP_COLORS: HeatmapColorScale = {
+  from0To50: '#C7E9FF',
+  from50To60: '#00BFFF',
+  from60To70: '#77DD77',
+  from70To80: '#FEF070',
+  from80To90: '#FF8508',
+  from90To99: '#FF6961',
+  at100: '#FF0000',
+};
+
+export const DEFAULT_REPORT_SETTINGS: ReportSettings = {
+  lowBelow: 60,
+  highFrom: 80,
+  workingHoursPerDay: 24,
+  heatmapColors: DEFAULT_HEATMAP_COLORS,
+  bandColors: { low: '#10b981', medium: '#f59e0b', high: '#ef4444' },
+  defaultRange: '30',
+  defaultOption: 'DP',
+  defaultFeatureGroup: 'All Feature',
+  divisionLabel: 'Division',
+  departmentLabel: 'Department',
+};
 interface WorkingHourTimes {
   start: string;
   end: string;
@@ -29,16 +65,18 @@ const WORKING_HOURS_SQL =
 
 @Injectable({ providedIn: 'root' })
 export class ReportSettingsService {
+  private readonly injector = inject(Injector);
+
   private readonly api = inject(ApiService);
   private readonly storage = inject(BrowserStorage);
-  private loading: Promise<ReportSettings> | null = null;
+  private settingsPromise: Promise<ReportSettings> | null = null;
 
   load(): Promise<ReportSettings> {
-    this.loading ??= this.fetch().catch((error: unknown) => {
-      this.loading = null;
+    this.settingsPromise ??= this.fetch().catch((error: unknown) => {
+      this.settingsPromise = null;
       throw error;
     });
-    return this.loading;
+    return this.settingsPromise;
   }
 
   private async fetch(): Promise<ReportSettings> {
@@ -53,6 +91,15 @@ export class ReportSettingsService {
         low: getSettingOrDefault('CBAND_1_COLOR', BAND_COLORS.low),
         medium: getSettingOrDefault('CBAND_2_COLOR', BAND_COLORS.medium),
         high: getSettingOrDefault('CBAND_3_COLOR', BAND_COLORS.high),
+      },
+      heatmapColors: {
+        from0To50: getSettingOrDefault('HEATMAP_0_50', DEFAULT_HEATMAP_COLORS.from0To50),
+        from50To60: getSettingOrDefault('HEATMAP_50_60', DEFAULT_HEATMAP_COLORS.from50To60),
+        from60To70: getSettingOrDefault('HEATMAP_60_70', DEFAULT_HEATMAP_COLORS.from60To70),
+        from70To80: getSettingOrDefault('HEATMAP_70_80', DEFAULT_HEATMAP_COLORS.from70To80),
+        from80To90: getSettingOrDefault('HEATMAP_80_90', DEFAULT_HEATMAP_COLORS.from80To90),
+        from90To99: getSettingOrDefault('HEATMAP_90_99', DEFAULT_HEATMAP_COLORS.from90To99),
+        at100: getSettingOrDefault('HEATMAP_100', DEFAULT_HEATMAP_COLORS.at100),
       },
       workingHoursPerDay: workingHours(workingHourTimes.start, workingHourTimes.end),
       defaultRange: getSettingOrDefault('DASHBOARD_SELECT_OPTION_DEFAULT', '30'),
@@ -78,6 +125,18 @@ export class ReportSettingsService {
     saveSetting(StorageKey.workingHoursPerDay, reportSettings.workingHoursPerDay);
     saveSetting(StorageKey.workingHourStart, workingHourTimes.start);
     saveSetting(StorageKey.workingHourEnd, workingHourTimes.end);
+    saveSetting(
+      StorageKey.reportStartTime,
+      this.api.getSetting('HOUR_START_UTILIZATION').slice(0, 5) ||
+        workingHourTimes.start.slice(0, 5) ||
+        '00:00',
+    );
+    saveSetting(
+      StorageKey.reportEndTime,
+      this.api.getSetting('HOUR_END_UTILIZATION').slice(0, 5) ||
+        workingHourTimes.end.slice(0, 5) ||
+        '23:59',
+    );
 
     saveSetting(StorageKey.licenseHoursPerDay, reportSettings.workingHoursPerDay);
     saveSetting(StorageKey.longDuration, reportSettings.workingHoursPerDay);
@@ -86,13 +145,15 @@ export class ReportSettingsService {
   }
 
   private async fetchWorkingHours(): Promise<WorkingHourTimes> {
-    const settingsResponse = await firstValueFrom(this.api.query<Setting[]>(WORKING_HOURS_SQL));
+    const settingsResponse = await resourceRequest(this.injector, (abortSignal) =>
+      apiRequest(this.api.query<Setting[]>(WORKING_HOURS_SQL), abortSignal),
+    );
     if (settingsResponse?.status !== 'PASS' || !Array.isArray(settingsResponse.message)) {
       throw new Error('Unable to load the working hours setting.');
     }
 
-    const valueFor = (settingName: string) =>
-      settingsResponse.message.find((setting) => setting._DESC === settingName)?._VALUE ?? '';
+    const values = namedValues(settingsResponse.message);
+    const valueFor = (settingName: string) => values.get(settingName) ?? '';
     return { start: valueFor('HOUR_START_USAGE'), end: valueFor('HOUR_END_USAGE') };
   }
 }

@@ -1,8 +1,10 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { apiRequest, resourceRequest } from '../api/api-request';
+import { Injectable, computed, inject, signal, Injector } from '@angular/core';
+
+import { assertNever, namedValues } from '../utils/data';
 import { ApiResult, LoginType, UserDetailRow, UserDetails, UserMenu } from '../models';
 import { ApiService, sqlString } from '../api/api.service';
-import { sidebarMenuNames } from '../menu/menu';
+import { sidebarMenuNames } from '../menu/menu-rules';
 import { MenuService } from '../menu/menu.service';
 import { BrowserStorage, StorageKey } from '../storage/browser-storage.service';
 
@@ -10,80 +12,82 @@ export type { LoginType } from '../models';
 
 type CredentialReply = 0 | 1 | string;
 
-const LOGIN_TYPES: ReadonlySet<LoginType> = new Set(['AD LOGIN', 'ESEC LOGIN', 'ADMIN']);
+function isLoginType(value: unknown): value is LoginType {
+  return value === 'AD LOGIN' || value === 'ESEC LOGIN' || value === 'ADMIN';
+}
 
 @Injectable({ providedIn: 'root' })
 export class LoginService {
+  private readonly injector = inject(Injector);
+
   private readonly api = inject(ApiService);
   private readonly menuService = inject(MenuService);
   private readonly storage = inject(BrowserStorage);
 
   private readonly currentUser = signal<UserDetails | null>(null);
   private readonly allowedMenus = signal<UserMenu[]>([]);
-  private readonly licenceChecked = signal(false);
+  private readonly licenseChecked = signal(false);
+  private sessionVersion = 0;
 
   readonly user = this.currentUser.asReadonly();
   readonly menus = this.allowedMenus.asReadonly();
-  readonly licenceReady = this.licenceChecked.asReadonly();
+  readonly isLicenseReady = this.licenseChecked.asReadonly();
   readonly isAuthenticated = computed(() => this.user() !== null);
 
   readonly mainMenuNames = computed(() => sidebarMenuNames(this.menus()));
 
-  setLicenceReady(ready: boolean): void {
-    this.licenceChecked.set(ready);
+  setLicenseReady(ready: boolean): void {
+    this.licenseChecked.set(ready);
     if (!ready) {
       this.clearSession();
     }
   }
 
   clearSession(): void {
+    this.sessionVersion++;
     this.currentUser.set(null);
     this.allowedMenus.set([]);
   }
 
-  /** Ends the session and forgets everything remembered in the browser. */
   signOut(): void {
     this.clearSession();
     this.storage.clearOnSignOut();
   }
 
-  /**
-   * Picks up the session remembered in the browser after a page reload (user ID and login type,
-   * never the password). Returns false, and forgets it, if there is none or it no longer works.
-   */
   async restoreSession(): Promise<boolean> {
+    const loginAttemptId = this.sessionVersion;
     const userId = this.storage.getHidden(StorageKey.userId);
-    const loginType = this.storage.getHidden(StorageKey.loginType) as LoginType | null;
-    if (!userId || !loginType || !LOGIN_TYPES.has(loginType)) {
+    const loginType = this.storage.getHidden(StorageKey.loginType);
+    if (!userId || !isLoginType(loginType)) {
       return false;
     }
 
     try {
-      await this.startSession(loginType, userId);
-      return true;
+      return await this.startSession(loginType, userId, loginAttemptId);
     } catch {
-      this.storage.clearOnSignOut();
+      if (loginAttemptId === this.sessionVersion) this.storage.clearOnSignOut();
       return false;
     }
   }
 
   async signInUser(loginType: LoginType, username: string, password: string): Promise<boolean> {
     this.clearSession();
+    const loginAttemptId = this.sessionVersion;
 
-    if (!this.licenceReady()) {
+    if (!this.isLicenseReady()) {
       throw new Error('Complete the application licence check before signing in.');
     }
-    
+
     if (username.trim() === '' || password === '') {
       throw new Error('Enter your User ID and Password.');
     }
 
     const userId = await this.authenticate(loginType, username.trim(), password);
-    if (userId === null) {
+    if (userId === null || loginAttemptId !== this.sessionVersion) {
       return false;
     }
 
-    await this.startSession(loginType, userId);
+    if (!(await this.startSession(loginType, userId, loginAttemptId))) return false;
 
     // Remember who signed in, so a page reload keeps the session.
     this.storage.setHidden(StorageKey.userId, userId);
@@ -94,16 +98,26 @@ export class LoginService {
     return true;
   }
 
-  /** Loads the user's profile and menus, then publishes the session; nothing is published if either fails. */
-  private async startSession(loginType: LoginType, userId: string): Promise<void> {
+  private async startSession(
+    loginType: LoginType,
+    userId: string,
+    loginAttemptId: number,
+  ): Promise<boolean> {
     const user = await this.loadProfile(userId);
+    if (loginAttemptId !== this.sessionVersion) return false;
     const menus = await this.menuService.loadMenu(loginType, userId);
+    if (loginAttemptId !== this.sessionVersion) return false;
 
     this.allowedMenus.set(menus);
     this.currentUser.set(user);
+    return true;
   }
 
-  private authenticate(type: LoginType, username: string, password: string): Promise<string | null> {
+  private authenticate(
+    type: LoginType,
+    username: string,
+    password: string,
+  ): Promise<string | null> {
     switch (type) {
       case 'ESEC LOGIN':
         return this.signInWithEsec(username, password);
@@ -111,6 +125,8 @@ export class LoginService {
         return this.signInAsAdmin(password);
       case 'AD LOGIN':
         return this.signInWithActiveDirectory(username, password);
+      default:
+        return assertNever(type);
     }
   }
 
@@ -121,11 +137,7 @@ export class LoginService {
     const userId = withoutDomain(username);
 
     await this.checkCredentials('check_esec_user', { username: userId }, 'Invalid User ID');
-    await this.checkCredentials(
-      'esec_login',
-      { username: userId, password },
-      'Invalid Password',
-    );
+    await this.checkCredentials('esec_login', { username: userId, password }, 'Invalid Password');
 
     return userId;
   }
@@ -140,13 +152,19 @@ export class LoginService {
     body: object,
     rejectedMessage: string,
   ): Promise<void> {
-    const credentialResponse = await firstValueFrom(this.api.post<CredentialReply>(endpoint, body));
+    const credentialResponse = await apiRequest(this.api.post<CredentialReply>(endpoint, body));
     requireAccepted(credentialResponse, rejectedMessage);
   }
 
-  private async signInWithActiveDirectory(username: string, password: string): Promise<string | null> {
-    const adLoginResponse = await firstValueFrom(
-      this.api.post<{ type?: string; redirectUrl?: string } | string>('ad_login', { username, password }),
+  private async signInWithActiveDirectory(
+    username: string,
+    password: string,
+  ): Promise<string | null> {
+    const adLoginResponse = await apiRequest(
+      this.api.post<{ type?: string; redirectUrl?: string } | string>('ad_login', {
+        username,
+        password,
+      }),
     );
     if (adLoginResponse?.status !== 'PASS') {
       throw new Error('Invalid User ID / Password or AD service unavailable.');
@@ -164,16 +182,19 @@ export class LoginService {
     const profileSource = `FROM esms.cltx_user WHERE USER_ID = ${sqlString(userId)}`;
     const profileQuery =
       ['USER_ID', 'USER_NAME', 'USER_DEPT', 'USER_STATUS']
-        .map((fieldName) => `SELECT '${fieldName}' AS _DESC, ${fieldName} AS _VALUE ${profileSource}`)
+        .map(
+          (fieldName) => `SELECT '${fieldName}' AS _DESC, ${fieldName} AS _VALUE ${profileSource}`,
+        )
         .join(' UNION ALL ') + ';';
-    const profileResponse = await firstValueFrom(this.api.query<UserDetailRow[]>(profileQuery));
+    const profileResponse = await resourceRequest(this.injector, (abortSignal) =>
+      apiRequest(this.api.query<UserDetailRow[]>(profileQuery), abortSignal),
+    );
     if (profileResponse?.status !== 'PASS' || !Array.isArray(profileResponse.message)) {
       throw new Error('Credentials were accepted, but user details could not be loaded.');
     }
 
-    const profileRows = profileResponse.message;
-    const profileValue = (fieldName: string) =>
-      String(profileRows.find((row) => row?._DESC === fieldName)?._VALUE ?? '');
+    const profileRows = namedValues(profileResponse.message);
+    const profileValue = (fieldName: string) => String(profileRows.get(fieldName) ?? '');
     const user: UserDetails = {
       userId: profileValue('USER_ID'),
       userName: profileValue('USER_NAME'),
@@ -186,7 +207,6 @@ export class LoginService {
     }
     return user;
   }
-
 }
 
 function withoutDomain(username: string): string {
@@ -196,7 +216,6 @@ function withoutDomain(username: string): string {
   }
   return userId;
 }
-
 
 function requireAccepted(
   credentialResponse: ApiResult<CredentialReply>,

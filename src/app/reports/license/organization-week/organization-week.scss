@@ -1,0 +1,33 @@
+// Layout and toolbar styles are shared (report-fill, report-toolbar); only the period stepper is here.
+@use '../../../../styles/variables' as *;
+
+.period-button {
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid #d7e3f4;
+  border-radius: 7px;
+  background: #f7faff;
+  color: $primary-dark;
+  font-size: 11px;
+  font-weight: 600;
+  transition:
+    background $transition-fast,
+    border-color $transition-fast;
+
+  &:hover {
+    border-color: #b6cbed;
+    background: #edf4ff;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: $filter-shadow-focus;
+  }
+}
+
+.period-label {
+  color: $gray-900;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}

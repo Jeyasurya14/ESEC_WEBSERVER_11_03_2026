@@ -1,6 +1,16 @@
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { RefreshHandle, TabService } from './tab.service';
+import { ReportHandle, TabService } from './tab.service';
+
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  selector: 'app-stub-report',
+  template: '{{ label }}',
+})
+class StubReportComponent {
+  label = '';
+}
 
 describe('report tabs', () => {
   let tabs: TabService;
@@ -28,6 +38,19 @@ describe('report tabs', () => {
     expect(titles().filter((title) => title === 'A')).toHaveLength(2);
   });
 
+  it('opens an arbitrary component as its own tab with its own inputs, as a drilldown does', () => {
+    tabs.openComponent(report('Row History'), StubReportComponent, { row: 'srv-01' });
+
+    expect(titles()[0]).toBe('Row History');
+    expect(tabs.activeTab()?.component).toBe(StubReportComponent);
+    expect(tabs.activeTab()?.inputs).toEqual({ row: 'srv-01' });
+  });
+
+  it('still passes a report opened by open() its menu as the input, as before', async () => {
+    await tabs.open(report('E'));
+    expect(tabs.activeTab()?.inputs).toEqual({ menu: report('E') });
+  });
+
   it('closes the front tab and hands focus to its neighbour', () => {
     tabs.close(idOf('D'));
     expect(titles()).toEqual(['C', 'B', 'A']);
@@ -44,6 +67,24 @@ describe('report tabs', () => {
     tabs.closeAll();
     expect(tabs.tabs()).toEqual([]);
     expect(tabs.activeTab()).toBeNull();
+  });
+
+  it('does not open a report whose load completes after Close All', async () => {
+    const pending = tabs.open(report('Late'));
+    tabs.closeAll();
+    await pending;
+    expect(tabs.tabs()).toEqual([]);
+  });
+
+  it('ignores stale tab ids without closing unrelated reports or losing the active tab', () => {
+    const previous = titles();
+    const active = tabs.activeTabId();
+    tabs.closeOthers(-1);
+    tabs.closeLeftOf(-1);
+    tabs.closeRightOf(-1);
+    tabs.activate(-1);
+    expect(titles()).toEqual(previous);
+    expect(tabs.activeTabId()).toBe(active);
   });
 
   it('pins a tab to the front and keeps it through Close All', () => {
@@ -90,35 +131,35 @@ describe('report tabs', () => {
     expect(tabs.canCloseRightOf(idOf('C'))).toBe(true);
   });
 
-  describe('a tab\'s refresh control', () => {
-    const handle = (overrides: Partial<RefreshHandle> = {}): RefreshHandle => ({
+  describe("a tab's refresh control", () => {
+    const handle = (overrides: Partial<ReportHandle> = {}): ReportHandle => ({
       loading: () => false,
       refresh: () => {},
-      asOn: () => '',
+      lastUpdated: () => '',
       ...overrides,
     });
 
     it('is only there once a tab registers one, and only for the active tab', () => {
-      expect(tabs.activeRefreshHandle()).toBeNull();
+      expect(tabs.activeReportHandle()).toBeNull();
 
-      tabs.setRefreshHandle(idOf('D'), handle({ loading: () => true }));
-      expect(tabs.activeRefreshHandle()?.loading()).toBe(true);
+      tabs.setReportHandle(idOf('D'), handle({ loading: () => true }));
+      expect(tabs.activeReportHandle()?.loading()).toBe(true);
 
       tabs.activate(idOf('A'));
-      expect(tabs.activeRefreshHandle()).toBeNull();
+      expect(tabs.activeReportHandle()).toBeNull();
     });
 
     it('clears when the tab says so', () => {
-      tabs.setRefreshHandle(idOf('D'), handle());
-      tabs.setRefreshHandle(idOf('D'), null);
-      expect(tabs.activeRefreshHandle()).toBeNull();
+      tabs.setReportHandle(idOf('D'), handle());
+      tabs.setReportHandle(idOf('D'), null);
+      expect(tabs.activeReportHandle()).toBeNull();
     });
 
     it('is forgotten once the tab closes', () => {
-      tabs.setRefreshHandle(idOf('D'), handle());
+      tabs.setReportHandle(idOf('D'), handle());
       tabs.close(idOf('D'));
       tabs.activate(idOf('C'));
-      expect(tabs.activeRefreshHandle()).toBeNull();
+      expect(tabs.activeReportHandle()).toBeNull();
     });
   });
 });

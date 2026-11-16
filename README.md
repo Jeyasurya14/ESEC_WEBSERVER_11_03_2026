@@ -1,11 +1,12 @@
 # ESEC (Angular 21)
 
-Start-up licence check, sign-in, and a menu that depends on who signed in.
+Start-up licence check, sign-in, permission-based navigation and 16 License report screens.
 
 ```bash
 npm start      # dev server
 npm test       # unit tests
 npm run build
+npm run check # type checks, formatting, production build and non-watching tests
 ```
 
 ## The flow
@@ -14,7 +15,7 @@ There is no URL routing. `AppComponent` shows one screen, chosen from the state 
 
 | Licence checked? | Signed in? | Screen             |
 | ---------------- | ---------- | ------------------ |
-| no               | -          | `OnstartComponent` |
+| no               | -          | `StartupComponent` |
 | yes              | no         | `LoginComponent`   |
 | yes              | yes        | `HomeComponent`    |
 
@@ -32,19 +33,19 @@ src/app/
     preferences/           The user's saved choices (shared with the company app's preference table)
     storage/               Everything kept in localStorage, under the company app's key names
   features/              The screens the user moves through
-    onstart/               Licence and maintenance check before login
+    startup/               Licence and maintenance check before login
     login/                 Sign-in form
     home/                  Header, sidebar and the work area
     tabs/                  Open report tabs
   shared/                Building blocks every report uses
     filters/               One file per filter: its component and its rules (range, option, bands, ...)
     grid/                  The report grid (AG Grid) and column helpers
-    dates.ts               Reading and showing dates ("15-Mar-2026")
+    dates.ts               Calendar parsing, display dates and SQL dates
     report-settings.service.ts  Band limits, working hours and defaults, loaded once
-    report-data.ts         Loading a report's rows: newest reply wins, loading/error/"As on"
+    report-data.ts         Cancelled/stale request handling, reactive loading, error/"As on"
   reports/               One folder per report screen, grouped by menu
-    reports.ts             The list of which component each menu screen opens
-    license/organization/  Example report with filters and a grid
+    report-registry.ts             The list of which component each menu screen opens
+    license/               License reports, shared summaries and drilldowns
 ```
 
 `core/` never imports from `features/`, `shared/` or `reports/`; `shared/` never imports from `reports/`.
@@ -55,7 +56,7 @@ Reports live in `src/app/reports/<menu>/<report>/`, for example `reports/license
 
 1. Generate it, for example for License / Department: `ng generate component reports/license/department`
 2. Copy `organization.ts`: it has an `input.required<UserMenu>()` called `menu` and `host: { class: 'report-page' }`.
-3. Add one line to the list in `reports/reports.ts`:
+3. Add one line to the list in `reports/report-registry.ts`:
 
 ```ts
 ['LICENSE/Department', () => import('./license/department/department').then((m) => m.Department)],
@@ -83,7 +84,12 @@ input fails there.
   <app-search-filter [(text)]="filters.search" />
   <app-range-filter [(range)]="filters.range" />
 </div>
-<app-data-grid [rows]="rows()" [columns]="columns()" [search]="filters.search()" [loading]="loading()" />
+<app-data-grid
+  [rows]="rows()"
+  [columns]="columns()"
+  [search]="filters.search()"
+  [loading]="loading()"
+/>
 ```
 
 Saved choices use the company app's preference table and keys (`a_user_pref_load` / `a_user_pref_insert`:
@@ -92,3 +98,30 @@ Saved choices use the company app's preference table and keys (`a_user_pref_load
 Columns use the helpers in `shared/grid/columns.ts`, so a column is one line:
 `numberColumn('qty_dp', 'Quantity', { hide: true })`. A new filter goes in `shared/filters/` as one file
 holding its component and its rule, so every report can use it.
+
+For a report whose query depends on signal inputs, use the shared `ReportData`:
+
+```ts
+constructor() {
+  effect(() => {
+    const query = this.reportQuery();
+    untracked(() => {
+      if (query) void this.reportData.load(query);
+      else this.reportData.fail('Choose a valid range.');
+    });
+  });
+}
+```
+
+Requests are cancelled when superseded, cleared or destroyed. `loadedAt` records a
+successful load, not a failed attempt. `registerReportRefresh` connects the report to the footer.
+
+Use `formatSqlDate(date)` for stored-procedure DATE arguments (`2026-11-15`) and
+`formatDate(date)` for labels (`15-Nov-2026`). Do not use display dates in SQL parameters.
+
+Run `npm run format` after changes. `npm run check` verifies unused imports/parameters,
+formatting, Angular templates, the production build and all tests. See
+[the cleanup notes](docs/code-cleanup.md) for the reliability changes and validation boundaries.
+
+See [project names and the code map](docs/project-names.md) for the current folders,
+file purposes and plain-language variable names.

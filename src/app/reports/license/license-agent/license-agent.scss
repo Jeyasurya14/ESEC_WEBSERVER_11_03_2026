@@ -1,0 +1,17 @@
+// Layout and toolbar styles are shared (report-fill, report-toolbar); only this report's extras are here.
+@use '../../../../styles/variables' as *;
+
+.row-count,
+.period {
+  color: $gray-900;
+}
+
+.software-filter input {
+  min-width: 180px;
+}
+
+.empty {
+  padding: $spacing-5;
+  color: $gray-500;
+  text-align: center;
+}

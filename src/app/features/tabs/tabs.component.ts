@@ -1,15 +1,18 @@
+import { assertNever } from '../../core/utils/data';
 import { NgComponentOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyableInjector,
   ElementRef,
-  HostListener,
   Injector,
+  OnDestroy,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
-import { shortModuleName } from './short-name';
+import { moduleLabel } from './module-label';
 import { TAB_ID, Tab, TabService } from './tab.service';
 
 const MENU_WIDTH_PX = 190;
@@ -34,21 +37,45 @@ interface OpenMenu {
   templateUrl: './tabs.component.html',
   styleUrl: './tabs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'closeMenu()',
+    '(document:keydown.escape)': 'closeMenu()',
+    '(window:resize)': 'closeMenu()',
+  },
 })
-export class TabsComponent {
+export class TabsComponent implements OnDestroy {
   readonly tabService = inject(TabService);
-  readonly shortName = shortModuleName;
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly moduleLabel = moduleLabel;
+  private readonly hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly parentInjector = inject(Injector);
 
-  readonly menu = signal<OpenMenu | null>(null);
+  readonly contextMenu = signal<OpenMenu | null>(null);
 
   // One child injector per tab, created once and reused - ngComponentOutlet recreates its
   // component whenever the injector it's given is a different object, so this must stay stable
   // for as long as the tab stays open.
-  private readonly tabInjectors = new Map<number, Injector>();
+  private readonly tabInjectors = new Map<number, DestroyableInjector>();
 
-  injectorFor(tab: Tab): Injector {
+  constructor() {
+    effect(() => {
+      const openIds = new Set(this.tabService.tabs().map((tab) => tab.id));
+      for (const [tabId, injector] of this.tabInjectors) {
+        if (!openIds.has(tabId)) {
+          injector.destroy();
+          this.tabInjectors.delete(tabId);
+        }
+      }
+      const menu = this.contextMenu();
+      if (menu && !openIds.has(menu.tab.id)) this.closeMenu();
+    });
+  }
+
+  ngOnDestroy(): void {
+    for (const injector of this.tabInjectors.values()) injector.destroy();
+    this.tabInjectors.clear();
+  }
+
+  injectorFor(tab: Tab): DestroyableInjector {
     let tabInjector = this.tabInjectors.get(tab.id);
     if (!tabInjector) {
       tabInjector = Injector.create({
@@ -61,7 +88,7 @@ export class TabsComponent {
   }
 
   readonly menuItems = computed<MenuItem[]>(() => {
-    const openMenu = this.menu();
+    const openMenu = this.contextMenu();
     if (!openMenu) {
       return [];
     }
@@ -86,43 +113,42 @@ export class TabsComponent {
   });
 
   isActive(tab: Tab): boolean {
-    return tab.id === this.tabService.activeId();
+    return tab.id === this.tabService.activeTabId();
   }
 
   openMenu(event: MouseEvent, tab: Tab): void {
     event.preventDefault();
     this.tabService.activate(tab.id);
 
-    this.menu.set({
+    this.contextMenu.set({
       tab,
-      x: Math.min(event.clientX, window.innerWidth - MENU_WIDTH_PX),
-      y: Math.min(event.clientY, window.innerHeight - MENU_HEIGHT_PX),
+      x: Math.max(0, Math.min(event.clientX, window.innerWidth - MENU_WIDTH_PX)),
+      y: Math.max(0, Math.min(event.clientY, window.innerHeight - MENU_HEIGHT_PX)),
     });
   }
 
   run(action: MenuAction): void {
-    const openMenu = this.menu();
-
-    if (openMenu) {
-      const { id } = openMenu.tab;
-
-      switch (action) {
-        case 'closeAll':
-          this.tabService.closeAll();
-          break;
-        case 'closeOthers':
-          this.tabService.closeOthers(id);
-          break;
-        case 'closeLeft':
-          this.tabService.closeLeftOf(id);
-          break;
-        case 'closeRight':
-          this.tabService.closeRightOf(id);
-          break;
-        case 'togglePin':
-          this.tabService.togglePin(id);
-          break;
-      }
+    const openMenu = this.contextMenu();
+    if (!openMenu) return;
+    const { id: tabId } = openMenu.tab;
+    switch (action) {
+      case 'closeAll':
+        this.tabService.closeAll();
+        break;
+      case 'closeOthers':
+        this.tabService.closeOthers(tabId);
+        break;
+      case 'closeLeft':
+        this.tabService.closeLeftOf(tabId);
+        break;
+      case 'closeRight':
+        this.tabService.closeRightOf(tabId);
+        break;
+      case 'togglePin':
+        this.tabService.togglePin(tabId);
+        break;
+      default:
+        assertNever(action);
     }
     this.closeMenu();
   }
@@ -136,19 +162,17 @@ export class TabsComponent {
     }
   }
 
-  @HostListener('document:click')
-  @HostListener('document:keydown.escape')
-  @HostListener('window:resize')
   closeMenu(): void {
-    this.menu.set(null);
+    this.contextMenu.set(null);
   }
 
   private focusNeighbour(tab: Tab, step: 1 | -1): void {
     const openTabs = this.tabService.tabs();
+    if (!openTabs.length) return;
     const neighbourTab =
       openTabs[(openTabs.indexOf(tab) + step + openTabs.length) % openTabs.length];
 
     this.tabService.activate(neighbourTab.id);
-    this.host.nativeElement.querySelector<HTMLElement>(`#tab-${neighbourTab.id}`)?.focus();
+    this.hostElement.nativeElement.querySelector<HTMLElement>(`#tab-${neighbourTab.id}`)?.focus();
   }
 }

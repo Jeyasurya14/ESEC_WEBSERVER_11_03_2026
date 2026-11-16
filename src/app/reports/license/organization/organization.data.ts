@@ -3,7 +3,7 @@ import { featureGroupParam } from '../../../shared/filters/feature-group-filter'
 import { UsageOption, percentField, quantityField } from '../../../shared/filters/option-filter';
 import { ReportRange, rangeCall } from '../../../shared/filters/range-filter';
 import { ServerStatus, matchesServerStatus } from '../../../shared/filters/server-status-filter';
-import { UsageBand, matchesBands } from '../../../shared/filters/usage-band-filter';
+import { UsageBand, bandMatcher } from '../../../shared/filters/usage-band-filter';
 import { GaugeStat } from '../../../shared/gauge/gauge-tile';
 import {
   Column,
@@ -11,6 +11,7 @@ import {
   compactColumn,
   dateColumn,
   formatNumber,
+  linkColumn,
   numberColumn,
   percentColumn,
   rowNumberColumn,
@@ -20,6 +21,11 @@ import {
 import { ReportSettings } from '../../../shared/report-settings.service';
 
 export interface OrganizationRow {
+  divn?: string;
+  dept?: string;
+  g_type?: string;
+  g_name?: string;
+  max_qty_r?: number;
   sw: string;
   server: string;
   location: string;
@@ -87,8 +93,10 @@ export function prepareRows(
   workingHoursPerDay: number,
 ): OrganizationRow[] {
   return rows.map((row) => {
-    const availableHours = Number(((Number(row.tlh_24) * workingHoursPerDay) / 24).toFixed(4));
-    const usedHours = Number(row.tot_du_q);
+    const availableHours = Number(
+      (((Number(row.tlh_24) || 0) * workingHoursPerDay) / 24).toFixed(4),
+    );
+    const usedHours = Number(row.tot_du_q) || 0;
     const usagePercent =
       availableHours !== 0 ? Number(((usedHours / availableHours) * 100).toFixed(1)) : 0;
 
@@ -103,20 +111,25 @@ export function visibleRows(
   today: Date,
 ): OrganizationRow[] {
   const selectedPercentField = percentField(selectedFilters.option);
+  const inSelectedBand = bandMatcher(selectedFilters.bands, reportSettings);
 
   return organizationRows.filter(
     (row) =>
       matchesServerStatus(row.status, selectedFilters.serverStatus) &&
       (!selectedFilters.notExpired || isNotExpired(row.expiry, today)) &&
-      matchesBands(row[selectedPercentField], selectedFilters.bands, reportSettings),
+      inSelectedBand(row[selectedPercentField]),
   );
 }
 
-/** One gauge tile's worth of data: the card's title, the dial's percentage, and its stat rows. */
+/**
+ * One gauge tile's worth of data: the card's title, the dial's percentage, its stat rows, and the
+ * row it was built from - kept around so selecting the tile can open its History/Heatmap drilldown.
+ */
 export interface OrganizationTile {
   title: string;
   percent: number;
   stats: GaugeStat[];
+  row: OrganizationRow;
 }
 
 export function organizationTiles(
@@ -129,6 +142,7 @@ export function organizationTiles(
   return organizationRows.map((row) => ({
     title: [row.sw, row.server, row.lic_name].filter(Boolean).join(', '),
     percent: toNumber(row[selectedPercentField]) ?? 0,
+    row,
     stats: [
       { label: 'Percentage', value: formatNumber(row[selectedPercentField]) },
       { label: 'Value', value: formatNumber(row[selectedQuantityField]) },
@@ -151,7 +165,10 @@ export function searchTiles(
     : organizationTiles;
 }
 
-export function organizationColumns(reportSettings: ReportSettings): Column<OrganizationRow>[] {
+export function organizationColumns(
+  reportSettings: ReportSettings,
+  onSoftwareSelected?: (row: OrganizationRow) => void,
+): Column<OrganizationRow>[] {
   const usageColumns = (headerName: string, option: Lowercase<UsageOption>, hide = false) =>
     columnGroup<OrganizationRow>(headerName, [
       numberColumn(`qty_${option}`, 'Qty', { width: 90, hide }),
@@ -160,7 +177,9 @@ export function organizationColumns(reportSettings: ReportSettings): Column<Orga
 
   return [
     rowNumberColumn(),
-    textColumn('sw', 'Software', { width: 100, pinned: 'left' }),
+    onSoftwareSelected
+      ? linkColumn('sw', 'Software', onSoftwareSelected, { width: 100, pinned: 'left' })
+      : textColumn('sw', 'Software', { width: 100, pinned: 'left' }),
     textColumn('server', 'Server', { width: 150, pinned: 'left' }),
     textColumn('location', 'Location', { width: 100, pinned: 'left', hide: true }),
     textColumn('lic', 'License', { width: 150, pinned: 'left', hide: true }),
@@ -192,7 +211,7 @@ export function organizationColumns(reportSettings: ReportSettings): Column<Orga
     numberColumn('ndept', reportSettings.departmentLabel, { width: 60 }),
     numberColumn('de', 'Denial Count', { width: 75, hide: true }),
     numberColumn('ad', 'Denial Users', { width: 75, hide: true }),
-    numberColumn('td', 'True Denial', { width: 75 }),
+    numberColumn('td', 'True Denial', { width: 90 }),
     columnGroup('Days', [
       numberColumn('w_days', 'Working', { width: 90 }),
       numberColumn('days', 'License', { width: 90 }),

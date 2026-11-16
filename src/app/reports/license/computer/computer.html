@@ -1,0 +1,19 @@
+<div class="report-toolbar" role="toolbar" aria-label="Computer filters">
+  <app-search-filter [(text)]="searchText" />
+
+  <div class="toolbar-trailing">
+    @if (rowCount()) {
+      <span class="row-count">Rows : {{ rowCount() }}</span>
+    }
+  </div>
+</div>
+
+<app-data-grid
+  [rows]="reportData.rows()"
+  [columns]="columns"
+  [search]="searchText()"
+  [loading]="reportData.loading()"
+  [emptyText]="reportData.error()"
+  (rowCount)="rowCount.set($event)"
+  (filtersCleared)="searchText.set('')"
+/>

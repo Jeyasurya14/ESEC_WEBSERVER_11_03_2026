@@ -2,18 +2,36 @@
   <section id="sidebar-panel" class="sidebar-panel" aria-labelledby="sidebar-panel-title">
     <div class="sidebar-header-row">
       <div class="sidebar-icon-title">
-        <span class="app-icon panel-title-icon" [style.--icon-url]="'url(' + icon() + ')'" aria-hidden="true"></span>
-        <h2 id="sidebar-panel-title" class="sidebar-title">{{ title() }}</h2>
+        <span class="panel-icon-wrap">
+          <span
+            class="app-icon panel-title-icon"
+            [style.--icon-url]="'url(' + icon() + ')'"
+            aria-hidden="true"
+          ></span>
+        </span>
+        <h2 id="sidebar-panel-title" class="sidebar-title" [title]="title()">{{ title() }}</h2>
       </div>
-      <button class="close-btn" type="button" (click)="closed.emit()" aria-label="Close panel" title="Close panel">
-        <span class="app-icon" style="--icon-url: url('assets/icons/flaticon/close.svg')" aria-hidden="true"></span>
+      <button
+        class="close-btn"
+        type="button"
+        (click)="closed.emit()"
+        aria-label="Close panel"
+        title="Close panel (Esc)"
+      >
+        <span
+          class="app-icon"
+          style="--icon-url: url('assets/icons/flaticon/close.svg')"
+          aria-hidden="true"
+        ></span>
       </button>
     </div>
 
-    <div class="sidebar-divider"></div>
-
     <div class="sidebar-filter">
-      <span class="app-icon filter-icon" style="--icon-url: url('assets/icons/flaticon/search.svg')" aria-hidden="true"></span>
+      <span
+        class="app-icon filter-icon"
+        style="--icon-url: url('assets/icons/flaticon/search.svg')"
+        aria-hidden="true"
+      ></span>
       <input
         class="filter-input"
         type="search"
@@ -24,20 +42,36 @@
       />
     </div>
 
+    <div class="screen-list-heading">
+      <span>Screens</span>
+      <span class="screen-count">{{ filteredScreens().length }}</span>
+    </div>
     <div class="sidebar-body">
       <div class="sidebar-actions">
         @for (screen of filteredScreens(); track screen.subMenuName) {
           <button
             class="action-chip"
             type="button"
-            [class.active]="selectedMenu()?.mainMenuName === screen.mainMenuName && selectedMenu()?.subMenuName === screen.subMenuName"
-            [attr.aria-pressed]="selectedMenu()?.mainMenuName === screen.mainMenuName && selectedMenu()?.subMenuName === screen.subMenuName"
+            [class.active]="
+              selectedMenu()?.mainMenuName === screen.mainMenuName &&
+              selectedMenu()?.subMenuName === screen.subMenuName
+            "
+            [attr.aria-pressed]="
+              selectedMenu()?.mainMenuName === screen.mainMenuName &&
+              selectedMenu()?.subMenuName === screen.subMenuName
+            "
             (click)="selectScreen(screen)"
           >
-            {{ screen.subMenuName }}
+            <svg class="screen-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="4" y="2.5" width="12" height="15" rx="2" />
+              <path d="M7 7h6M7 10h6M7 13h3" />
+            </svg>
+            <span class="screen-name">{{ screen.subMenuName }}</span>
           </button>
         } @empty {
-          <output class="empty-message">No matching screens.</output>
+          <output class="empty-message"
+            >No matching screens.<span>Try a different search term.</span></output
+          >
         }
       </div>
     </div>

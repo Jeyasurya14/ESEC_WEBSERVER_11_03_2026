@@ -1,15 +1,16 @@
+import { reportSettings } from '../../../testing/report-fixtures';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { UserPreferencesService } from '../../core/preferences/user-preferences.service';
-import { ReportSettings, ReportSettingsService } from '../report-settings.service';
+import { ReportSettingsService } from '../report-settings.service';
 import { formatRange, parseRange } from './range-filter';
 import { ReportFilters, bandsFrom, bandsToStored, serverStatusFrom } from './report-filters';
 
-const settings = {
+const settings = reportSettings({
   defaultRange: '30',
   defaultOption: 'DP',
   defaultFeatureGroup: 'All Feature',
-} as ReportSettings;
+});
 
 describe('stored filter formats (shared with the company app)', () => {
   it('writes ranges the way it reads them', () => {

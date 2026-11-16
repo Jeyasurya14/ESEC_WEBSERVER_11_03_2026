@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../api/api.service';
 import { BrowserStorage, StorageKey } from '../storage/browser-storage.service';
@@ -9,7 +9,13 @@ import { LoginService } from './login.service';
 describe('sign-in workflow and session state', () => {
   let loginService: LoginService;
   let permissions: string | null;
-  let api: Record<string, ReturnType<typeof vi.fn> | boolean>;
+  let api: {
+    isCentralized: boolean;
+    getSetting: ReturnType<typeof vi.fn>;
+    loadAsset: ReturnType<typeof vi.fn>;
+    post: ReturnType<typeof vi.fn>;
+    query: ReturnType<typeof vi.fn>;
+  };
 
   const profile = [
     { _DESC: 'USER_ID', _VALUE: 'john' },
@@ -23,14 +29,14 @@ describe('sign-in workflow and session state', () => {
     { RT_M_REF_NO: 3, RT_M_NAME: 'License Manager', RT_M_LIST: 'Bentley' },
   ];
 
-  const post = () => api['post'] as ReturnType<typeof vi.fn>;
-  const query = () => api['query'] as ReturnType<typeof vi.fn>;
+  const post = () => api.post;
+  const query = () => api.query;
 
   beforeEach(() => {
     localStorage.clear();
     permissions = 'DASHBOARD_CONFIGURATION';
     api = {
-      centralized: false,
+      isCentralized: false,
       getSetting: vi.fn().mockReturnValue('TRUE'),
       loadAsset: vi.fn().mockResolvedValue(catalog),
       post: vi.fn().mockReturnValue(of({ status: 'PASS', message: 1 })),
@@ -41,7 +47,7 @@ describe('sign-in workflow and session state', () => {
     };
     TestBed.configureTestingModule({ providers: [{ provide: ApiService, useValue: api }] });
     loginService = TestBed.inject(LoginService);
-    loginService.setLicenceReady(true);
+    loginService.setLicenseReady(true);
   });
 
   it('loads user and menus after both ESEC checks, ignoring USER_STATUS for access', async () => {
@@ -49,7 +55,9 @@ describe('sign-in workflow and session state', () => {
     expect(post()).toHaveBeenCalledTimes(2);
     expect(loginService.user()?.status).toBe('INACTIVE');
     expect(loginService.isAuthenticated()).toBe(true);
-    expect(loginService.menus()).toEqual([{ mainMenuName: 'DASHBOARD', subMenuName: 'Configuration' }]);
+    expect(loginService.menus()).toEqual([
+      { mainMenuName: 'DASHBOARD', subMenuName: 'Configuration' },
+    ]);
   });
 
   it('hides License Manager from the rail and puts Admin last', async () => {
@@ -57,7 +65,10 @@ describe('sign-in workflow and session state', () => {
     await loginService.signInUser('ESEC LOGIN', 'john', 'password');
 
     expect(loginService.mainMenuNames()).toEqual(['DASHBOARD', 'ADMIN']);
-    expect(loginService.menus()).toContainEqual({ mainMenuName: 'LICENSE MANAGER', subMenuName: 'Bentley' });
+    expect(loginService.menus()).toContainEqual({
+      mainMenuName: 'LICENSE MANAGER',
+      subMenuName: 'Bentley',
+    });
   });
 
   it('does not request profile or menus after password failure', async () => {
@@ -65,16 +76,33 @@ describe('sign-in workflow and session state', () => {
       .mockReturnValueOnce(of({ status: 'PASS', message: 1 }))
       .mockReturnValueOnce(of({ status: 'PASS', message: 0 }));
 
-    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'wrong')).rejects.toThrow('Invalid Password');
+    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'wrong')).rejects.toThrow(
+      'Invalid Password',
+    );
     expect(query()).not.toHaveBeenCalled();
     expect(loginService.isAuthenticated()).toBe(false);
   });
 
   it('requires a licence check before making authentication requests', async () => {
-    loginService.setLicenceReady(false);
+    loginService.setLicenseReady(false);
 
-    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow('licence check');
+    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow(
+      'licence check',
+    );
     expect(post()).not.toHaveBeenCalled();
+  });
+
+  it('does not restore a session when an earlier login finishes after sign-out', async () => {
+    const credentials = new Subject<unknown>();
+    post().mockReturnValueOnce(credentials);
+    const pending = loginService.signInUser('ESEC LOGIN', 'john', 'password');
+    loginService.signOut();
+    credentials.next({ status: 'PASS', message: 1 });
+    credentials.complete();
+    expect(await pending).toBe(false);
+    expect(query()).not.toHaveBeenCalled();
+    expect(loginService.isAuthenticated()).toBe(false);
+    expect(localStorage.getItem(StorageKey.userId)).toBeNull();
   });
 
   it('does not publish a partial session when permission loading fails', async () => {
@@ -82,7 +110,9 @@ describe('sign-in workflow and session state', () => {
       return of({ status: sql.includes('cltx_user_rt_a') ? 'FAIL' : 'PASS', message: profile });
     });
 
-    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow('menu permissions');
+    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow(
+      'menu permissions',
+    );
     expect(loginService.user()).toBeNull();
     expect(loginService.menus()).toEqual([]);
   });
@@ -90,7 +120,9 @@ describe('sign-in workflow and session state', () => {
   it('does not continue when the user profile is missing', async () => {
     query().mockReturnValue(of({ status: 'PASS', message: [] }));
 
-    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow('no user profile');
+    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow(
+      'no user profile',
+    );
   });
 
   it('strips the domain prefix and escapes quotes before SQL', async () => {
@@ -117,7 +149,7 @@ describe('sign-in workflow and session state', () => {
 
   it('clears the session when the licence is no longer ready', async () => {
     await loginService.signInUser('ESEC LOGIN', 'john', 'password');
-    loginService.setLicenceReady(false);
+    loginService.setLicenseReady(false);
 
     expect(loginService.user()).toBeNull();
     expect(loginService.menus()).toEqual([]);
@@ -126,7 +158,9 @@ describe('sign-in workflow and session state', () => {
   it('surfaces a server rejection as the error message', async () => {
     post().mockReturnValue(of({ status: 'FAIL', message: 'Account locked' }));
 
-    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow('Account locked');
+    await expect(loginService.signInUser('ESEC LOGIN', 'john', 'password')).rejects.toThrow(
+      'Account locked',
+    );
   });
 
   describe('remembering the signed-in user', () => {
@@ -148,7 +182,9 @@ describe('sign-in workflow and session state', () => {
 
       expect(await loginService.restoreSession()).toBe(true);
       expect(loginService.user()?.userId).toBe('john');
-      expect(loginService.menus()).toEqual([{ mainMenuName: 'DASHBOARD', subMenuName: 'Configuration' }]);
+      expect(loginService.menus()).toEqual([
+        { mainMenuName: 'DASHBOARD', subMenuName: 'Configuration' },
+      ]);
       expect(post()).not.toHaveBeenCalled();
     });
 

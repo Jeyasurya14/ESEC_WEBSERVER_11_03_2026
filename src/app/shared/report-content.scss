@@ -1,0 +1,51 @@
+:host {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+app-data-grid,
+highcharts-chart {
+  display: block;
+  flex: 1;
+  min-height: 0;
+}
+
+highcharts-chart {
+  min-height: 220px;
+}
+
+:host(.matrix) {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.report-message {
+  margin: auto;
+  padding: 16px;
+  color: #62758c;
+  font-size: 13px;
+  text-align: center;
+
+  p {
+    margin: 0 0 10px;
+  }
+
+  button {
+    padding: 6px 14px;
+    color: #1d4ed8;
+    font: inherit;
+    cursor: pointer;
+    background: #edf4ff;
+    border: 1px solid #cddcf6;
+    border-radius: 4px;
+
+    &:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+  }
+}

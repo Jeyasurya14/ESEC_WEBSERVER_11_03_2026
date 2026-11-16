@@ -1,0 +1,153 @@
+<footer class="status-bar" aria-label="Application status">
+  <div class="status-controls">
+    @if (reportControls().range; as range) {
+      <app-range-filter [range]="range.value()" (rangeChange)="range.set($event)" />
+    }
+    @if (reportControls().dates; as draftDates) {
+      <button
+        type="button"
+        class="status-action"
+        (click)="openDialog('dates')"
+        aria-haspopup="dialog"
+      >
+        Range
+        <span
+          >{{ formatDate(draftDates.value().start) }} –
+          {{ formatDate(draftDates.value().end) }}</span
+        >
+      </button>
+    }
+    @if (reportControls().times; as draftTimes) {
+      <button
+        type="button"
+        class="status-action"
+        (click)="openDialog('times')"
+        aria-haspopup="dialog"
+      >
+        Time <span>{{ draftTimes.value().startTime }} – {{ draftTimes.value().endTime }}</span>
+      </button>
+    }
+    @if (reportControls().parameters) {
+      <button
+        type="button"
+        class="status-action"
+        (click)="openDialog('parameters')"
+        aria-haspopup="dialog"
+      >
+        Parameters
+      </button>
+    }
+    @if (activeReport(); as report) {
+      <app-refresh-button
+        variant="plain"
+        [loading]="report.loading()"
+        (refresh)="report.refresh()"
+      />
+      <span role="status" aria-live="polite">
+        @if (report.loading()) {
+          Loading…
+        } @else if (report.lastUpdated()) {
+          As on {{ report.lastUpdated() }}
+        }
+      </span>
+    } @else {
+      <span>License Monitoring System</span>
+    }
+  </div>
+  <span class="status-user">{{ userId() }}</span>
+</footer>
+
+<dialog
+  #editorDialog
+  aria-labelledby="status-editor-title"
+  (cancel)="editorType.set(null)"
+  (close)="editorType.set(null)"
+>
+  @if (editorType()) {
+    <form (submit)="$event.preventDefault(); apply()" novalidate>
+      <header>
+        <h2 id="status-editor-title">
+          {{
+            editorType() === 'dates'
+              ? 'Report range'
+              : editorType() === 'times'
+                ? 'Report time'
+                : 'Parameters'
+          }}
+        </h2>
+        <button type="button" class="close" aria-label="Close" (click)="closeDialog()">×</button>
+      </header>
+      @switch (editorType()) {
+        @case ('dates') {
+          <label
+            >Preset<select [value]="selectedPreset()" (change)="preset(inputValue($event))">
+              <option value="">Custom dates</option>
+              <option value="1">Today</option>
+              <option value="week">Week</option>
+              <option value="YTD">YTD</option>
+              <option value="7">7 Days</option>
+              <option value="30">30 Days</option>
+              <option value="60">60 Days</option>
+              <option value="90">90 Days</option>
+              <option value="180">180 Days</option>
+              <option value="360">360 Days</option>
+            </select></label
+          >
+          <label
+            >From<input
+              type="date"
+              [value]="draftDates().start"
+              (change)="changeDate('start', inputValue($event))"
+          /></label>
+          <label
+            >To<input
+              type="date"
+              [value]="draftDates().end"
+              (change)="changeDate('end', inputValue($event))"
+          /></label>
+        }
+        @case ('times') {
+          <label
+            >Start time<input
+              type="time"
+              [value]="draftTimes().startTime"
+              (change)="changeTime('startTime', inputValue($event))"
+          /></label>
+          <label
+            >End time<input
+              type="time"
+              [value]="draftTimes().endTime"
+              (change)="changeTime('endTime', inputValue($event))"
+          /></label>
+        }
+        @case ('parameters') {
+          @for (key of parameterKeys(); track key) {
+            <label
+              >{{ parameterRules[key].label
+              }}<input
+                type="number"
+                [min]="parameterRules[key].min"
+                [attr.max]="parameterRules[key].max ?? null"
+                [step]="parameterRules[key].step"
+                [value]="draftParameters()[key]"
+                (input)="changeParameter(key, inputValue($event))"
+              />
+              <small
+                >{{ parameterRules[key].min
+                }}{{ parameterRules[key].max !== undefined ? ' – ' + parameterRules[key].max : '+'
+                }}{{ key === 'percentile' ? '%' : ' hours' }}</small
+              >
+            </label>
+          }
+        }
+      }
+      @if (validationError()) {
+        <p class="validation" role="alert">{{ validationError() }}</p>
+      }
+      <div class="dialog-actions">
+        <button type="button" (click)="closeDialog()">Cancel</button
+        ><button type="submit" class="apply">Apply</button>
+      </div>
+    </form>
+  }
+</dialog>

@@ -1,0 +1,35 @@
+<div class="report-toolbar" role="toolbar" aria-label="Organization by week filters">
+  <div class="toolbar-filters">
+    <div class="filter-cluster">
+      <button type="button" class="period-button" (click)="stepWeek(-1)" aria-label="Previous week">
+        &lsaquo; Previous week
+      </button>
+      <span class="period-label">{{ weekLabel() }}</span>
+      <button type="button" class="period-button" (click)="stepWeek(1)" aria-label="Next week">
+        Next week &rsaquo;
+      </button>
+    </div>
+
+    <span class="filter-divider" aria-hidden="true"></span>
+
+    <div class="filter-cluster">
+      <app-check-filter
+        label="Working day only"
+        [checked]="workingDaysOnly()"
+        (toggled)="workingDaysOnly.set(!workingDaysOnly())"
+      />
+      <app-check-filter
+        label="Primary feature only"
+        [checked]="primaryFeatureOnly()"
+        (toggled)="primaryFeatureOnly.set(!primaryFeatureOnly())"
+      />
+    </div>
+  </div>
+</div>
+
+<app-data-grid
+  [rows]="rows()"
+  [columns]="columns()"
+  [loading]="reportData.loading()"
+  [emptyText]="reportData.error()"
+/>

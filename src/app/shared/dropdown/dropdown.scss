@@ -9,10 +9,12 @@
 .dropdown-trigger {
   display: inline-flex;
   align-items: center;
-  gap: $spacing-2;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  gap: 7px;
+  min-height: 27px;
+  padding: 0 8px;
+  border: 1px solid #e1e7ef;
+  border-radius: 6px;
+  background: #fff;
   color: $filter-text;
   font: inherit;
   white-space: nowrap;
@@ -20,7 +22,9 @@
   border-radius: $border-radius-sm;
 
   &:hover {
+    border-color: #cbd5e1;
     color: $primary;
+    background: #f0f5ff;
   }
 
   // Replace the page's default 3px outline ring with the same soft focus
@@ -29,6 +33,7 @@
   &:focus-visible {
     outline: none;
     box-shadow: $filter-shadow-focus;
+    border-color: $filter-border-focus;
   }
 }
 
@@ -93,6 +98,9 @@
   font-size: $font-size-base;
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    background $transition-fast,
+    color $transition-fast;
 
   &.active {
     background: $primary-light;
