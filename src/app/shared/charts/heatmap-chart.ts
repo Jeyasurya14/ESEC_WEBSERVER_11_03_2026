@@ -5,15 +5,18 @@ import {
   ElementRef,
   afterNextRender,
   computed,
+  effect,
   inject,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import type { Options } from 'highcharts';
 import { HighchartsChartComponent } from 'highcharts-angular';
 import {
   groupHeatmapPoints,
+  VisibleRows,
   visibleHeatmapRows,
   viewportHeatmapOptions,
 } from './heatmap-chart.utils';
@@ -29,7 +32,6 @@ import {
       role="region"
       aria-label="Hourly utilization matrix"
       tabindex="0"
-      (scroll)="onScroll()"
     >
       <div class="matrix-surface">
         <div class="matrix-header">
@@ -62,6 +64,7 @@ import {
       min-height: 0;
       overflow: auto;
       isolation: isolate;
+      overflow-anchor: none;
     }
     .matrix-surface {
       min-width: 1794px;
@@ -108,7 +111,7 @@ export class HeatmapChart {
   readonly options = input.required<Options>();
   protected readonly hours = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'));
   private readonly viewport = viewChild<ElementRef<HTMLElement>>('viewport');
-  private readonly viewportSize = signal({ top: 0, height: 640 });
+  private readonly visibleRows = signal<VisibleRows>({ start: 0, end: 0 });
   private scrollFrame: number | null = null;
   private readonly dateAxis = computed(() => {
     const axis = this.options().yAxis;
@@ -118,15 +121,6 @@ export class HeatmapChart {
   private readonly rowHeight = computed(() =>
     Math.max(1, (this.matrixHeight() - 4) / Math.max(1, this.dateAxis().categories?.length ?? 0)),
   );
-  private readonly visibleRows = computed(() => {
-    const { top, height } = this.viewportSize();
-    return visibleHeatmapRows(
-      top,
-      height,
-      this.dateAxis().categories?.length ?? 0,
-      this.rowHeight(),
-    );
-  });
   protected readonly scrollOffset = computed(() => this.visibleRows().start * this.rowHeight());
   private readonly pointsByRow = computed(() => groupHeatmapPoints(this.options()));
   protected readonly chartOptions = computed(() =>
@@ -142,11 +136,18 @@ export class HeatmapChart {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
+    effect(() => {
+      this.options();
+      untracked(() => this.measure(true));
+    });
     afterNextRender(() => {
-      this.measure();
       const viewport = this.viewport()?.nativeElement;
-      if (viewport && typeof ResizeObserver !== 'undefined') {
-        const observer = new ResizeObserver(() => this.measure());
+      if (!viewport) return;
+      this.measure(true);
+      viewport.addEventListener('scroll', this.onScroll, { passive: true });
+      destroyRef.onDestroy(() => viewport.removeEventListener('scroll', this.onScroll));
+      if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(() => this.measure(true));
         observer.observe(viewport);
         destroyRef.onDestroy(() => observer.disconnect());
       }
@@ -156,20 +157,24 @@ export class HeatmapChart {
     });
   }
 
-  protected onScroll(): void {
+  private readonly onScroll = (): void => {
     if (this.scrollFrame !== null) return;
     this.scrollFrame = requestAnimationFrame(() => {
       this.scrollFrame = null;
       this.measure();
     });
-  }
+  };
 
-  private measure(): void {
+  private measure(reset = false): void {
     const element = this.viewport()?.nativeElement;
-    if (!element) return;
-    const oldSize = this.viewportSize();
-    const newSize = { top: element.scrollTop, height: element.clientHeight || oldSize.height };
-    if (newSize.top !== oldSize.top || newSize.height !== oldSize.height)
-      this.viewportSize.set(newSize);
+    const current = this.visibleRows();
+    const next = visibleHeatmapRows(
+      element?.scrollTop ?? 0,
+      element?.clientHeight || 640,
+      this.dateAxis().categories?.length ?? 0,
+      this.rowHeight(),
+      reset ? undefined : current,
+    );
+    if (next.start !== current.start || next.end !== current.end) this.visibleRows.set(next);
   }
 }

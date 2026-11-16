@@ -1,6 +1,6 @@
 import { namedValues } from '../core/utils/data';
-import { apiRequest, resourceRequest } from '../core/api/api-request';
-import { Injectable, inject, Injector } from '@angular/core';
+import { apiRequest } from '../core/api/api-request';
+import { Injectable, inject, DestroyRef } from '@angular/core';
 
 import { ApiService } from '../core/api/api.service';
 import { Setting } from '../core/models';
@@ -65,7 +65,7 @@ const WORKING_HOURS_SQL =
 
 @Injectable({ providedIn: 'root' })
 export class ReportSettingsService {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly api = inject(ApiService);
   private readonly storage = inject(BrowserStorage);
@@ -145,8 +145,9 @@ export class ReportSettingsService {
   }
 
   private async fetchWorkingHours(): Promise<WorkingHourTimes> {
-    const settingsResponse = await resourceRequest(this.injector, (abortSignal) =>
-      apiRequest(this.api.query<Setting[]>(WORKING_HOURS_SQL), abortSignal),
+    const settingsResponse = await apiRequest(
+      this.api.query<Setting[]>(WORKING_HOURS_SQL),
+      this.destroyRef,
     );
     if (settingsResponse?.status !== 'PASS' || !Array.isArray(settingsResponse.message)) {
       throw new Error('Unable to load the working hours setting.');

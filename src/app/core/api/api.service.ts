@@ -1,6 +1,6 @@
 import { namedValues } from '../utils/data';
-import { apiRequest, resourceRequest } from './api-request';
-import { Injectable, inject, Injector } from '@angular/core';
+import { apiRequest } from './api-request';
+import { Injectable, inject, DestroyRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, timeout } from 'rxjs';
 import { ApiResult, MenuDefinition, ServerConfig, Setting } from '../models';
@@ -9,7 +9,7 @@ const TIMEOUT_MS = 10_000;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly http = inject(HttpClient);
   private serverUrl = '';
@@ -34,11 +34,9 @@ export class ApiService {
       return;
     }
 
-    const configResponse = await resourceRequest(this.injector, (abortSignal) =>
-      apiRequest(
-        this.post<{ settingsData: Setting[]; menuData: MenuDefinition[] }>('web_report_config', {}),
-        abortSignal,
-      ),
+    const configResponse = await apiRequest(
+      this.post<{ settingsData: Setting[]; menuData: MenuDefinition[] }>('web_report_config', {}),
+      this.destroyRef,
     );
     if (configResponse.status !== 'PASS' || !Array.isArray(configResponse.message?.settingsData)) {
       throw new Error('Unable to load centralized application settings');
@@ -68,9 +66,7 @@ export class ApiService {
   }
 
   loadAsset<T>(path: string): Promise<T> {
-    return resourceRequest(this.injector, (abortSignal) =>
-      apiRequest(this.http.get<T>(path).pipe(timeout(TIMEOUT_MS)), abortSignal),
-    );
+    return apiRequest(this.http.get<T>(path).pipe(timeout(TIMEOUT_MS)), this.destroyRef);
   }
 }
 

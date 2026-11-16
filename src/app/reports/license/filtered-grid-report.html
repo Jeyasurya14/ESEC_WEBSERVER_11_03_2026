@@ -1,4 +1,4 @@
-<div class="report-toolbar" role="toolbar" aria-label="Denial filters">
+<div class="report-toolbar" role="toolbar" [attr.aria-label]="label + ' filters'">
   <app-search-filter [(text)]="filters.search" />
 
   <span class="filter-divider" aria-hidden="true"></span>

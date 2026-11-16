@@ -1,5 +1,5 @@
-import { apiRequest, resourceRequest } from '../api/api-request';
-import { Injectable, inject, Injector } from '@angular/core';
+import { apiRequest } from '../api/api-request';
+import { Injectable, inject, DestroyRef } from '@angular/core';
 
 import { LoginType, MenuDefinition, MenuPermissionRow, UserMenu } from '../models';
 import { ApiService, sqlString } from '../api/api.service';
@@ -7,7 +7,7 @@ import { adminMenus, resolvePermittedMenus } from './menu-rules';
 
 @Injectable({ providedIn: 'root' })
 export class MenuService {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly api = inject(ApiService);
 
@@ -34,8 +34,9 @@ export class MenuService {
 
   private async loadPermissions(userId: string): Promise<string> {
     const permissionQuery = `SELECT RT_A_LIST FROM esms.cltx_user_rt_a WHERE RT_A_ID=${sqlString(userId)}`;
-    const permissionResponse = await resourceRequest(this.injector, (abortSignal) =>
-      apiRequest(this.api.query<MenuPermissionRow[]>(permissionQuery), abortSignal),
+    const permissionResponse = await apiRequest(
+      this.api.query<MenuPermissionRow[]>(permissionQuery),
+      this.destroyRef,
     );
 
     if (permissionResponse?.status !== 'PASS' || !Array.isArray(permissionResponse.message)) {

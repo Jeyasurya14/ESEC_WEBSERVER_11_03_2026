@@ -1,5 +1,5 @@
 import { assertNever } from '../../core/utils/data';
-import { apiRequest, resourceRequest } from '../../core/api/api-request';
+import { apiRequest } from '../../core/api/api-request';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,7 +7,7 @@ import {
   computed,
   inject,
   signal,
-  Injector,
+  DestroyRef,
 } from '@angular/core';
 
 import { ApiService } from '../../core/api/api.service';
@@ -30,7 +30,7 @@ type StartupState =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StartupComponent implements OnInit {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly api = inject(ApiService);
   private readonly loginService = inject(LoginService);
@@ -76,13 +76,11 @@ export class StartupComponent implements OnInit {
   }
 
   private async checkLicense(): Promise<void> {
-    const licenseResponse = await resourceRequest(this.injector, (abortSignal) =>
-      apiRequest(
-        this.api.query<Array<{ ESEC_VALUE: string }>>(
-          "SELECT ESEC_VALUE FROM esms.cltx_esec WHERE ESEC_DESC = 'LICENSE_WEB'",
-        ),
-        abortSignal,
+    const licenseResponse = await apiRequest(
+      this.api.query<Array<{ ESEC_VALUE: string }>>(
+        "SELECT ESEC_VALUE FROM esms.cltx_esec WHERE ESEC_DESC = 'LICENSE_WEB'",
       ),
+      this.destroyRef,
     );
     if (licenseResponse.status !== 'PASS') {
       return this.block('Database Server - Connection Error');

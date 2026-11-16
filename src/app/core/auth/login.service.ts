@@ -1,5 +1,5 @@
-import { apiRequest, resourceRequest } from '../api/api-request';
-import { Injectable, computed, inject, signal, Injector } from '@angular/core';
+import { apiRequest } from '../api/api-request';
+import { Injectable, computed, inject, signal, DestroyRef } from '@angular/core';
 
 import { assertNever, namedValues } from '../utils/data';
 import { ApiResult, LoginType, UserDetailRow, UserDetails, UserMenu } from '../models';
@@ -18,7 +18,7 @@ function isLoginType(value: unknown): value is LoginType {
 
 @Injectable({ providedIn: 'root' })
 export class LoginService {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly api = inject(ApiService);
   private readonly menuService = inject(MenuService);
@@ -152,7 +152,10 @@ export class LoginService {
     body: object,
     rejectedMessage: string,
   ): Promise<void> {
-    const credentialResponse = await apiRequest(this.api.post<CredentialReply>(endpoint, body));
+    const credentialResponse = await apiRequest(
+      this.api.post<CredentialReply>(endpoint, body),
+      this.destroyRef,
+    );
     requireAccepted(credentialResponse, rejectedMessage);
   }
 
@@ -165,6 +168,7 @@ export class LoginService {
         username,
         password,
       }),
+      this.destroyRef,
     );
     if (adLoginResponse?.status !== 'PASS') {
       throw new Error('Invalid User ID / Password or AD service unavailable.');
@@ -186,8 +190,9 @@ export class LoginService {
           (fieldName) => `SELECT '${fieldName}' AS _DESC, ${fieldName} AS _VALUE ${profileSource}`,
         )
         .join(' UNION ALL ') + ';';
-    const profileResponse = await resourceRequest(this.injector, (abortSignal) =>
-      apiRequest(this.api.query<UserDetailRow[]>(profileQuery), abortSignal),
+    const profileResponse = await apiRequest(
+      this.api.query<UserDetailRow[]>(profileQuery),
+      this.destroyRef,
     );
     if (profileResponse?.status !== 'PASS' || !Array.isArray(profileResponse.message)) {
       throw new Error('Credentials were accepted, but user details could not be loaded.');

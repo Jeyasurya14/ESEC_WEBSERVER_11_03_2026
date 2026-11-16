@@ -161,14 +161,12 @@ export class Organization implements OnInit {
     }
   }
 
-  /** Selects a row clicked via its Software link - triggers whichever bottom-tab is armed. */
   openDrilldownForRow(row: OrganizationRow): void {
     const [tile] = groupedTiles([row], this.filters.option(), this.reportLevel());
     this.selectedGauge.set(tile ?? null);
   }
 
   openDrilldown(tile: OrganizationTile): void {
-    // Each click is an open request, including a repeated click on the same gauge.
     this.selectedGauge.set({ ...tile });
   }
 

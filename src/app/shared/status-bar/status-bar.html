@@ -43,13 +43,13 @@
         [loading]="report.loading()"
         (refresh)="report.refresh()"
       />
-      <span role="status" aria-live="polite">
+      <output>
         @if (report.loading()) {
           Loading…
         } @else if (report.lastUpdated()) {
           As on {{ report.lastUpdated() }}
         }
-      </span>
+      </output>
     } @else {
       <span>License Monitoring System</span>
     }

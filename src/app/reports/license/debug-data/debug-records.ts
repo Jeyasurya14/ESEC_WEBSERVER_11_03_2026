@@ -3,12 +3,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   input,
   output,
   signal,
-  untracked,
 } from '@angular/core';
 import { sqlString } from '../../../core/api/api.service';
 import { SearchFilter } from '../../../shared/filters/search-filter';
@@ -64,26 +62,23 @@ export class DebugRecords {
   readonly endDate = signal(isoDate(new Date()));
   readonly columns = computed(() => recordColumns(this.reportData.rows()));
   constructor() {
-    effect(() => {
-      this.row();
-      this.startDate();
-      this.endDate();
-      untracked(() => this.refresh());
+    this.reportData.bind(() => {
+      if (!validPeriod(this.startDate(), this.endDate())) {
+        return { kind: 'invalid', message: 'Choose a valid date range.' };
+      }
+      const queryArgs = [
+        this.row().server,
+        this.row().lic,
+        serverDate(this.startDate()),
+        serverDate(this.endDate()),
+      ];
+      return {
+        kind: 'load',
+        sql: `call esms_m.r_license_debug_data_1(${queryArgs.map(sqlString).join(',')});`,
+      };
     });
   }
   refresh(): void {
-    if (!validPeriod(this.startDate(), this.endDate())) {
-      this.reportData.fail('Choose a valid date range.');
-      return;
-    }
-    const queryArgs = [
-      this.row().server,
-      this.row().lic,
-      serverDate(this.startDate()),
-      serverDate(this.endDate()),
-    ];
-    void this.reportData.load(
-      `call esms_m.r_license_debug_data_1(${queryArgs.map(sqlString).join(',')});`,
-    );
+    this.reportData.refresh();
   }
 }

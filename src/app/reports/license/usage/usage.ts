@@ -4,11 +4,9 @@ import {
   Component,
   OnInit,
   computed,
-  effect,
   inject,
   input,
   signal,
-  untracked,
 } from '@angular/core';
 import { UserMenu } from '../../../core/models';
 import { Dropdown } from '../../../shared/dropdown/dropdown';
@@ -87,13 +85,24 @@ export class Usage implements OnInit {
       ).size,
   );
   constructor() {
-    effect(() => {
-      this.selectedSoftwareNames();
-      this.startDate();
-      this.endDate();
-      this.workingDaysOnly();
-      this.filters.featureGroup();
-      if (this.filters.settings()) untracked(() => this.refresh());
+    this.reportData.bind(() => {
+      const settings = this.filters.settings();
+      if (!settings) return undefined;
+      if (!this.selectedSoftwareNames().length) return { kind: 'idle' };
+      if (!validPeriod(this.startDate(), this.endDate())) {
+        return { kind: 'invalid', message: 'Choose valid dates with the start before the end.' };
+      }
+      return {
+        kind: 'load',
+        sql: licenseUsageCall(
+          this.selectedSoftwareNames(),
+          this.startDate(),
+          this.endDate(),
+          this.filters.featureGroup(),
+          this.workingDaysOnly(),
+        ),
+        transform: (rows) => prepareUsage(rows, settings.workingHoursPerDay),
+      };
     });
     registerLicenseRefresh(this.reportData, () => this.refresh());
   }
@@ -121,25 +130,6 @@ export class Usage implements OnInit {
       this.matrixGroup.set(group);
   }
   refresh(): void {
-    if (!this.selectedSoftwareNames().length) {
-      this.reportData.clear();
-      return;
-    }
-    if (!validPeriod(this.startDate(), this.endDate())) {
-      this.reportData.fail('Choose valid dates with the start before the end.');
-      return;
-    }
-    const settings = this.filters.settings();
-    if (settings)
-      void this.reportData.load(
-        licenseUsageCall(
-          this.selectedSoftwareNames(),
-          this.startDate(),
-          this.endDate(),
-          this.filters.featureGroup(),
-          this.workingDaysOnly(),
-        ),
-        (rows) => prepareUsage(rows, settings.workingHoursPerDay),
-      );
+    this.reportData.refresh();
   }
 }

@@ -18,21 +18,28 @@ export interface SummaryChartSettings {
 
 function escapeLabel(value: string): string {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
+/** The rows to chart: on the daily chart, only working days when that option is on. */
 export function summaryChartRows(
   records: readonly SummaryRecord[],
   period: SummaryPeriod,
-  workingDaysOnly: boolean,
+  settings: Pick<SummaryChartSettings, 'workingDaysOnly'>,
 ): readonly SummaryRecord[] {
-  return period === 'day' && workingDaysOnly
-    ? records.filter((row) => String(row['holi']).trim().toLowerCase() === 'n')
-    : records;
+  if (period !== 'day' || !settings.workingDaysOnly) return records;
+  return records.filter((row) => String(row['holi']).trim().toLowerCase() === 'n');
+}
+
+/** The record field a series plots: issued quantity, or the series' quantity or percentage. */
+function seriesField(seriesId: SummarySeriesId, percentage: boolean): string {
+  if (seriesId === 'ISSUED') return 'qty_i';
+  const prefix = percentage ? 'p' : 'qty';
+  return `${prefix}_${seriesId.toLowerCase()}`;
 }
 
 export function summaryChartOptions(
@@ -40,7 +47,7 @@ export function summaryChartOptions(
   period: SummaryPeriod,
   settings: SummaryChartSettings,
 ): Options {
-  const rows = summaryChartRows(records, period, settings.workingDaysOnly);
+  const rows = summaryChartRows(records, period, settings);
   const holidays = new Set(
     rows.flatMap((row, index) => (String(row['holi']).toLowerCase() === 'y' ? [index] : [])),
   );
@@ -117,15 +124,7 @@ export function summaryChartOptions(
       color: series.color,
       type: period === 'day' || period === 'week' || series.id === 'ISSUED' ? 'line' : 'column',
       visible: visibleSeries.has(series.id),
-      data: rows.map((row) =>
-        toNumber(
-          row[
-            series.id === 'ISSUED'
-              ? 'qty_i'
-              : `${percentage ? 'p' : 'qty'}_${series.id.toLowerCase()}`
-          ],
-        ),
-      ),
+      data: rows.map((row) => toNumber(row[seriesField(series.id, percentage)])),
     })),
   };
 }

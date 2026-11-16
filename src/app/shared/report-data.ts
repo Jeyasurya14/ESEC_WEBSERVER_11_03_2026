@@ -1,6 +1,7 @@
-import { DestroyRef, Injectable, computed, effect, inject, resource, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { Observable, catchError, map, of } from 'rxjs';
 import { ApiService } from '../core/api/api.service';
-import { apiRequest } from '../core/api/api-request';
 import { LoginService } from '../core/auth/login.service';
 import { assertNever } from '../core/utils/data';
 import { formatDateTime } from './dates';
@@ -26,59 +27,54 @@ export function sqlQuery<T>(sql: string | null, whenMissing: ReportQuery<T>): Re
   return sql ? { kind: 'load', sql } : whenMissing;
 }
 
-interface ReportRequest<T> {
-  sql: string;
-  previousRows: T[];
-  transform: (rows: T[]) => T[];
-  complete: () => void;
+/**
+ * When a report built from several data sources last fully loaded: the oldest source's load
+ * time, or '' while any source is loading, failed, or hasn't loaded yet.
+ */
+export function combinedLastUpdated(
+  sources: readonly Pick<ReportData<unknown>, 'loading' | 'error' | 'loadedAt'>[],
+): string {
+  const loadTimes: number[] = [];
+  for (const source of sources) {
+    const loadedAt = source.loadedAt();
+    if (source.loading() || source.error() || !loadedAt) return '';
+    loadTimes.push(loadedAt.getTime());
+  }
+  return loadTimes.length ? formatDateTime(new Date(Math.min(...loadTimes))) : '';
 }
 
-interface ReportParams<T> {
-  query: ReportQuery<T>;
-  complete?: () => void;
-}
-
+/**
+ * One report's rows, loaded from whatever query the report binds. Provide it per report
+ * (or create one with `new` in an injection context for a second, independent data source).
+ */
 @Injectable()
 export class ReportData<T> {
   private readonly api = inject(ApiService);
   private readonly loginService = inject(LoginService);
-  private readonly request = signal<ReportRequest<T> | undefined>(undefined);
-  private readonly binding = signal<(() => ReportQuery<T> | undefined) | null>(null);
-  private readonly params = computed<ReportParams<T> | undefined>(() => {
-    const binding = this.binding();
-    if (binding) {
-      const query = binding();
-      return query && { query };
-    }
-    const request = this.request();
-    if (!request) return undefined;
-    return {
-      query: { kind: 'load', sql: request.sql, transform: request.transform },
-      complete: request.complete,
-    };
-  });
-  private destroyed = false;
-  private readonly result = resource({
-    params: this.params,
+  private readonly query = signal<() => ReportQuery<T> | undefined>(() => undefined);
+
+  // rxResource unsubscribes a superseded request when the query changes, cancelling it.
+  private readonly result = rxResource({
+    params: () => this.query()(),
     defaultValue: { kind: 'initial', rows: [] } satisfies ReportState<T>,
-    loader: async ({ params, abortSignal }): Promise<ReportState<T>> => {
-      const { query } = params;
-      switch (query.kind) {
+    stream: ({ params }): Observable<ReportState<T>> => {
+      switch (params.kind) {
         case 'idle':
-          return { kind: 'empty', rows: [] };
+          return of({ kind: 'empty', rows: [] });
         case 'invalid':
-          return { kind: 'error', rows: [], message: query.message };
+          return of({ kind: 'error', rows: [], message: params.message });
         case 'load':
-          return this.fetch(query.sql, query.transform ?? ((rows) => rows), abortSignal);
+          return this.fetch(params.sql, params.transform ?? ((rows) => rows));
         default:
-          return assertNever(query);
+          return assertNever(params);
       }
     },
   });
+
   private readonly state = computed(() =>
     this.result.hasValue() ? this.result.value() : undefined,
   );
-  readonly rows = computed(() => this.state()?.rows ?? this.request()?.previousRows ?? []);
+  readonly rows = computed(() => this.state()?.rows ?? []);
   readonly loading = computed(() => this.result.isLoading() || this.state()?.kind === 'initial');
   readonly error = computed(() => {
     const state = this.state();
@@ -104,26 +100,9 @@ export class ReportData<T> {
   });
   readonly userId = computed(() => this.loginService.user()?.userId ?? '');
 
-  constructor() {
-    effect(() => {
-      const request = this.request();
-      if (request && !this.result.isLoading()) {
-        request.previousRows = [];
-        request.complete();
-      }
-    });
-    inject(DestroyRef).onDestroy(() => {
-      this.destroyed = true;
-      this.request()?.complete();
-    });
-  }
-
-  /**
-   * Loads whatever `query` declares, and again whenever a signal it reads changes - the
-   * declarative alternative to calling `load()` from an effect. Call once, in the constructor.
-   */
+  /** Loads whatever `query` declares, again whenever a signal it reads changes. Call once. */
   bind(query: () => ReportQuery<T> | undefined): void {
-    this.binding.set(query);
+    this.query.set(query);
   }
 
   /** Re-runs the current query; unlike a query change, the rows stay on screen meanwhile. */
@@ -131,51 +110,30 @@ export class ReportData<T> {
     this.result.reload();
   }
 
-  load(sql: string, transform: (rows: T[]) => T[] = (rows) => rows): Promise<void> {
-    if (this.destroyed) return Promise.resolve();
-    const previousRows = this.rows();
-    this.request()?.complete();
-    const completion = Promise.withResolvers<void>();
-    this.request.set({ sql, transform, previousRows, complete: () => completion.resolve() });
-    return completion.promise;
-  }
-
+  /** Shows an error that isn't from a query, e.g. the report's settings failing to load. */
   fail(message: string): void {
-    this.reset({ kind: 'error', rows: [], message });
+    this.result.set({ kind: 'error', rows: [], message });
   }
 
-  clear(): void {
-    this.reset({ kind: 'empty', rows: [] });
-  }
-
-  private async fetch(
-    sql: string,
-    transform: (rows: T[]) => T[],
-    abortSignal: AbortSignal,
-  ): Promise<ReportState<T>> {
-    try {
-      const response = await apiRequest(this.api.call<T[]>(sql), abortSignal);
-      if (response.status !== 'PASS' || !Array.isArray(response.message)) {
-        return {
+  private fetch(sql: string, transform: (rows: T[]) => T[]): Observable<ReportState<T>> {
+    return this.api.call<T[]>(sql).pipe(
+      map((response): ReportState<T> => {
+        if (response.status !== 'PASS' || !Array.isArray(response.message)) {
+          return {
+            kind: 'error',
+            rows: [],
+            message: typeof response.message === 'string' ? response.message : 'No data found.',
+          };
+        }
+        return { kind: 'ready', rows: transform(response.message), loadedAt: new Date() };
+      }),
+      catchError(() =>
+        of<ReportState<T>>({
           kind: 'error',
           rows: [],
-          message: typeof response.message === 'string' ? response.message : 'No data found.',
-        };
-      }
-      return { kind: 'ready', rows: transform(response.message), loadedAt: new Date() };
-    } catch (error: unknown) {
-      if (abortSignal.aborted) throw error;
-      return {
-        kind: 'error',
-        rows: [],
-        message: 'Unable to load the report. Please refresh to try again.',
-      };
-    }
-  }
-
-  private reset(state: ReportState<T>): void {
-    this.request()?.complete();
-    this.request.set(undefined);
-    this.result.set(state);
+          message: 'Unable to load the report. Please refresh to try again.',
+        }),
+      ),
+    );
   }
 }

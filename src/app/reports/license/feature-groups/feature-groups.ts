@@ -1,20 +1,21 @@
-import { inputValue } from '../../../shared/input-value';
-import { apiRequest } from '../../../core/api/api-request';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  OnInit,
   computed,
-  effect,
   inject,
-  resource,
   input,
+  linkedSignal,
   signal,
-  untracked,
 } from '@angular/core';
-
-import { ApiService } from '../../../core/api/api.service';
-import { sqlString } from '../../../core/api/api.service';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { catchError, map, of } from 'rxjs';
+import { apiRequest } from '../../../core/api/api-request';
+import { ApiService, sqlString } from '../../../core/api/api.service';
 import { UserMenu } from '../../../core/models';
+import { toggled } from '../../../core/utils/data';
+import { inputValue } from '../../../shared/input-value';
 import { Dropdown, DropdownOption } from '../../../shared/dropdown/dropdown';
 import { FeatureGroupsService } from '../../../shared/filters/feature-group-filter';
 import { SearchFilter } from '../../../shared/filters/search-filter';
@@ -57,12 +58,13 @@ const BUILT_IN_GROUPS = new Set(['All Feature', 'Primary Feature']);
   providers: [ReportData],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FeatureGroups {
+export class FeatureGroups implements OnInit {
   protected readonly inputValue = inputValue;
 
   readonly menu = input.required<UserMenu>();
 
   private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly tabs = inject(TabService, { optional: true });
   private readonly featureGroups = inject(FeatureGroupsService);
   protected readonly reportData = inject<ReportData<FeatureRow>>(ReportData);
@@ -73,39 +75,56 @@ export class FeatureGroups {
   protected readonly newGroupName = signal('');
   protected readonly statusMessage = signal('');
   protected readonly isSaving = signal(false);
-  private readonly groupSelection = resource({
+  // rxResource unsubscribes the previous group's request when another group is picked.
+  private readonly groupSelection = rxResource({
     params: () => {
       const userId = this.reportData.userId();
       const groupName = this.selectedGroup();
       return userId && groupName ? groupFeaturesCall(userId, groupName) : undefined;
     },
     defaultValue: { kind: 'ready', keys: new Set<string>() } satisfies GroupSelection,
-    loader: async ({ params, abortSignal }): Promise<GroupSelection> => {
-      try {
-        const response = await apiRequest(this.api.call<unknown>(params), abortSignal);
-        if (response.status !== 'PASS')
-          return {
+    stream: ({ params }) =>
+      this.api.call<unknown>(params).pipe(
+        map((response): GroupSelection =>
+          response.status !== 'PASS'
+            ? {
+                kind: 'error',
+                message:
+                  typeof response.message === 'string'
+                    ? response.message
+                    : 'Unable to load the selected group.',
+              }
+            : { kind: 'ready', keys: savedFeatureKeys(response.message) },
+        ),
+        catchError(() =>
+          of<GroupSelection>({
             kind: 'error',
-            message:
-              typeof response.message === 'string'
-                ? response.message
-                : 'Unable to load the selected group.',
-          };
-        return { kind: 'ready', keys: savedFeatureKeys(response.message) };
-      } catch (error: unknown) {
-        if (abortSignal.aborted) throw error;
-        return {
-          kind: 'error',
-          message: 'Unable to load the selected group. Select it again to retry.',
-        };
-      }
-    },
+            message: 'Unable to load the selected group. Select it again to retry.',
+          }),
+        ),
+      ),
   });
   protected readonly groupLoading = this.groupSelection.isLoading;
+  private readonly loadedGroup = computed(() =>
+    this.groupSelection.hasValue() ? this.groupSelection.value() : undefined,
+  );
+  private readonly loadedKeys = computed<ReadonlySet<string>>(() => {
+    const group = this.loadedGroup();
+    return group?.kind === 'ready' ? group.keys : new Set();
+  });
 
-  /** What the selected group held when it was loaded - what Save compares the ticks against. */
-  private readonly savedFeatureIds = signal<ReadonlySet<string>>(new Set());
-  private readonly selectedFeatureIds = signal<ReadonlySet<string>>(new Set());
+  // Both reset to the group's saved features each time a group loads.
+  /** What the group holds on the server - what Save compares the ticks against. */
+  private readonly savedFeatureIds = linkedSignal(() => this.loadedKeys());
+  /** The ticks the user has made since. */
+  private readonly selectedFeatureIds = linkedSignal(() => new Set(this.loadedKeys()));
+
+  /** The last action's message, else why the selected group couldn't load. */
+  protected readonly message = computed(() => {
+    if (this.statusMessage()) return this.statusMessage();
+    const group = this.loadedGroup();
+    return group?.kind === 'error' ? group.message : '';
+  });
 
   protected readonly groupOptions = computed<DropdownOption[]>(() => [
     { value: '', label: 'Select a group' },
@@ -148,30 +167,23 @@ export class FeatureGroups {
   ];
 
   constructor() {
+    this.reportData.bind(() => {
+      const userId = this.reportData.userId();
+      return userId ? { kind: 'load', sql: allFeaturesCall(userId) } : undefined;
+    });
     registerLicenseRefresh(this.reportData, () => {
-      void this.reportData.load(allFeaturesCall(this.reportData.userId()));
+      this.reportData.refresh();
       this.groupSelection.reload();
     });
-    void inject(FeatureGroupsService)
-      .load()
-      .then((groups) =>
-        this.groups.set(groups.filter((groupName) => !BUILT_IN_GROUPS.has(groupName))),
-      );
+  }
 
-    effect(() => {
-      const userId = this.reportData.userId();
-      if (userId) {
-        untracked(() => void this.reportData.load(allFeaturesCall(userId)));
-      }
-    });
+  ngOnInit(): void {
+    void this.loadGroups();
+  }
 
-    effect(() => {
-      const state = this.groupSelection.hasValue() ? this.groupSelection.value() : undefined;
-      const keys = state?.kind === 'ready' ? state.keys : new Set<string>();
-      this.savedFeatureIds.set(keys);
-      this.selectedFeatureIds.set(new Set(keys));
-      if (state?.kind === 'error') this.statusMessage.set(state.message);
-    });
+  private async loadGroups(): Promise<void> {
+    const groups = await this.featureGroups.load();
+    this.groups.set(groups.filter((groupName) => !BUILT_IN_GROUPS.has(groupName)));
   }
 
   protected selectGroup(groupName: string): void {
@@ -292,29 +304,21 @@ export class FeatureGroups {
     )
       return;
     this.isSaving.set(true);
-    try {
-      const response = await apiRequest(
-        this.api.post<unknown>('post_delete', {
-          sql: [
-            `call R_A_CLTX_ESEC_MF_DELETE(${sqlString(this.reportData.userId())},${sqlString(groupName)});`,
-          ],
-        }),
-      );
-      if (response.status !== 'PASS') {
-        this.statusMessage.set(
-          typeof response.message === 'string' ? response.message : 'Unable to delete group.',
-        );
-        return;
-      }
-      this.groups.update((groups) => groups.filter((name) => name !== groupName));
-      this.selectedGroup.set('');
-      this.featureGroups.invalidate();
-      this.statusMessage.set('Group deleted.');
-    } catch {
-      this.statusMessage.set('Unable to delete group.');
-    } finally {
-      this.isSaving.set(false);
+    const response = await this.run(
+      [
+        `call R_A_CLTX_ESEC_MF_DELETE(${sqlString(this.reportData.userId())},${sqlString(groupName)});`,
+      ],
+      'post_delete',
+    );
+    this.isSaving.set(false);
+    if (!response.ok) {
+      this.statusMessage.set(response.message || 'Unable to delete group.');
+      return;
     }
+    this.groups.update((groups) => groups.filter((name) => name !== groupName));
+    this.selectedGroup.set('');
+    this.featureGroups.invalidate();
+    this.statusMessage.set('Group deleted.');
   }
 
   private toggle(row: FeatureRow): void {
@@ -323,27 +327,18 @@ export class FeatureGroups {
       this.statusMessage.set('Select or create a group first.');
       return;
     }
-    const featureId = featureKey(row);
-    this.selectedFeatureIds.update((keys) => {
-      const updatedIds = new Set(keys);
-      if (updatedIds.has(featureId)) {
-        updatedIds.delete(featureId);
-      } else {
-        updatedIds.add(featureId);
-      }
-      return updatedIds;
-    });
+    this.selectedFeatureIds.update((keys) => toggled(keys, featureKey(row)));
   }
 
+  /** Posts `sql`; `message` is the server's text, if any. Never throws. */
   private async run(
-    sql: string,
+    sql: string | string[],
     endpoint = 'post_view_call',
-  ): Promise<{ ok: boolean; message: string; rows?: unknown }> {
+  ): Promise<{ ok: boolean; message: string }> {
     try {
-      const response = await apiRequest(this.api.post<unknown>(endpoint, { sql }));
-      const isSuccessful = response?.status === 'PASS';
+      const response = await apiRequest(this.api.post<unknown>(endpoint, { sql }), this.destroyRef);
       const message = typeof response?.message === 'string' ? response.message : '';
-      return { ok: isSuccessful, message, rows: response?.message };
+      return { ok: response?.status === 'PASS', message };
     } catch {
       return { ok: false, message: '' };
     }

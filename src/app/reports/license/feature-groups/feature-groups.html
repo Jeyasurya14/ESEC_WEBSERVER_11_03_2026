@@ -3,7 +3,7 @@
 
   <span class="filter-divider" aria-hidden="true"></span>
 
-  <label class="filter">
+  <div class="filter">
     <span class="filter-label">Group</span>
     <app-dropdown
       ariaLabel="Feature group"
@@ -11,7 +11,7 @@
       [value]="selectedGroup()"
       (valueChange)="selectGroup($event)"
     />
-  </label>
+  </div>
 
   <input
     class="group-input"
@@ -35,8 +35,8 @@
   </button>
 
   <div class="toolbar-trailing">
-    @if (statusMessage()) {
-      <span class="status-message">{{ statusMessage() }}</span>
+    @if (message()) {
+      <span class="status-message">{{ message() }}</span>
     }
     <span class="row-count">Selected : {{ selectedCount() }} / {{ rows().length }}</span>
     <button

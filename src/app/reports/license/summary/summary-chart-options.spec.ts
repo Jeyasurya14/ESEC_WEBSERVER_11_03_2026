@@ -68,8 +68,8 @@ describe('Company Summary chart options', () => {
   });
 
   it('filters working days only for the daily chart without modifying the original rows', () => {
-    expect(summaryChartRows(rows, 'day', true)).toEqual([rows[1]]);
-    expect(summaryChartRows(rows, 'week', true)).toBe(rows);
+    expect(summaryChartRows(rows, 'day', { workingDaysOnly: true })).toEqual([rows[1]]);
+    expect(summaryChartRows(rows, 'week', { workingDaysOnly: true })).toBe(rows);
     expect(
       summaryChartOptions(rows, 'day', { ...settings, workingDaysOnly: true }).xAxis,
     ).toMatchObject({ categories: ['02-Nov-2026'] });

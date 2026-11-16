@@ -32,11 +32,22 @@ export function visibleHeatmapRows(
   height: number,
   count: number,
   rowHeight: number,
+  previous?: VisibleRows,
 ): VisibleRows {
-  const first = Math.min(Math.max(0, count - 1), Math.floor(Math.max(0, top - 28) / rowHeight));
+  const bodyTop = Math.max(0, top - 28);
+  const first = Math.min(Math.max(0, count - 1), Math.floor(bodyTop / rowHeight));
+  const last = Math.min(count, Math.ceil((bodyTop + height) / rowHeight));
+  // Keep the SVG stable until the viewport consumes most of its eight-row buffer.
+  if (
+    previous &&
+    previous.end <= count &&
+    (previous.start === 0 || first >= previous.start + 2) &&
+    (previous.end === count || last <= previous.end - 2)
+  )
+    return previous;
   return {
-    start: Math.max(0, first - 4),
-    end: Math.min(count, first + Math.ceil(height / rowHeight) + 4),
+    start: Math.max(0, first - 8),
+    end: Math.min(count, last + 8),
   };
 }
 
@@ -48,7 +59,7 @@ function heatmapExportRows(
   return [
     ['Date', ...hours],
     ...dates.map((date, index) => {
-      const values = Array<string>(24).fill('');
+      const values = new Array<string>(24).fill('');
       for (const point of points.get(index) ?? []) {
         if (
           typeof point.x === 'number' &&
@@ -80,6 +91,7 @@ export function viewportHeatmapOptions(
     ...options,
     chart: {
       ...options.chart,
+      animation: false,
       height: Math.max(27, (end - start) * rowHeight + 4),
       events: {
         ...options.chart?.events,

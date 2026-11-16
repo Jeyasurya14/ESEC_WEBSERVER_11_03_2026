@@ -14,6 +14,13 @@ export function literal<const T>(value: T): T {
   return value;
 }
 
+export function toggled<T>(set: ReadonlySet<T>, value: T): Set<T> {
+  const copy = new Set(set);
+  if (copy.has(value)) copy.delete(value);
+  else copy.add(value);
+  return copy;
+}
+
 export function assertNever(value: never): never {
   throw new Error(`Unhandled state: ${String(value)}`);
 }

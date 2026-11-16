@@ -121,10 +121,6 @@ export function visibleRows(
   );
 }
 
-/**
- * One gauge tile's worth of data: the card's title, the dial's percentage, its stat rows, and the
- * row it was built from - kept around so selecting the tile can open its History/Heatmap drilldown.
- */
 export interface OrganizationTile {
   title: string;
   percent: number;
@@ -154,7 +150,6 @@ export function organizationTiles(
   }));
 }
 
-/** Keeps the tiles whose title matches the search text - the same text box the grid view uses. */
 export function searchTiles(
   organizationTiles: OrganizationTile[],
   searchText: string,

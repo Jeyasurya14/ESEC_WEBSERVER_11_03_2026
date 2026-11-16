@@ -1,35 +1,25 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
-import { UserMenu } from '../../../core/models';
-import { registerLicenseRefresh } from '../report-helpers';
-import { SearchFilter } from '../../../shared/filters/search-filter';
-import { DataGrid } from '../../../shared/grid/data-grid';
-import { ReportData } from '../../../shared/report-data';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ReportData, ReportQuery } from '../../../shared/report-data';
+import { GRID_REPORT_IMPORTS, GridReport } from '../grid-report';
 import { DebugDataRow, debugDataCall, debugDataColumns } from './debug-data.data';
 import { DebugRecords } from './debug-records';
 
 /** License / Debug Data - the licenses the data collector has debug records for. */
 @Component({
   selector: 'app-license-debug-data',
-  imports: [DataGrid, SearchFilter, DebugRecords],
+  imports: [...GRID_REPORT_IMPORTS, DebugRecords],
   templateUrl: './debug-data.html',
-  styleUrl: './debug-data.scss',
+  styleUrl: '../grid-report.scss',
   host: { class: 'report-page report-fill' },
   providers: [ReportData],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DebugData implements OnInit {
-  readonly menu = input.required<UserMenu>();
-  readonly reportData = inject<ReportData<DebugDataRow>>(ReportData);
-  readonly searchText = signal('');
-  readonly rowCount = signal('');
-  readonly selectedRow = signal<DebugDataRow | null>(null);
-  readonly columns = debugDataColumns((row) => this.selectedRow.set({ ...row }));
+export class DebugData extends GridReport<DebugDataRow> {
+  protected readonly label = 'Debug data';
+  protected readonly selectedRow = signal<DebugDataRow | null>(null);
+  protected readonly columns = debugDataColumns((row) => this.selectedRow.set({ ...row }));
 
-  constructor() {
-    registerLicenseRefresh(this.reportData, () => void this.reportData.load(debugDataCall()));
-  }
-
-  ngOnInit(): void {
-    void this.reportData.load(debugDataCall());
+  protected query(): ReportQuery<DebugDataRow> {
+    return { kind: 'load', sql: debugDataCall() };
   }
 }

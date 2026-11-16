@@ -58,12 +58,12 @@
     </button>
   }
 </div>
-@if (statusMessage()) {
-  <p class="report-message" role="status">{{ statusMessage() }}</p>
+@if (message()) {
+  <output class="report-message">{{ message() }}</output>
 }
 <div class="report-layout">
   <aside class="parameter-panel" aria-label="Select parameters">
-    <h2>Select parameters · {{ selectedFeatureIds().size }}</h2>
+    <h2>Select parameters · {{ chosenFeatures().length }}</h2>
     <app-dropdown
       ariaLabel="Software"
       [options]="softwareOptions()"
@@ -126,7 +126,7 @@
       <button
         type="button"
         class="action"
-        [disabled]="isSavingSession() || !sessionName().trim() || !selectedFeatureIds().size"
+        [disabled]="isSavingSession() || !sessionName().trim() || !chosenFeatures().length"
         (click)="saveSession()"
       >
         Save
@@ -142,7 +142,7 @@
     </div>
   </aside>
   <section class="report-result" aria-label="Custom report results">
-    @if (selectedFeatureIds().size) {
+    @if (chosenFeatures().length) {
       @if (
         showChart() && !reportData.loading() && !reportData.error() && filters.settings();
         as settings

@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { CheckFilter } from '../../../shared/filters/check-filter';
 import { DataGrid } from '../../../shared/grid/data-grid';
 import { registerReportRefresh } from '../../../shared/report-refresh';
@@ -21,7 +12,6 @@ import {
   SummaryMode,
   SummaryPeriod,
   SummarySeriesId,
-  summaryCall,
   summaryIndicatorColumns,
   summaryIndicators,
 } from './license-summary.data';
@@ -62,15 +52,8 @@ export class LicenseSummary {
   protected readonly columns = computed(() => summaryIndicatorColumns(this.settings()));
 
   constructor() {
-    effect(() => {
-      const row = this.row();
-      const scope = this.scope();
-      untracked(() => void this.summaryData.load(row, scope));
-    });
-    registerReportRefresh(
-      this.summaryData,
-      () => void this.summaryData.load(this.row(), this.scope()),
-    );
+    this.summaryData.bind(() => ({ row: this.row(), scope: this.scope() }));
+    registerReportRefresh(this.summaryData, () => this.summaryData.refresh());
   }
 
   protected setMode(mode: SummaryMode): void {
@@ -94,6 +77,6 @@ export class LicenseSummary {
       section === 'indicators'
         ? this.summaryData.indicators
         : this.summaryData.charts.find((chart) => chart.id === section)?.data;
-    if (source) void source.load(summaryCall(this.scope(), this.row(), section));
+    source?.refresh();
   }
 }

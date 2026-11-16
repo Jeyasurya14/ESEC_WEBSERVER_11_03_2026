@@ -1,4 +1,4 @@
-import { apiRequest, resourceRequest } from '../../core/api/api-request';
+import { apiRequest } from '../../core/api/api-request';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,7 +9,6 @@ import {
   inject,
   model,
   signal,
-  Injector,
 } from '@angular/core';
 
 import { ApiService, sqlString } from '../../core/api/api.service';
@@ -27,7 +26,7 @@ export function featureGroupParam(group: string): string {
 
 @Injectable({ providedIn: 'root' })
 export class FeatureGroupsService {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly api = inject(ApiService);
   private readonly loginService = inject(LoginService);
@@ -58,13 +57,11 @@ export class FeatureGroupsService {
   }
 
   private async fetch(userId: string): Promise<string[]> {
-    const groupResponse = await resourceRequest(this.injector, (abortSignal) =>
-      apiRequest(
-        this.api.call<Array<{ COLLECTION_NAME: string }>>(
-          `call R_A_CLTX_ESEC_MF_LOAD(${sqlString(userId)});`,
-        ),
-        abortSignal,
+    const groupResponse = await apiRequest(
+      this.api.call<Array<{ COLLECTION_NAME: string }>>(
+        `call R_A_CLTX_ESEC_MF_LOAD(${sqlString(userId)});`,
       ),
+      this.destroyRef,
     ).catch(() => null);
 
     if (groupResponse?.status !== 'PASS') this.groupsByUserId.delete(userId);

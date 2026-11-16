@@ -6,7 +6,7 @@
   (actionSelected)="selectAction($event)"
 />
 @if (loading()) {
-  <span class="opening-status" role="status">Opening {{ activeAction().label }}…</span>
+  <output class="opening-status">Opening {{ activeAction().label }}…</output>
 }
 @if (error()) {
   <div class="open-error" role="alert">

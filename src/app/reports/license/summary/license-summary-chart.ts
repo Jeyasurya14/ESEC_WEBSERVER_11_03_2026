@@ -71,7 +71,10 @@ export class LicenseSummaryChart {
   protected readonly chartSource = {
     loading: () => this.data().loading(),
     error: () => this.data().error(),
-    rows: () => summaryChartRows(this.data().rows(), this.period(), this.workingDaysOnly()),
+    rows: () =>
+      summaryChartRows(this.data().rows(), this.period(), {
+        workingDaysOnly: this.workingDaysOnly(),
+      }),
   };
   protected readonly options = computed(() =>
     summaryChartOptions(this.data().rows(), this.period(), {

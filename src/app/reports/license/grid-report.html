@@ -1,4 +1,4 @@
-<div class="report-toolbar" role="toolbar" aria-label="User filters">
+<div class="report-toolbar" role="toolbar" [attr.aria-label]="label + ' filters'">
   <app-search-filter [(text)]="searchText" />
 
   <div class="toolbar-trailing">

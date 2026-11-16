@@ -1,6 +1,6 @@
+import { featureGroupParam } from '../../shared/filters/feature-group-filter';
 import { UsageOption } from '../../shared/filters/option-filter';
 import { ReportRange, rangeCall } from '../../shared/filters/range-filter';
-import { featureGroupParam } from '../../shared/filters/feature-group-filter';
 import { Column, textColumn } from '../../shared/grid/columns';
 import { ReportSettings } from '../../shared/report-settings.service';
 import {
@@ -59,15 +59,20 @@ export function groupedColumns(
 
 export function groupedTiles(rows: OrganizationRow[], option: UsageOption, scope: LicenseScope) {
   return organizationTiles(rows, option).map((tile) => {
-    const row = tile.row;
-    const labels =
-      scope === 'department'
-        ? [row.divn, row.dept]
-        : scope === 'division'
-          ? [row.divn]
-          : scope === 'group'
-            ? [row.g_type, row.g_name]
-            : [];
+    const labels = scopeLabels(tile.row, scope);
     return { ...tile, title: [tile.title, ...labels].filter(Boolean).join(', ') };
   });
+}
+
+function scopeLabels(row: OrganizationRow, scope: LicenseScope): (string | undefined)[] {
+  switch (scope) {
+    case 'department':
+      return [row.divn, row.dept];
+    case 'division':
+      return [row.divn];
+    case 'group':
+      return [row.g_type, row.g_name];
+    default:
+      return [];
+  }
 }

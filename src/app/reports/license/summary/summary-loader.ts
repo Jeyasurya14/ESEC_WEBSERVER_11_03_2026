@@ -1,6 +1,6 @@
-import { DestroyRef, Injectable, computed, inject } from '@angular/core';
-import { formatDateTime } from '../../../shared/dates';
-import { ReportData } from '../../../shared/report-data';
+import { Injectable, computed } from '@angular/core';
+
+import { ReportData, combinedLastUpdated } from '../../../shared/report-data';
 import { OrganizationRow } from '../organization/organization.data';
 import { LicenseScope } from '../grouped-reports';
 import { SUMMARY_PERIODS, SummaryPeriod, SummaryRecord, summaryCall } from './license-summary.data';
@@ -20,30 +20,28 @@ export class SummaryLoader {
     data: new ReportData<SummaryRecord>(),
   }));
   readonly indicators: ReportData<SummaryRecord> = new ReportData<SummaryRecord>();
-  private readonly destroyRef = inject(DestroyRef);
   private readonly reportSources: readonly ReportData<SummaryRecord>[] = [
     ...this.charts.map((chart) => chart.data),
     this.indicators,
   ];
   readonly loading = computed(() => this.reportSources.some((reportData) => reportData.loading()));
-  readonly lastUpdated = computed(() => {
-    if (
-      this.loading() ||
-      this.reportSources.some((reportData) => reportData.error() || !reportData.loadedAt())
-    )
-      return '';
-    return formatDateTime(
-      new Date(
-        Math.min(...this.reportSources.map((reportData) => reportData.loadedAt()!.getTime())),
-      ),
-    );
-  });
+  readonly lastUpdated = computed(() => combinedLastUpdated(this.reportSources));
 
-  async load(licenseRow: OrganizationRow, scope: LicenseScope): Promise<void> {
-    if (this.destroyRef.destroyed) return;
-    await Promise.all([
-      ...this.charts.map((chart) => chart.data.load(summaryCall(scope, licenseRow, chart.id))),
-      this.indicators.load(summaryCall(scope, licenseRow, 'indicators')),
-    ]);
+  /** Loads every period and the indicators for whichever row `source` gives, as it changes. */
+  bind(source: () => { row: OrganizationRow; scope: LicenseScope }): void {
+    for (const chart of this.charts) {
+      chart.data.bind(() => {
+        const { row, scope } = source();
+        return { kind: 'load', sql: summaryCall(scope, row, chart.id) };
+      });
+    }
+    this.indicators.bind(() => {
+      const { row, scope } = source();
+      return { kind: 'load', sql: summaryCall(scope, row, 'indicators') };
+    });
+  }
+
+  refresh(): void {
+    for (const reportData of this.reportSources) reportData.refresh();
   }
 }

@@ -1,5 +1,34 @@
 import type { LicenseRecord } from '../report-helpers';
-import { DetailParameters, DetailView, holidayRow } from './detail-queries';
+import { DETAIL_DEFINITIONS, DetailParameters, DetailView, holidayRow } from './detail-queries';
+import { groupUsage, usageMatrix } from './usage-analysis';
+
+export type DetailLayout = 'grid' | 'chart' | 'split';
+
+/** Hours views open with grid and chart side by side; other chart views on the chart. */
+export function defaultLayout(view: DetailView): DetailLayout {
+  if (view === 'hours' || view === 'utilizationHours') return 'split';
+  return DETAIL_DEFINITIONS[view].chart ? 'chart' : 'grid';
+}
+
+/** The grid's rows: a usage matrix, the rows grouped by `groupField`, or the rows as they are. */
+export function detailGridRows(
+  rows: LicenseRecord[],
+  view: DetailView,
+  usageView: DetailParameters['usageView'],
+  groupField: string,
+): LicenseRecord[] {
+  if (view === 'usage' && usageView === 'matrix') return usageMatrix(rows, groupField || 'divn');
+  if (groupField) return groupUsage(rows, groupField);
+  return rows;
+}
+
+/** The columns whose cells are links that drill into the clicked row. */
+export function detailLinkFields(view: DetailView, groupField: string): string[] {
+  if (groupField) return [groupField];
+  if (view === 'usage') return ['user_id'];
+  if (view === 'debugData') return ['lic'];
+  return [];
+}
 
 const WORKDAY_VIEWS = new Set<DetailView>(['usage', 'heatmap', 'utilization', 'checkoutCount']);
 

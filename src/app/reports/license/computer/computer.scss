@@ -1,6 +1,0 @@
-// Layout and toolbar styles are shared (report-fill, report-toolbar); only this report's extras are here.
-@use '../../../../styles/variables' as *;
-
-.row-count {
-  color: $gray-900;
-}

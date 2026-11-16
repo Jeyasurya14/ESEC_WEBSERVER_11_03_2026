@@ -15,19 +15,12 @@ export interface Tab {
   id: number;
   menu: UserMenu;
   component: Type<unknown>;
-  /** Passed to the tab's component via `ngComponentOutletInputs` - `{ menu }` for a report opened by `open()`. */
   inputs: Record<string, unknown>;
   pinned: boolean;
 }
 
-/**
- * The id of the tab a report is running in, if any - inject it (it's optional) to reach
- * `TabService.setReportHandle` and put a refresh control in the shared status bar instead of a
- * report's own toolbar. Provided per tab by TabsComponent, not by the report itself.
- */
 export const TAB_ID = new InjectionToken<number>('TAB_ID');
 
-/** How a report's own refresh button reaches the shared status bar: its loading state, what to call, and when it last loaded. */
 export interface ReportHandle {
   loading: () => boolean;
   refresh: () => void;
@@ -54,12 +47,9 @@ export class TabService {
     () => this.tabs().find((tab) => tab.id === this.activeTabId()) ?? null,
   );
 
-  // A report registers its refresh handle under its own tab id (see Organization for how); this
-  // map isn't a signal itself, so refreshVersion stands in for "something in it changed".
   private readonly reportHandles = new Map<number, ReportHandle>();
   private readonly reportRevision = signal(0);
 
-  /** The open tab whose refresh should show in the status bar - the active tab's, if it has one. */
   readonly activeReportHandle = computed<ReportHandle | null>(() => {
     this.reportRevision();
     const tabId = this.activeTabId();
@@ -82,11 +72,6 @@ export class TabService {
     this.addTab(menu, component, { menu });
   }
 
-  /**
-   * Opens an arbitrary component as its own permanent tab, the way the company app's
-   * `addReportInTab` opens a report from a grid row - used by report drilldowns (e.g. the
-   * Organization report's bottom section) rather than the main menu's `open()`.
-   */
   openComponent(menu: UserMenu, component: Type<unknown>, inputs: Record<string, unknown>): void {
     this.addTab(menu, component, inputs);
   }
@@ -103,7 +88,7 @@ export class TabService {
   }
 
   activate(tabId: number): void {
-    if (this.indexOf(tabId) >= 0) this.activeTabId.set(tabId);
+    if (this.hasTab(tabId)) this.activeTabId.set(tabId);
   }
 
   close(tabId: number): void {
@@ -116,7 +101,7 @@ export class TabService {
   }
 
   closeOthers(tabId: number): void {
-    if (this.indexOf(tabId) < 0) return;
+    if (!this.hasTab(tabId)) return;
     this.removeWhere((tab) => tab.id !== tabId && !tab.pinned);
     this.activate(tabId);
   }
@@ -164,6 +149,10 @@ export class TabService {
 
   private indexOf(tabId: number): number {
     return this.tabs().findIndex((tab) => tab.id === tabId);
+  }
+
+  private hasTab(tabId: number): boolean {
+    return this.tabs().some((tab) => tab.id === tabId);
   }
 
   private removeWhere(shouldRemove: (tab: Tab, index: number) => boolean): void {

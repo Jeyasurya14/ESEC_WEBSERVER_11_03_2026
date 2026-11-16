@@ -1,5 +1,5 @@
-import { apiRequest, resourceRequest } from '../api/api-request';
-import { Injectable, inject, Injector } from '@angular/core';
+import { apiRequest } from '../api/api-request';
+import { Injectable, inject, DestroyRef } from '@angular/core';
 
 import { ApiService, sqlString } from '../api/api.service';
 import { LoginService } from '../auth/login.service';
@@ -19,7 +19,7 @@ interface PreferenceSession {
 
 @Injectable({ providedIn: 'root' })
 export class UserPreferencesService {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly api = inject(ApiService);
   private readonly loginService = inject(LoginService);
@@ -69,13 +69,11 @@ export class UserPreferencesService {
 
   private async loadPreferences(userSession: PreferenceSession): Promise<StoredPreferences> {
     try {
-      const preferenceResponse = await resourceRequest(this.injector, (abortSignal) =>
-        apiRequest(
-          this.api.call<Array<{ pref?: string }>>(
-            `call esms_m.a_user_pref_load(${sqlString(userSession.userId)});`,
-          ),
-          abortSignal,
+      const preferenceResponse = await apiRequest(
+        this.api.call<Array<{ pref?: string }>>(
+          `call esms_m.a_user_pref_load(${sqlString(userSession.userId)});`,
         ),
+        this.destroyRef,
       );
       if (preferenceResponse?.status !== 'PASS' || !Array.isArray(preferenceResponse.message))
         return {};
@@ -106,7 +104,7 @@ export class UserPreferencesService {
     );
     const saveQuery = `call esms_m.a_user_pref_insert(${sqlString(userSession.userId)}, ${sqlString(JSON.stringify([preferencesToSave]))});`;
     try {
-      await apiRequest(this.api.write(saveQuery));
+      await apiRequest(this.api.write(saveQuery), this.destroyRef);
     } catch {}
 
     return this.saveChanges(userSession, currentPreferences);

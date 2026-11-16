@@ -21,7 +21,6 @@ export interface BorrowRow {
 }
 
 export function borrowCall(userId: string, range: ReportRange, featureGroup: string): string {
-  debugger;
   return rangeCall('esms_m.r_borrow_grid', range, [userId], [featureGroupParam(featureGroup)]);
 }
 

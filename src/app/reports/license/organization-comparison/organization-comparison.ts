@@ -4,11 +4,9 @@ import {
   Component,
   OnInit,
   computed,
-  effect,
   inject,
   input,
   signal,
-  untracked,
 } from '@angular/core';
 import { UserMenu } from '../../../core/models';
 import { Dropdown } from '../../../shared/dropdown/dropdown';
@@ -107,10 +105,12 @@ export class OrganizationComparison implements OnInit {
       : [];
   });
   constructor() {
-    effect(() => {
-      this.reportRequest();
-      this.validationError();
-      if (this.filters.settings()) untracked(() => this.refresh());
+    this.reportData.bind(() => {
+      if (!this.filters.settings()) return undefined;
+      const message = this.validationError();
+      return message
+        ? { kind: 'invalid', message }
+        : { kind: 'load', sql: comparisonCall(this.reportRequest()) };
     });
     registerLicenseRefresh(this.reportData, () => this.refresh());
   }
@@ -120,11 +120,7 @@ export class OrganizationComparison implements OnInit {
     });
   }
   refresh(): void {
-    if (this.validationError()) {
-      this.reportData.fail(this.validationError());
-      return;
-    }
-    void this.reportData.load(comparisonCall(this.reportRequest()));
+    this.reportData.refresh();
   }
   chooseMode(mode: string): void {
     if (mode === 'year' || mode === 'month' || mode === 'compare') this.comparisonMode.set(mode);

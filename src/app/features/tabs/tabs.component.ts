@@ -51,9 +51,6 @@ export class TabsComponent implements OnDestroy {
 
   readonly contextMenu = signal<OpenMenu | null>(null);
 
-  // One child injector per tab, created once and reused - ngComponentOutlet recreates its
-  // component whenever the injector it's given is a different object, so this must stay stable
-  // for as long as the tab stays open.
   private readonly tabInjectors = new Map<number, DestroyableInjector>();
 
   constructor() {

@@ -16,7 +16,7 @@ export function featureOptions(
   }
   return [
     { value: '', label: field === 'sw' ? 'All software' : 'All servers' },
-    ...[...values].sort().map((value) => ({ value, label: value })),
+    ...[...values].sort((a, b) => a.localeCompare(b)).map((value) => ({ value, label: value })),
   ];
 }
 

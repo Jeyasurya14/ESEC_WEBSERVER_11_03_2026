@@ -1,6 +1,15 @@
-import { DETAIL_CHOICES, DetailSelectField } from './license-detail.utils';
 import { inputValue, isOption } from '../../../shared/input-value';
-import { detailRows, selectedDetailRows, detailUsageStats } from './license-detail.utils';
+import {
+  DETAIL_CHOICES,
+  DetailSelectField,
+  DetailLayout,
+  defaultLayout,
+  detailGridRows,
+  detailLinkFields,
+  detailRows,
+  detailUsageStats,
+  selectedDetailRows,
+} from './license-detail.utils';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,13 +20,13 @@ import {
   signal,
 } from '@angular/core';
 import { BrowserStorage } from '../../../core/storage/browser-storage.service';
-import { formatDateTime, formatSqlDate } from '../../../shared/dates';
+import { formatSqlDate } from '../../../shared/dates';
 import { CheckFilter } from '../../../shared/filters/check-filter';
 import { HeatmapControls } from '../../../shared/charts/heatmap-controls';
 import { SearchFilter } from '../../../shared/filters/search-filter';
 import { DataGrid } from '../../../shared/grid/data-grid';
 import { ReportChart } from '../../../shared/report-chart/report-chart';
-import { ReportData, sqlQuery } from '../../../shared/report-data';
+import { ReportData, combinedLastUpdated, sqlQuery } from '../../../shared/report-data';
 import { registerReportRefresh } from '../../../shared/report-refresh';
 import { DEFAULT_REPORT_SETTINGS, ReportSettings } from '../../../shared/report-settings.service';
 import { LicenseRecord, recordColumns } from '../report-helpers';
@@ -36,7 +45,6 @@ import {
 } from '../summary/license-summary.data';
 import { detailColumns, detailLinks } from './detail-columns';
 import { detailChart, DetailChartOptions } from './detail-charts';
-import { groupUsage, usageMatrix } from './usage-analysis';
 import {
   DETAIL_DEFINITIONS,
   debugSessionQuery,
@@ -64,7 +72,25 @@ const DEFAULT_PARAMETERS: DetailParameters = {
   newCalculation: false,
 };
 
-const INVALID_PARAMETERS = 'Choose valid dates, times, working hours and a reduction of at least 1.';
+const DEFAULT_CHART_SETTINGS: DetailChartOptions = {
+  percentage: false,
+  visible: [...DEFAULT_SUMMARY_SERIES],
+  labels: false,
+  overlap: false,
+  percentile: 95,
+  linear: false,
+  polynomial: 0,
+  capacity: 0,
+  heatmapMetric: 'peak',
+  minimum: 0,
+  maximum: 100,
+  showZero: true,
+  showIssued: false,
+  showUsed: false,
+};
+
+const INVALID_PARAMETERS =
+  'Choose valid dates, times, working hours and a reduction of at least 1.';
 
 interface DetailContext {
   view: DetailView;
@@ -110,7 +136,7 @@ export class LicenseDetail {
         hours,
       );
       // A settings-only change updates the hours and keeps the user's other edits.
-      if (previous && previous.source.context === context) {
+      if (previous?.source.context === context) {
         return { ...previous.value, workingHours };
       }
       return {
@@ -128,30 +154,13 @@ export class LicenseDetail {
     },
   });
   protected readonly chartSettings = signal<DetailChartOptions>({
-    percentage: false,
-    visible: [...DEFAULT_SUMMARY_SERIES],
-    labels: false,
-    overlap: false,
+    ...DEFAULT_CHART_SETTINGS,
     percentile: reportParameter(this.storage, 'percentile', 95),
-    linear: false,
-    polynomial: 0,
-    capacity: 0,
-    heatmapMetric: 'peak',
-    minimum: 0,
-    maximum: 100,
-    showZero: true,
-    showIssued: false,
-    showUsed: false,
   });
   protected readonly searchText = signal('');
-  protected readonly layout = linkedSignal<DetailContext, 'grid' | 'chart' | 'split'>({
+  protected readonly layout = linkedSignal<DetailContext, DetailLayout>({
     source: this.context,
-    computation: ({ view }) =>
-      view === 'hours' || view === 'utilizationHours'
-        ? 'split'
-        : DETAIL_DEFINITIONS[view].chart
-          ? 'chart'
-          : 'grid',
+    computation: ({ view }) => defaultLayout(view),
   });
   protected readonly groupField = signal('');
   protected readonly selectedRow = linkedSignal<DetailContext, LicenseRecord | null>({
@@ -181,27 +190,16 @@ export class LicenseDetail {
     ),
   );
   protected readonly gridRows = computed(() =>
-    this.view() === 'usage' && this.parameters().usageView === 'matrix'
-      ? usageMatrix(this.rows(), this.groupField() || 'divn')
-      : this.groupField()
-        ? groupUsage(this.rows(), this.groupField())
-        : this.rows(),
+    detailGridRows(this.rows(), this.view(), this.parameters().usageView, this.groupField()),
   );
-  protected readonly columns = computed(() =>
-    detailLinks(
-      this.groupField()
-        ? recordColumns(this.gridRows())
-        : detailColumns(this.view(), this.gridRows(), this.settings(), this.parameters()),
-      this.groupField()
-        ? [this.groupField()]
-        : this.view() === 'usage'
-          ? ['user_id']
-          : this.view() === 'debugData'
-            ? ['lic']
-            : [],
-      (row) => this.selectRow(row),
-    ),
-  );
+  protected readonly columns = computed(() => {
+    const columns = this.groupField()
+      ? recordColumns(this.gridRows())
+      : detailColumns(this.view(), this.gridRows(), this.settings(), this.parameters());
+    return detailLinks(columns, detailLinkFields(this.view(), this.groupField()), (row) =>
+      this.selectRow(row),
+    );
+  });
   protected readonly extraColumns = computed(() => recordColumns(this.extraData.rows()));
   protected readonly chartData = computed(() =>
     this.view() === 'utilizationHours' ? this.extraData : this.mainData,
@@ -231,18 +229,10 @@ export class LicenseDetail {
     registerReportRefresh(
       {
         loading: () => this.mainData.loading() || this.extraData.loading(),
-        lastUpdated: () => {
-          const sources = this.extraQuery() ? [this.mainData, this.extraData] : [this.mainData];
-          return sources.some(
-            (reportData) => reportData.loading() || reportData.error() || !reportData.loadedAt(),
-          )
-            ? ''
-            : formatDateTime(
-                new Date(
-                  Math.min(...sources.map((reportData) => reportData.loadedAt()!.getTime())),
-                ),
-              );
-        },
+        lastUpdated: () =>
+          combinedLastUpdated(
+            this.extraQuery() ? [this.mainData, this.extraData] : [this.mainData],
+          ),
       },
       () => this.refresh(),
       () => this.statusControls(),

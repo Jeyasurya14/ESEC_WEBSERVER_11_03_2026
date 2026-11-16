@@ -1,4 +1,4 @@
-import { apiRequest, resourceRequest } from '../../../core/api/api-request';
+import { apiRequest } from '../../../core/api/api-request';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,7 +7,7 @@ import {
   inject,
   input,
   signal,
-  Injector,
+  DestroyRef,
 } from '@angular/core';
 import { UserMenu } from '../../../core/models';
 
@@ -41,7 +41,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LicenseAgent implements OnInit {
-  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly menu = input.required<UserMenu>();
   readonly reportData = inject<ReportData<LicenseAgentRow>>(ReportData);
@@ -78,13 +78,9 @@ export class LicenseAgent implements OnInit {
     registerLicenseRefresh(this.reportData, () => this.refresh());
   }
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     void this.loadSoftware();
-    try {
-      this.settings.set(await this.settingsService.load());
-    } catch {
-      this.reportData.fail('Unable to load the report settings. Please refresh to try again.');
-    }
+    void this.loadSettings();
   }
 
   chooseSoftware(name: string): void {
@@ -93,30 +89,38 @@ export class LicenseAgent implements OnInit {
 
   refresh(): void {
     if (!this.settings()) {
-      void this.ngOnInit();
+      this.ngOnInit();
       return;
     }
     if (this.softwareName()) this.reportData.refresh();
     else void this.loadSoftware();
   }
 
+  private async loadSettings(): Promise<void> {
+    try {
+      this.settings.set(await this.settingsService.load());
+    } catch {
+      this.reportData.fail('Unable to load the report settings. Please refresh to try again.');
+    }
+  }
+
   async loadSoftware(): Promise<void> {
     this.softwareError.set('');
     try {
-      const response = await resourceRequest(this.injector, (abortSignal) =>
-        apiRequest(
-          this.api.call<Array<{ sw_name?: string; sw?: string; exe?: string }>>(
-            'call esms_m.r_license_agent_sw_list();',
-          ),
-          abortSignal,
+      const response = await apiRequest(
+        this.api.call<Array<{ sw_name?: string; sw?: string; exe?: string }>>(
+          'call esms_m.r_license_agent_sw_list();',
         ),
+        this.destroyRef,
       );
-      if (response.status !== 'PASS' || !Array.isArray(response.message)) throw new Error();
+      if (response.status !== 'PASS' || !Array.isArray(response.message)) {
+        throw new Error('Unable to load software names.');
+      }
       const names = [
         ...new Set(
           response.message.map((row) => row.sw_name || row.sw || row.exe || '').filter(Boolean),
         ),
-      ].sort();
+      ].sort((a, b) => a.localeCompare(b));
       this.softwareOptions.set([
         { value: '', label: 'Select software' },
         ...names.map((value) => ({ value, label: value })),
