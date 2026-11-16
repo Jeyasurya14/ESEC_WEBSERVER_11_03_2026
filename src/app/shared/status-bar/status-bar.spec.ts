@@ -109,7 +109,7 @@ describe('Shared report status bar', () => {
     expect(instance(element.querySelector('.refresh-button'), HTMLButtonElement).disabled).toBe(
       true,
     );
-    expect(element.querySelector('[role="status"]')?.textContent).toContain('Loading');
+    expect(element.querySelector('output')?.textContent).toContain('Loading');
     tabs.close(tabs.activeTabId()!);
     await fixture.whenStable();
     expect(element.querySelector('.status-action')).toBeNull();
