@@ -6,11 +6,13 @@ import {
   input,
   isDevMode,
   output,
+  signal,
 } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   CellStyleModule,
   ClientSideRowModelModule,
+  ColumnApiModule,
   ColDef,
   CsvExportModule,
   GetContextMenuItems,
@@ -46,6 +48,7 @@ import { Column, ROW_NUMBER_COLUMN, formatNumber } from './columns';
 
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
+  ColumnApiModule,
   TextFilterModule,
   NumberFilterModule,
   PinnedRowModule,
@@ -137,6 +140,10 @@ let licenseApplied = false;
   template: `
     <ag-grid-angular
       class="grid"
+      [class.pinned-scroll]="scrollWidths() !== null"
+      [style.--grid-pinned-left.px]="scrollWidths()?.left"
+      [style.--grid-pinned-right.px]="scrollWidths()?.right"
+      [style.--grid-scroll-content.px]="scrollWidths()?.center"
       [theme]="theme"
       [icons]="icons"
       [rowData]="rows()"
@@ -157,6 +164,9 @@ let licenseApplied = false;
       [overlayLoadingTemplate]="loadingTemplate"
       [overlayNoRowsTemplate]="noRowsTemplate()"
       (modelUpdated)="countRows($event)"
+      (gridReady)="updateScrollWidths($event.api)"
+      (displayedColumnsChanged)="updateScrollWidths($event.api)"
+      (columnResized)="updateScrollWidths($event.api)"
       (filterChanged)="renumberRows($event.api)"
       (sortChanged)="renumberRows($event.api)"
       (rowDoubleClicked)="onRowDoubleClicked($event)"
@@ -202,6 +212,9 @@ export class DataGrid<T> {
 
   protected readonly columnHeaderHeight = 32;
   protected readonly groupHeaderHeight = 32;
+  protected readonly scrollWidths = signal<{ left: number; center: number; right: number } | null>(
+    null,
+  );
   protected readonly shownColumns = computed(() =>
     applyColumnVisibility(this.columns(), this.hiddenColumns()),
   );
@@ -230,6 +243,23 @@ export class DataGrid<T> {
 
   protected renumberRows(api: GridApi<T>): void {
     api.refreshCells({ columns: [ROW_NUMBER_COLUMN] });
+  }
+
+  protected updateScrollWidths(api: GridApi<T>): void {
+    const width = (columns: ReturnType<GridApi<T>['getAllDisplayedColumns']>) =>
+      columns.reduce((total, column) => total + column.getActualWidth(), 0);
+    const next = {
+      left: width(api.getDisplayedLeftColumns()),
+      center: width(api.getDisplayedCenterColumns()),
+      right: width(api.getDisplayedRightColumns()),
+    };
+    const current = this.scrollWidths();
+    if (
+      current?.left !== next.left ||
+      current.center !== next.center ||
+      current.right !== next.right
+    )
+      this.scrollWidths.set(next);
   }
 
   protected countRows({ api }: ModelUpdatedEvent<T>): void {

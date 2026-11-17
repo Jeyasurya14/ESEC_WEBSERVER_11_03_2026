@@ -87,7 +87,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 3px 16px;
   border-bottom: 1px solid $border-light;
   background: #fff;
   font-size: $font-size-base;
@@ -319,4 +319,18 @@ button:disabled {
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
+}
+
+// Exclude pinned widths from both the viewport and track to preserve the native scroll range.
+app-data-grid .pinned-scroll {
+  .ag-body-horizontal-scroll-viewport {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-left: var(--grid-pinned-left, 0px);
+    margin-right: var(--grid-pinned-right, 0px);
+  }
+
+  .ag-body-horizontal-scroll-container {
+    width: max(1px, var(--grid-scroll-content, 0px)) !important;
+  }
 }

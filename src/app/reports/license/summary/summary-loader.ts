@@ -12,7 +12,6 @@ export interface SummaryChart {
   readonly data: ReportData<SummaryRecord>;
 }
 
-/** Five independent requests, with one aggregate workspace refresh state. Provided per Summary tab. */
 @Injectable()
 export class SummaryLoader {
   readonly charts: readonly SummaryChart[] = SUMMARY_PERIODS.map((period) => ({
@@ -27,7 +26,6 @@ export class SummaryLoader {
   readonly loading = computed(() => this.reportSources.some((reportData) => reportData.loading()));
   readonly lastUpdated = computed(() => combinedLastUpdated(this.reportSources));
 
-  /** Loads every period and the indicators for whichever row `source` gives, as it changes. */
   bind(source: () => { row: OrganizationRow; scope: LicenseScope }): void {
     for (const chart of this.charts) {
       chart.data.bind(() => {

@@ -23,7 +23,6 @@ export type SummaryMode = 'value' | 'percentage';
 export type SummarySeriesId = UsageOption | 'ISSUED';
 export type SummaryRecord = Record<string, unknown>;
 
-/** Colors and field names from the company's ag-summary-template and gblfunction. */
 export const SUMMARY_SERIES: readonly {
   id: SummarySeriesId;
   label: string;
@@ -65,7 +64,6 @@ export type SummaryIndicator = { description: string; percentage: boolean } & Re
   number | null
 >;
 
-/** Pivot period records into metric rows without mutating the API response. */
 export function summaryIndicators(
   records: readonly SummaryRecord[],
   scope: LicenseScope,
@@ -112,22 +110,32 @@ export function summaryIndicators(
       '360': null,
     };
     for (const period of INDICATOR_PERIODS) {
-      const record = periods.get(period);
-      let value = toNumber(record?.[field]);
-      const available = toNumber(record?.['tlh_24']);
-      const capacity = available === null ? null : (available * hours) / 24;
-      if (field === 'tlh_24') value = capacity === null ? null : Number(capacity.toFixed(4));
-      if (field === 'tot_du_q')
-        value =
-          capacity === null || value === null
-            ? null
-            : capacity > 0
-              ? Number(((value / capacity) * 100).toFixed(1))
-              : 0;
-      values[period] = value;
+      values[period] = indicatorValue(periods.get(period), field, hours);
     }
     return { description: label, percentage: field === 'tot_du_q', ...values };
   });
+}
+
+/**
+ * One indicator's value for one period. License hours available is rescaled from 24 hours to
+ * the working hours, and License Hours % is the hours used as a share of that capacity.
+ */
+function indicatorValue(
+  record: SummaryRecord | undefined,
+  field: string,
+  hours: number,
+): number | null {
+  const value = toNumber(record?.[field]);
+  if (field !== 'tlh_24' && field !== 'tot_du_q') return value;
+
+  const available = toNumber(record?.['tlh_24']);
+  if (available === null) return null;
+  const capacity = (available * hours) / 24;
+  if (field === 'tlh_24') return Number(capacity.toFixed(4));
+
+  if (value === null) return null;
+  if (capacity <= 0) return 0;
+  return Number(((value / capacity) * 100).toFixed(1));
 }
 
 export function summaryIndicatorColumns(settings: ReportSettings): Column<SummaryIndicator>[] {

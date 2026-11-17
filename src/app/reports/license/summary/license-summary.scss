@@ -93,8 +93,10 @@
   color: #9f2534;
   text-align: center;
 }
-[hidden] {
-  display: none !important;
+.summary-charts[hidden],
+.indicators-panel[hidden],
+app-license-summary-chart[hidden] {
+  display: none;
 }
 
 @container license-summary (max-width: 1100px) {
