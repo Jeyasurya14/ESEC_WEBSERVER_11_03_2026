@@ -3,6 +3,7 @@ import { apiRequest } from '../core/api/api-request';
 import { Injectable, inject, DestroyRef } from '@angular/core';
 
 import { ApiService } from '../core/api/api.service';
+import { LoginService } from '../core/auth/login.service';
 import { Setting } from '../core/models';
 import { BrowserStorage, StorageKey } from '../core/storage/browser-storage.service';
 import { BAND_COLORS, UsageBand } from './filters/usage-band-filter';
@@ -69,9 +70,17 @@ export class ReportSettingsService {
 
   private readonly api = inject(ApiService);
   private readonly storage = inject(BrowserStorage);
+  private readonly loginService = inject(LoginService);
   private settingsPromise: Promise<ReportSettings> | null = null;
+  private settingsSession: unknown = null;
 
   load(): Promise<ReportSettings> {
+    // Sign-out clears the browser copies `remember` writes, so each sign-in loads again.
+    const session = this.loginService.user();
+    if (session !== this.settingsSession) {
+      this.settingsSession = session;
+      this.settingsPromise = null;
+    }
     this.settingsPromise ??= this.fetch().catch((error: unknown) => {
       this.settingsPromise = null;
       throw error;

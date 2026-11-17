@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   OnInit,
   computed,
   inject,
@@ -11,7 +10,6 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { catchError, map, of } from 'rxjs';
-import { apiRequest } from '../../../core/api/api-request';
 import { ApiService, sqlString } from '../../../core/api/api.service';
 import { UserMenu } from '../../../core/models';
 import { toggled } from '../../../core/utils/data';
@@ -64,7 +62,6 @@ export class FeatureGroups implements OnInit {
   readonly menu = input.required<UserMenu>();
 
   private readonly api = inject(ApiService);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly tabs = inject(TabService, { optional: true });
   private readonly featureGroups = inject(FeatureGroupsService);
   protected readonly reportData = inject<ReportData<FeatureRow>>(ReportData);
@@ -208,12 +205,13 @@ export class FeatureGroups implements OnInit {
     }
 
     this.isSaving.set(true);
-    const response = await this.run(createGroupCall(this.reportData.userId(), groupName));
+    const created = await this.run(
+      createGroupCall(this.reportData.userId(), groupName),
+      'post_view_call',
+      'Unable to create the group.',
+    );
     this.isSaving.set(false);
-    if (!response.ok) {
-      this.statusMessage.set(response.message || 'Unable to create the group.');
-      return;
-    }
+    if (!created) return;
     if (!this.groups().includes(groupName)) {
       this.groups.update((groups) => [...groups, groupName]);
     }
@@ -239,11 +237,7 @@ export class FeatureGroups implements OnInit {
     try {
       if (removed.length) {
         const sql = removed.map((row) => removeFeatureCall(userId, groupName, row)).join('');
-        const response = await this.run(sql, 'post_delete_bulk');
-        if (!response.ok) {
-          this.statusMessage.set(response.message || 'Unable to save the group.');
-          return;
-        }
+        if (!(await this.run(sql, 'post_delete_bulk', 'Unable to save the group.'))) return;
         const removedIds = new Set(removed.map(featureKey));
         this.savedFeatureIds.update(
           (keys) => new Set([...keys].filter((featureId) => !removedIds.has(featureId))),
@@ -251,11 +245,7 @@ export class FeatureGroups implements OnInit {
       }
       if (added.length) {
         const sql = added.map((row) => addFeatureCall(userId, groupName, row)).join('');
-        const response = await this.run(sql, 'post_insert_update');
-        if (!response.ok) {
-          this.statusMessage.set(response.message || 'Unable to save the group.');
-          return;
-        }
+        if (!(await this.run(sql, 'post_insert_update', 'Unable to save the group.'))) return;
         this.savedFeatureIds.update((keys) => new Set([...keys, ...added.map(featureKey)]));
       }
       this.statusMessage.set('Data Saved');
@@ -304,17 +294,15 @@ export class FeatureGroups implements OnInit {
     )
       return;
     this.isSaving.set(true);
-    const response = await this.run(
+    const deleted = await this.run(
       [
         `call R_A_CLTX_ESEC_MF_DELETE(${sqlString(this.reportData.userId())},${sqlString(groupName)});`,
       ],
       'post_delete',
+      'Unable to delete group.',
     );
     this.isSaving.set(false);
-    if (!response.ok) {
-      this.statusMessage.set(response.message || 'Unable to delete group.');
-      return;
-    }
+    if (!deleted) return;
     this.groups.update((groups) => groups.filter((name) => name !== groupName));
     this.selectedGroup.set('');
     this.featureGroups.invalidate();
@@ -330,17 +318,18 @@ export class FeatureGroups implements OnInit {
     this.selectedFeatureIds.update((keys) => toggled(keys, featureKey(row)));
   }
 
-  /** Posts `sql`; `message` is the server's text, if any. Never throws. */
+  /** Posts `sql`; on failure shows the server's text (else `failedMessage`). Never throws. */
   private async run(
     sql: string | string[],
-    endpoint = 'post_view_call',
-  ): Promise<{ ok: boolean; message: string }> {
+    endpoint: string,
+    failedMessage: string,
+  ): Promise<boolean> {
     try {
-      const response = await apiRequest(this.api.post<unknown>(endpoint, { sql }), this.destroyRef);
-      const message = typeof response?.message === 'string' ? response.message : '';
-      return { ok: response?.status === 'PASS', message };
-    } catch {
-      return { ok: false, message: '' };
+      await this.api.send(endpoint, sql, failedMessage);
+      return true;
+    } catch (error) {
+      this.statusMessage.set(error instanceof Error ? error.message : failedMessage);
+      return false;
     }
   }
 }

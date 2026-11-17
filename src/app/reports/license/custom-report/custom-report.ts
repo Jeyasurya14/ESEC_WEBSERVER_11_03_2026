@@ -341,7 +341,7 @@ export class CustomReport implements OnInit {
     this.isSavingSession.set(true);
     this.isWritingSession = true;
     try {
-      await this.write(sql, endpoint);
+      await this.api.send(endpoint, sql, failedMessage);
       this.statusMessage.set(doneMessage);
       this.sessionData.refresh();
       return true;
@@ -395,15 +395,6 @@ export class CustomReport implements OnInit {
       );
     }
     return response.message;
-  }
-
-  private async write(sql: string | string[], endpoint: string): Promise<void> {
-    const response = await apiRequest(this.api.post<unknown>(endpoint, { sql }), this.destroyRef);
-    if (response.status !== 'PASS') {
-      throw new Error(
-        typeof response.message === 'string' ? response.message : 'Unable to save changes.',
-      );
-    }
   }
 }
 

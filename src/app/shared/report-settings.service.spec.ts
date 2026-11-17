@@ -1,7 +1,9 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../core/api/api.service';
+import { LoginService } from '../core/auth/login.service';
 import { BrowserStorage, StorageKey } from '../core/storage/browser-storage.service';
 import { ReportSettingsService, workingHours } from './report-settings.service';
 
@@ -19,8 +21,14 @@ describe('report settings', () => {
         }),
       ),
     };
-    TestBed.configureTestingModule({ providers: [{ provide: ApiService, useValue: api }] });
-    return { service: TestBed.inject(ReportSettingsService), api };
+    const user = signal<{ userId: string } | null>({ userId: 'john' });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ApiService, useValue: api },
+        { provide: LoginService, useValue: { user } },
+      ],
+    });
+    return { service: TestBed.inject(ReportSettingsService), api, user };
   }
 
   it('reads band limits and defaults from the app settings, and working hours from the database', async () => {
@@ -63,6 +71,20 @@ describe('report settings', () => {
     const { service, api } = setUp({});
     await Promise.all([service.load(), service.load()]);
     expect(api.query).toHaveBeenCalledOnce();
+  });
+
+  it('writes the browser copies again after sign-out and a new sign-in, even as the same user', async () => {
+    const { service, api, user } = setUp({});
+    const storage = TestBed.inject(BrowserStorage);
+    await service.load();
+
+    user.set(null);
+    storage.clearOnSignOut();
+    user.set({ userId: 'john' });
+    await service.load();
+
+    expect(api.query).toHaveBeenCalledTimes(2);
+    expect(storage.get(StorageKey.workingHourStart)).toBe('09:00:00');
   });
 
   it('works out working hours, falling back to a full day', () => {

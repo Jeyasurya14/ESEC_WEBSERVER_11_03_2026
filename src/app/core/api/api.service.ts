@@ -65,6 +65,18 @@ export class ApiService {
     return this.post<T>('post_insert_update', { sql });
   }
 
+  /** Posts `sql` to a write endpoint; rejects with the server's text, else `failedMessage`. */
+  async send(endpoint: string, sql: string | string[], failedMessage: string): Promise<void> {
+    const response = await apiRequest(this.post<unknown>(endpoint, { sql }), this.destroyRef);
+    if (response?.status !== 'PASS') {
+      throw new Error(
+        typeof response?.message === 'string' && response.message
+          ? response.message
+          : failedMessage,
+      );
+    }
+  }
+
   loadAsset<T>(path: string): Promise<T> {
     return apiRequest(this.http.get<T>(path).pipe(timeout(TIMEOUT_MS)), this.destroyRef);
   }
